@@ -152,50 +152,75 @@ class KotogawaDataCollector:
                         dam_data['water_level'] = level
                         break
             
-            # テーブルから時系列データを取得
+            # テーブルから正確な日時マッチングで目標データを取得
             tables = soup.find_all('table')
-            water_levels = []
-            storage_rates = []
-            inflows = []
-            outflows = []
+            target_date = observation_time.strftime('%Y/%m/%d')
+            target_time = observation_time.strftime('%H:%M')
+            
+            print(f"Looking for dam data: {target_date} {target_time}")
             
             for table in tables:
                 rows = table.find_all('tr')
                 for row in rows:
                     cells = row.find_all('td')
-                    if len(cells) >= 4:  # 時刻、貯水位、貯水率、流入量などの列がある場合
-                        for i, cell in enumerate(cells):
-                            text = cell.get_text().strip()
+                    if len(cells) >= 9:  # ダムテーブルの最小列数（日付、時刻、貯水位、貯水率、流入量、全放流量、調整流量、60分雨量、累加雨量）
+                        try:
+                            date_text = cells[0].get_text().strip()
+                            time_text = cells[1].get_text().strip()
                             
-                            # 数値のみを抽出
-                            try:
-                                value = float(text)
+                            # 日時が完全一致する行を探す
+                            if date_text == target_date and time_text == target_time:
+                                print(f"Found matching row: {date_text} {time_text}")
                                 
-                                # 値の妥当性で判定
-                                if 30 <= value <= 40:  # ダム水位の範囲
-                                    water_levels.append(value)
-                                elif 90 <= value <= 100:  # 貯水率の範囲
-                                    storage_rates.append(value)
-                                elif 0 < value < 20:  # 流入・流出量の範囲
-                                    # 前後のセルのテキストを確認
-                                    if i > 0:
-                                        prev_text = cells[i-1].get_text().strip()
-                                        if '流入' in prev_text:
-                                            inflows.append(value)
-                                        elif '流出' in prev_text:
-                                            outflows.append(value)
-                            except ValueError:
-                                continue
-            
-            # 最新値を使用（リストの最後の値）
-            if water_levels and dam_data['water_level'] is None:
-                dam_data['water_level'] = water_levels[-1]
-            if storage_rates:
-                dam_data['storage_rate'] = storage_rates[-1]
-            if inflows:
-                dam_data['inflow'] = inflows[-1]
-            if outflows:
-                dam_data['outflow'] = outflows[-1]
+                                # 列位置に基づいてデータを抽出
+                                # 列2: 貯水位, 列3: 貯水率, 列4: 流入量, 列5: 全放流量
+                                water_level_text = cells[2].get_text().strip()
+                                storage_rate_text = cells[3].get_text().strip()
+                                inflow_text = cells[4].get_text().strip()
+                                outflow_text = cells[5].get_text().strip()
+                                
+                                # 貯水位
+                                try:
+                                    level = float(water_level_text)
+                                    if 30 <= level <= 40:  # 妥当性チェック
+                                        dam_data['water_level'] = level
+                                        print(f"Dam water level: {level}m")
+                                except ValueError:
+                                    print(f"Invalid water level: {water_level_text}")
+                                
+                                # 貯水率
+                                try:
+                                    rate = float(storage_rate_text)
+                                    if 0 <= rate <= 100:  # 妥当性チェック
+                                        dam_data['storage_rate'] = rate
+                                        print(f"Storage rate: {rate}%")
+                                except ValueError:
+                                    print(f"Invalid storage rate: {storage_rate_text}")
+                                
+                                # 流入量
+                                try:
+                                    inflow = float(inflow_text)
+                                    if 0 <= inflow <= 100:  # 範囲を拡張
+                                        dam_data['inflow'] = inflow
+                                        print(f"Inflow: {inflow} m³/s")
+                                except ValueError:
+                                    print(f"Invalid inflow: {inflow_text}")
+                                
+                                # 全放流量
+                                try:
+                                    outflow = float(outflow_text)
+                                    if 0 <= outflow <= 100:  # 範囲を拡張
+                                        dam_data['outflow'] = outflow
+                                        print(f"Outflow: {outflow} m³/s")
+                                except ValueError:
+                                    print(f"Invalid outflow: {outflow_text}")
+                                
+                                break  # 目標行が見つかったら終了
+                        except (IndexError, ValueError) as e:
+                            continue
+                
+                if dam_data['water_level'] is not None:
+                    break  # データが見つかったらテーブル検索終了
             
             # 貯水率の計算（水位から）
             if dam_data['water_level'] and not dam_data['storage_rate']:
@@ -253,61 +278,74 @@ class KotogawaDataCollector:
         }
         
         try:
-            # テーブルから最新の水位データを取得
+            # テーブルから正確な日時マッチングで目標データを取得
             tables = soup.find_all('table')
-            water_levels = []
+            target_date = observation_time.strftime('%Y/%m/%d')
+            target_time = observation_time.strftime('%H:%M')
+            
+            print(f"Looking for river data: {target_date} {target_time}")
             
             for table in tables:
                 rows = table.find_all('tr')
                 for row in rows:
-                    cells = row.find_all(['td', 'th'])
-                    if len(cells) >= 2:
-                        # 各行のセルを順番に確認
-                        row_text = ' '.join([cell.get_text().strip() for cell in cells])
-                        
-                        # 時刻パターンを含む行（データ行）かチェック
-                        if re.search(r'\d{1,2}:\d{2}', row_text):
-                            for cell in cells:
-                                text = cell.get_text().strip()
-                                # 水位の数値パターンを検索
-                                if re.match(r'^\d+\.\d{2}$', text):
-                                    try:
-                                        level = float(text)
-                                        # 合理的な水位範囲内かチェック (0.5-10m)
-                                        # 0.02のような極小値は除外
-                                        if 0.5 <= level <= 10:
-                                            water_levels.append(level)
-                                    except ValueError:
-                                        continue
-            
-            # 最新の水位データを使用（ただし警戒水位値を除外）
-            if water_levels:
-                # 警戒水位の値を除外
-                threshold_values = [3.80, 5.00, 5.10, 5.50]
-                actual_levels = [level for level in water_levels if level not in threshold_values]
+                    cells = row.find_all('td')
+                    if len(cells) >= 4:  # 河川テーブルの最小列数（日付、時刻、水位、変化量など）
+                        try:
+                            date_text = cells[0].get_text().strip()
+                            time_text = cells[1].get_text().strip()
+                            
+                            # 日時が完全一致する行を探す
+                            if date_text == target_date and time_text == target_time:
+                                print(f"Found matching river row: {date_text} {time_text}")
+                                
+                                # 列位置に基づいてデータを抽出
+                                # 列2: 水位, 列3: 水位変化（推定）
+                                water_level_text = cells[2].get_text().strip()
+                                
+                                # 水位
+                                try:
+                                    level = float(water_level_text)
+                                    if 0.5 <= level <= 10:  # 合理的な水位範囲
+                                        river_data['water_level'] = level
+                                        print(f"River water level: {level}m")
+                                        
+                                        # 水位変化（列3があれば）
+                                        if len(cells) > 3:
+                                            try:
+                                                change_text = cells[3].get_text().strip()
+                                                # +0.01 や -0.02 のような形式から数値を抽出
+                                                change_match = re.search(r'([+-]?\d+\.\d+)', change_text)
+                                                if change_match:
+                                                    change = float(change_match.group(1))
+                                                    river_data['level_change'] = round(change, 2)
+                                                    print(f"Water level change: {change}m")
+                                                else:
+                                                    river_data['level_change'] = 0.0
+                                            except (ValueError, IndexError):
+                                                river_data['level_change'] = 0.0
+                                        else:
+                                            river_data['level_change'] = 0.0
+                                        
+                                        # 警戒レベルの判定
+                                        if level >= thresholds['danger']:
+                                            river_data['status'] = '氾濫危険'
+                                        elif level >= thresholds['evacuation']:
+                                            river_data['status'] = '避難判断'
+                                        elif level >= thresholds['caution']:
+                                            river_data['status'] = '氾濫注意'
+                                        elif level >= thresholds['preparedness']:
+                                            river_data['status'] = '水防団待機'
+                                        else:
+                                            river_data['status'] = '正常'
+                                        
+                                        break  # 目標行が見つかったら終了
+                                except ValueError:
+                                    print(f"Invalid river water level: {water_level_text}")
+                        except (IndexError, ValueError) as e:
+                            continue
                 
-                if actual_levels:
-                    current_level = actual_levels[-1]  # 最新値
-                    river_data['water_level'] = current_level
-                    
-                    # 前の値と比較して変化量を計算
-                    if len(actual_levels) > 1:
-                        previous_level = actual_levels[-2]
-                        river_data['level_change'] = round(current_level - previous_level, 2)
-                    else:
-                        river_data['level_change'] = 0.0
-                    
-                    # 警戒レベルの判定
-                    if current_level >= thresholds['danger']:
-                        river_data['status'] = '氾濫危険'
-                    elif current_level >= thresholds['evacuation']:
-                        river_data['status'] = '避難判断'
-                    elif current_level >= thresholds['caution']:
-                        river_data['status'] = '氾濫注意'
-                    elif current_level >= thresholds['preparedness']:
-                        river_data['status'] = '水防団待機'
-                    else:
-                        river_data['status'] = '正常'
+                if river_data['water_level'] is not None:
+                    break  # データが見つかったらテーブル検索終了
             
             # JavaScriptから現在値を抽出
             scripts = soup.find_all('script')
@@ -388,86 +426,55 @@ class KotogawaDataCollector:
             return rainfall_data
         
         try:
-            found_hourly = False
-            found_cumulative = False
-            
-            # テーブルから雨量データを検索
+            # 雨量データは同じダムテーブルから取得（列7: 60分雨量、列8: 累積雨量）
             tables = soup.find_all('table')
-            print(f"Found {len(tables)} tables for rainfall data extraction")
+            target_date = observation_time.strftime('%Y/%m/%d')
+            target_time = observation_time.strftime('%H:%M')
             
-            for i, table in enumerate(tables):
+            print(f"Looking for rainfall data: {target_date} {target_time}")
+            
+            for table in tables:
                 rows = table.find_all('tr')
-                print(f"Table {i+1}: {len(rows)} rows")
-                
                 for row in rows:
-                    cells = row.find_all(['td', 'th'])
-                    row_text = ' '.join([cell.get_text().strip() for cell in cells])
-                    
-                    # 詳細ログ出力
-                    if '雨量' in row_text or '60分' in row_text:
-                        print(f"Rainfall row found: {row_text}")
-                    
-                    # 60分雨量を検索
-                    hourly_match = re.search(r'60分.*?(\d+)', row_text)
-                    if hourly_match and not found_hourly:
-                        value = int(hourly_match.group(1))
-                        if self.validate_rainfall_data(value, 0):
-                            rainfall_data['hourly'] = value
-                            found_hourly = True
-                            print(f"Found hourly rainfall: {value}mm")
-                    
-                    # 累積雨量を検索
-                    cumulative_match = re.search(r'累積.*?(\d+)', row_text)
-                    if cumulative_match and not found_cumulative:
-                        value = int(cumulative_match.group(1))
-                        if self.validate_rainfall_data(0, value):
-                            rainfall_data['cumulative'] = value
-                            found_cumulative = True
-                            print(f"Found cumulative rainfall: {value}mm")
-            
-            # HTMLテキスト全体からも検索（テーブルで見つからない場合）
-            if not found_hourly or not found_cumulative:
-                full_text = soup.get_text()
-                print("Searching full text for missing rainfall data...")
+                    cells = row.find_all('td')
+                    if len(cells) >= 9:  # ダムテーブルの全列数
+                        try:
+                            date_text = cells[0].get_text().strip()
+                            time_text = cells[1].get_text().strip()
+                            
+                            # 日時が完全一致する行を探す
+                            if date_text == target_date and time_text == target_time:
+                                print(f"Found matching rainfall row: {date_text} {time_text}")
+                                
+                                # 列位置に基づいて雨量データを抽出
+                                # 列7: 60分雨量, 列8: 累積雨量
+                                hourly_text = cells[7].get_text().strip()
+                                cumulative_text = cells[8].get_text().strip()
+                                
+                                # 60分雨量
+                                try:
+                                    hourly = int(hourly_text)
+                                    if self.validate_rainfall_data(hourly, 0):
+                                        rainfall_data['hourly'] = hourly
+                                        print(f"Hourly rainfall: {hourly}mm")
+                                except ValueError:
+                                    print(f"Invalid hourly rainfall: {hourly_text}")
+                                
+                                # 累積雨量
+                                try:
+                                    cumulative = int(cumulative_text)
+                                    if self.validate_rainfall_data(0, cumulative):
+                                        rainfall_data['cumulative'] = cumulative
+                                        print(f"Cumulative rainfall: {cumulative}mm")
+                                except ValueError:
+                                    print(f"Invalid cumulative rainfall: {cumulative_text}")
+                                
+                                break  # 目標行が見つかったら終了
+                        except (IndexError, ValueError) as e:
+                            continue
                 
-                # より柔軟なパターンマッチング
-                if not found_hourly:
-                    hourly_patterns = [
-                        r'時間雨量[:\s]*(\d+)',
-                        r'60分[^\d]*(\d+)',
-                        r'1時間[^\d]*(\d+)',
-                        r'雨量[^\d]{0,10}(\d+)'
-                    ]
-                    for pattern in hourly_patterns:
-                        matches = re.findall(pattern, full_text)
-                        for match in matches:
-                            value = int(match)
-                            if self.validate_rainfall_data(value, 0):
-                                rainfall_data['hourly'] = value
-                                found_hourly = True
-                                print(f"Found hourly rainfall in full text: {value}mm")
-                                break
-                        if found_hourly:
-                            break
-                
-                if not found_cumulative:
-                    cumulative_patterns = [
-                        r'累積雨量[:\s]*(\d+)',
-                        r'総雨量[:\s]*(\d+)',
-                        r'積算[^\d]*(\d+)',
-                        r'累計[^\d]*(\d+)'
-                    ]
-                    for pattern in cumulative_patterns:
-                        matches = re.findall(pattern, full_text)
-                        for match in matches:
-                            value = int(match)
-                            if self.validate_rainfall_data(0, value):
-                                rainfall_data['cumulative'] = value
-                                found_cumulative = True
-                                print(f"Found cumulative rainfall in full text: {value}mm")
-                                break
-                        if found_cumulative:
-                            break
+                if rainfall_data['hourly'] != 0 or rainfall_data['cumulative'] != 0:
+                    break  # データが見つかったらテーブル検索終了
             
             # 変化量の計算（前回データとの比較は省略し、0を設定）
             rainfall_data['change'] = 0
