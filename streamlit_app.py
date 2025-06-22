@@ -6,10 +6,16 @@
 
 import json
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 import pandas as pd
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    # Python 3.8以前の場合
+    import pytz
+    ZoneInfo = lambda x: pytz.timezone(x)
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -215,11 +221,18 @@ class KotogawaMonitor:
             st.warning("表示するデータがありません")
             return
         
-        # 観測時刻の取得
+        # 観測時刻の取得（日本時間で表示）
         observation_time = data.get('data_time')
         if observation_time:
             try:
+                # ISOフォーマットから日時を解析
                 dt = datetime.fromisoformat(observation_time.replace('Z', '+00:00'))
+                # タイムゾーンがない場合は日本時間として扱う
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                else:
+                    # UTCから日本時間に変換
+                    dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
                 obs_time_str = dt.strftime('%Y/%m/%d %H:%M')
             except:
                 obs_time_str = observation_time
@@ -270,7 +283,7 @@ class KotogawaMonitor:
         
         # 河川情報
         st.markdown("### 🌊 河川情報（持世寺）")
-        river_col1, river_col2 = st.columns(2)
+        river_col1, river_col2, river_col3 = st.columns(3)
         
         with river_col1:
             river_level = data.get('river', {}).get('water_level')
@@ -305,6 +318,12 @@ class KotogawaMonitor:
             st.metric(
                 label="観測地点",
                 value="持世寺"
+            )
+        
+        with river_col3:
+            st.metric(
+                label="観測日時",
+                value=obs_time_str
             )
         
         # ダム情報
@@ -542,6 +561,12 @@ def main():
         if latest_data and latest_data.get('timestamp'):
             try:
                 timestamp = datetime.fromisoformat(latest_data['timestamp'].replace('Z', '+00:00'))
+                # タイムゾーンがない場合は日本時間として扱う
+                if timestamp.tzinfo is None:
+                    timestamp = timestamp.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                else:
+                    # UTCから日本時間に変換
+                    timestamp = timestamp.astimezone(ZoneInfo('Asia/Tokyo'))
                 st.info(f"最終更新: {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}")
             except:
                 st.info(f"最終更新: {latest_data.get('timestamp', '不明')}")
@@ -654,7 +679,16 @@ def main():
     if latest_data and latest_data.get('timestamp'):
         try:
             last_update = datetime.fromisoformat(latest_data['timestamp'].replace('Z', '+00:00'))
-            time_diff = datetime.now() - last_update.replace(tzinfo=None)
+            # タイムゾーンがない場合は日本時間として扱う
+            if last_update.tzinfo is None:
+                last_update = last_update.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+            else:
+                # UTCから日本時間に変換
+                last_update = last_update.astimezone(ZoneInfo('Asia/Tokyo'))
+            
+            # 現在時刻（日本時間）
+            now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
+            time_diff = now_jst - last_update
             minutes_ago = int(time_diff.total_seconds() / 60)
             
             if minutes_ago < 60:
