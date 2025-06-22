@@ -117,21 +117,34 @@ obsdt = observation_time.strftime('%Y%m%d%H%M')
 1. **河川データ取得URL修正**
    - `kwl_graph.aspx` → `kwl_table.aspx`
    - テーブル形式での確実なデータ取得
+   - パラメータ: `check=05067&obsdt=YYYYMMDDHHmm&pop=1`
 
 2. **ダムデータ取得URL修正**
    - `kdm_graph.aspx` → `kdm_table.aspx`
    - テーブル形式での確実なデータ取得
+   - パラメータ: `check=015&obsdt=YYYYMMDDHHmm&pop=1`
 
 3. **時刻処理の改善**
    - 10分単位での丸め処理
    - データ公開遅延への対応（10分前のデータを取得）
+   - 全ての時刻表示を日本時間（JST）に統一
 
 4. **GitHub Actions間隔変更**
    - 10分間隔 → 60分間隔（毎時0分）
+   - cron設定: `0 * * * *`
 
 5. **Streamlit読み込み問題の修正**
    - 履歴データ処理の最適化（最大100ファイル）
    - 自動更新の一時無効化
+   - 新しいファイルから優先的に処理
+
+6. **UI改善**
+   - 河川情報セクションに観測日時を追加
+   - 3列レイアウト（水位、観測地点、観測日時）
+
+7. **手動データ更新スクリプト追加**
+   - `scripts/update_latest_data.py`
+   - GitHub Actions停止時の緊急対応用
 
 ## トラブルシューティング
 
@@ -165,8 +178,28 @@ streamlit run streamlit_app_minimal.py
 - **Streamlit Cloud管理**: https://share.streamlit.io/
 - **GitHub Actions管理**: https://github.com/dobocreate/kotogawa-monitor-streamlit/actions
 
+## 現在の状態（2025年6月23日 5:15 JST）
+
+### システム稼働状況
+- **Streamlit App**: ✅ 稼働中
+- **最新データ**: 2025-06-23 04:50 JST
+- **GitHub Actions**: ⚠️ 次回実行は 06:00 JST予定
+
+### 最新観測データ
+- **ダム貯水位**: 36.82m (97.9%)
+- **河川水位**: 2.91m (正常)
+- **流入量**: 17.22 m³/s
+- **全放流量**: 9.25 m³/s
+
+### 未解決の課題
+1. GitHub Actionsの自動実行が一時的に停止（設定変更後の初回実行待ち）
+2. 雨量データの取得が不安定
+3. Git rebaseの残骸が残っている可能性
+
 ## 今後の改善案
 1. データ取得エラー時の通知機能
 2. 過去データの統計分析機能
 3. 予測機能の追加
 4. モバイル対応の改善
+5. 雨量データ専用URLの調査と実装
+6. エラーログの可視化機能
