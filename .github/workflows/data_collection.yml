@@ -2,8 +2,8 @@ name: Data Collection
 
 on:
   schedule:
-    # 10分ごとに実行 (UTC時間)
-    - cron: '*/10 * * * *'
+    # 60分ごとに実行 (UTC時間) - 毎時0分
+    - cron: '0 * * * *'
   workflow_dispatch: # 手動実行も可能
 
 jobs:
