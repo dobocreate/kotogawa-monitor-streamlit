@@ -6,6 +6,7 @@
 
 import json
 import os
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, Any, List, Optional
@@ -43,9 +44,8 @@ class KotogawaMonitor:
             'dam_danger': 95.0
         }
     
-    @st.cache_data(ttl=300)  # 5分間キャッシュ
     def load_latest_data(_self) -> Optional[Dict[str, Any]]:
-        """最新データを読み込む"""
+        """最新データを読み込む（ファイル更新時刻ベースのキャッシュ）"""
         latest_file = _self.data_dir / "latest.json"
         
         if not latest_file.exists():
@@ -53,7 +53,18 @@ class KotogawaMonitor:
             return None
         
         try:
-            with open(latest_file, 'r', encoding='utf-8') as f:
+            # ファイル更新時刻をキャッシュキーとして使用
+            file_mtime = latest_file.stat().st_mtime
+            return _self._load_latest_data_cached(str(latest_file), file_mtime)
+        except Exception as e:
+            st.error(f"❌ データ読み込みエラー: {e}")
+            return None
+    
+    @st.cache_data(ttl=300)  # ファイル更新時刻が変わるまでキャッシュ
+    def _load_latest_data_cached(_self, file_path: str, file_mtime: float) -> Optional[Dict[str, Any]]:
+        """ファイル更新時刻をキーとするキャッシュされたデータ読み込み"""
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 
                 # データの整合性チェック
