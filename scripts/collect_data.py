@@ -98,8 +98,9 @@ class KotogawaDataCollector:
     
     def collect_dam_data(self) -> Dict[str, Union[float, None]]:
         """ダムデータを収集する"""
-        # 現在時刻を取得し、10分単位に丸める
-        current_time = datetime.now()
+        # 日本時間で現在時刻を取得し、10分単位に丸める
+        jst = ZoneInfo('Asia/Tokyo')
+        current_time = datetime.now(jst)
         # 分を10で割って切り捨て、10を掛けることで10分単位に
         minutes = (current_time.minute // 10) * 10
         # 最新の10分単位時刻のデータを取得
@@ -212,8 +213,9 @@ class KotogawaDataCollector:
     
     def collect_river_data(self) -> Dict[str, Any]:
         """河川データを収集する"""
-        # 現在時刻を取得し、10分単位に丸める
-        current_time = datetime.now()
+        # 日本時間で現在時刻を取得し、10分単位に丸める
+        jst = ZoneInfo('Asia/Tokyo')
+        current_time = datetime.now(jst)
         # 分を10で割って切り捨て、10を掛けることで10分単位に
         minutes = (current_time.minute // 10) * 10
         # 最新の10分単位時刻のデータを取得
@@ -359,10 +361,11 @@ class KotogawaDataCollector:
     
     def collect_rainfall_data(self) -> Dict[str, Any]:
         """雨量データを収集する"""
-        # 現在時刻を取得し、10分単位に丸める（過去方向）
-        current_time = datetime.now()
+        # 日本時間で現在時刻を取得し、10分単位に丸める
+        jst = ZoneInfo('Asia/Tokyo')
+        current_time = datetime.now(jst)
         minutes = (current_time.minute // 10) * 10
-        observation_time = current_time.replace(minute=minutes, second=0, microsecond=0) - timedelta(minutes=10)
+        observation_time = current_time.replace(minute=minutes, second=0, microsecond=0)
         obsdt = observation_time.strftime('%Y%m%d%H%M')
         
         params = {
@@ -557,21 +560,15 @@ class KotogawaDataCollector:
         river_data = self.collect_river_data()
         rainfall_data = self.collect_rainfall_data()
         
-        # 観測時刻を計算（10分単位で最新の観測時刻）
-        current_time = datetime.now()
+        # 観測時刻を計算（10分単位で最新の観測時刻）- 日本時間で統一
+        jst = ZoneInfo('Asia/Tokyo')
+        current_time = datetime.now(jst)
         minutes = (current_time.minute // 10) * 10
-        # 10分前のデータを取得していたが、最新の10分単位時刻に変更
         observation_time = current_time.replace(minute=minutes, second=0, microsecond=0)
         
         # データを統合（日本時間で保存）
-        jst = ZoneInfo('Asia/Tokyo') if 'ZoneInfo' in globals() else None
-        if jst:
-            timestamp_jst = datetime.now(jst)
-            observation_time_jst = observation_time.replace(tzinfo=jst)
-        else:
-            # fallback: システム時刻を使用
-            timestamp_jst = datetime.now()
-            observation_time_jst = observation_time
+        timestamp_jst = datetime.now(jst)
+        observation_time_jst = observation_time  # 既にJST
         
         data = {
             'timestamp': timestamp_jst.isoformat(),
