@@ -33,10 +33,12 @@ class KotogawaDataCollector:
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
         self.timeout = 30
-        self.max_retries = 3
+        self.max_retries = 5  # リトライ回数を増加
+        self.retry_delay = 3  # リトライ間隔（秒）
         
     def fetch_page(self, url: str, params: Dict[str, str]) -> Optional[BeautifulSoup]:
         """指定されたURLからHTMLを取得し、BeautifulSoupオブジェクトを返す"""
+        last_error = None
         for attempt in range(self.max_retries):
             try:
                 response = requests.get(
@@ -46,13 +48,31 @@ class KotogawaDataCollector:
                     timeout=self.timeout
                 )
                 response.raise_for_status()
+                
+                # レスポンスサイズをチェック
+                if len(response.content) < 100:
+                    raise requests.RequestException(f"Response too small: {len(response.content)} bytes")
+                
                 return BeautifulSoup(response.content, 'html.parser')
+                
             except requests.RequestException as e:
-                print(f"Attempt {attempt + 1} failed: {e}")
+                last_error = e
+                error_msg = f"Attempt {attempt + 1}/{self.max_retries} failed: {type(e).__name__}: {e}"
+                print(error_msg)
+                
                 if attempt < self.max_retries - 1:
-                    time.sleep(5)  # Wait before retry
+                    wait_time = self.retry_delay * (attempt + 1)  # 指数バックオフ
+                    print(f"Waiting {wait_time} seconds before retry...")
+                    time.sleep(wait_time)
                 else:
-                    print(f"Failed to fetch {url} after {self.max_retries} attempts")
+                    print(f"Failed to fetch {url} after {self.max_retries} attempts. Last error: {last_error}")
+                    return None
+            except Exception as e:
+                last_error = e
+                print(f"Unexpected error on attempt {attempt + 1}: {type(e).__name__}: {e}")
+                if attempt < self.max_retries - 1:
+                    time.sleep(self.retry_delay)
+                else:
                     return None
     
     def extract_number(self, text: str) -> Optional[float]:
@@ -314,10 +334,35 @@ class KotogawaDataCollector:
         
         return river_data
     
+    def validate_rainfall_data(self, hourly: int, cumulative: int) -> bool:
+        """雨量データの妥当性を検証する"""
+        # 時間雨量の妥当性チェック（0-100mm/h）
+        if not (0 <= hourly <= 100):
+            return False
+        
+        # 累積雨量の妥当性チェック（0-500mm）
+        if not (0 <= cumulative <= 500):
+            return False
+        
+        # 論理的整合性チェック（時間雨量 > 0 なら累積雨量も > 0 であるべき）
+        if hourly > 0 and cumulative == 0:
+            print(f"Warning: Hourly rainfall {hourly}mm but cumulative is 0mm - data may be inconsistent")
+        
+        return True
+    
     def collect_rainfall_data(self) -> Dict[str, Any]:
         """雨量データを収集する"""
-        # ダムページから雨量データも取得できる場合がある
-        params = {'stncd': '015'}
+        # 現在時刻を取得し、10分単位に丸める（過去方向）
+        current_time = datetime.now()
+        minutes = (current_time.minute // 10) * 10
+        observation_time = current_time.replace(minute=minutes, second=0, microsecond=0) - timedelta(minutes=10)
+        obsdt = observation_time.strftime('%Y%m%d%H%M')
+        
+        params = {
+            'check': '015',     # 厚東川ダムの観測所コード
+            'obsdt': obsdt,     # 10分単位に丸めた観測時刻  
+            'pop': '1'
+        }
         soup = self.fetch_page(self.dam_url, params)
         
         rainfall_data = {
@@ -327,57 +372,104 @@ class KotogawaDataCollector:
         }
         
         if not soup:
+            print("Failed to fetch rainfall data: No soup returned")
             return rainfall_data
         
         try:
+            found_hourly = False
+            found_cumulative = False
+            
             # テーブルから雨量データを検索
             tables = soup.find_all('table')
-            for table in tables:
+            print(f"Found {len(tables)} tables for rainfall data extraction")
+            
+            for i, table in enumerate(tables):
                 rows = table.find_all('tr')
+                print(f"Table {i+1}: {len(rows)} rows")
+                
                 for row in rows:
                     cells = row.find_all(['td', 'th'])
                     row_text = ' '.join([cell.get_text().strip() for cell in cells])
                     
+                    # 詳細ログ出力
+                    if '雨量' in row_text or '60分' in row_text:
+                        print(f"Rainfall row found: {row_text}")
+                    
                     # 60分雨量を検索
                     hourly_match = re.search(r'60分.*?(\d+)', row_text)
-                    if hourly_match:
-                        rainfall_data['hourly'] = int(hourly_match.group(1))
+                    if hourly_match and not found_hourly:
+                        value = int(hourly_match.group(1))
+                        if self.validate_rainfall_data(value, 0):
+                            rainfall_data['hourly'] = value
+                            found_hourly = True
+                            print(f"Found hourly rainfall: {value}mm")
                     
                     # 累積雨量を検索
                     cumulative_match = re.search(r'累積.*?(\d+)', row_text)
-                    if cumulative_match:
-                        rainfall_data['cumulative'] = int(cumulative_match.group(1))
+                    if cumulative_match and not found_cumulative:
+                        value = int(cumulative_match.group(1))
+                        if self.validate_rainfall_data(0, value):
+                            rainfall_data['cumulative'] = value
+                            found_cumulative = True
+                            print(f"Found cumulative rainfall: {value}mm")
             
-            # HTMLテキスト全体からも検索
-            full_text = soup.get_text()
+            # HTMLテキスト全体からも検索（テーブルで見つからない場合）
+            if not found_hourly or not found_cumulative:
+                full_text = soup.get_text()
+                print("Searching full text for missing rainfall data...")
+                
+                # より柔軟なパターンマッチング
+                if not found_hourly:
+                    hourly_patterns = [
+                        r'時間雨量[:\s]*(\d+)',
+                        r'60分[^\d]*(\d+)',
+                        r'1時間[^\d]*(\d+)',
+                        r'雨量[^\d]{0,10}(\d+)'
+                    ]
+                    for pattern in hourly_patterns:
+                        matches = re.findall(pattern, full_text)
+                        for match in matches:
+                            value = int(match)
+                            if self.validate_rainfall_data(value, 0):
+                                rainfall_data['hourly'] = value
+                                found_hourly = True
+                                print(f"Found hourly rainfall in full text: {value}mm")
+                                break
+                        if found_hourly:
+                            break
+                
+                if not found_cumulative:
+                    cumulative_patterns = [
+                        r'累積雨量[:\s]*(\d+)',
+                        r'総雨量[:\s]*(\d+)',
+                        r'積算[^\d]*(\d+)',
+                        r'累計[^\d]*(\d+)'
+                    ]
+                    for pattern in cumulative_patterns:
+                        matches = re.findall(pattern, full_text)
+                        for match in matches:
+                            value = int(match)
+                            if self.validate_rainfall_data(0, value):
+                                rainfall_data['cumulative'] = value
+                                found_cumulative = True
+                                print(f"Found cumulative rainfall in full text: {value}mm")
+                                break
+                        if found_cumulative:
+                            break
             
-            # より柔軟なパターンマッチング
-            if rainfall_data['hourly'] == 0:
-                hourly_patterns = [
-                    r'時間雨量.*?(\d+)',
-                    r'60分.*?(\d+)',
-                    r'1時間.*?(\d+)'
-                ]
-                for pattern in hourly_patterns:
-                    match = re.search(pattern, full_text)
-                    if match:
-                        rainfall_data['hourly'] = int(match.group(1))
-                        break
+            # 変化量の計算（前回データとの比較は省略し、0を設定）
+            rainfall_data['change'] = 0
             
-            if rainfall_data['cumulative'] == 0:
-                cumulative_patterns = [
-                    r'累積雨量.*?(\d+)',
-                    r'総雨量.*?(\d+)',
-                    r'積算.*?(\d+)'
-                ]
-                for pattern in cumulative_patterns:
-                    match = re.search(pattern, full_text)
-                    if match:
-                        rainfall_data['cumulative'] = int(match.group(1))
-                        break
-                        
+            # 最終的な検証
+            if not self.validate_rainfall_data(rainfall_data['hourly'], rainfall_data['cumulative']):
+                print(f"Warning: Invalid rainfall data detected - hourly: {rainfall_data['hourly']}, cumulative: {rainfall_data['cumulative']}")
+            
+            print(f"Final rainfall data: hourly={rainfall_data['hourly']}mm, cumulative={rainfall_data['cumulative']}mm")
+            
         except Exception as e:
-            print(f"Error extracting rainfall data: {e}")
+            print(f"Error extracting rainfall data: {type(e).__name__}: {e}")
+            import traceback
+            traceback.print_exc()
         
         return rainfall_data
     
