@@ -25,7 +25,7 @@ class KotogawaDataCollector:
         self.history_dir.mkdir(exist_ok=True)
         
         # URLs for data sources
-        self.dam_url = "https://y-bousai.pref.yamaguchi.lg.jp/citizen/dam/kdm_graph.aspx"
+        self.dam_url = "https://y-bousai.pref.yamaguchi.lg.jp/citizen/dam/kdm_table.aspx"
         self.river_url = "https://y-bousai.pref.yamaguchi.lg.jp/citizen/water/kwl_table.aspx"
         
         # Request settings
@@ -71,7 +71,19 @@ class KotogawaDataCollector:
     
     def collect_dam_data(self) -> Dict[str, Union[float, None]]:
         """ダムデータを収集する"""
-        params = {'stncd': '015'}
+        # 現在時刻を取得し、10分単位に丸める（過去方向）
+        current_time = datetime.now()
+        # 分を10で割って切り捨て、10を掛けることで10分単位に
+        minutes = (current_time.minute // 10) * 10
+        # 10分前のデータを取得（データ更新の遅延を考慮）
+        observation_time = current_time.replace(minute=minutes, second=0, microsecond=0) - timedelta(minutes=10)
+        obsdt = observation_time.strftime('%Y%m%d%H%M')
+        
+        params = {
+            'check': '015',     # 厚東川ダムの観測所コード
+            'obsdt': obsdt,     # 10分単位に丸めた観測時刻
+            'pop': '1'
+        }
         soup = self.fetch_page(self.dam_url, params)
         
         if not soup:
