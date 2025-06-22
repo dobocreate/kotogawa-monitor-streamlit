@@ -14,6 +14,13 @@ from typing import Dict, Optional, Any, Union
 import requests
 from bs4 import BeautifulSoup
 
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    # Python 3.8以前の場合
+    import pytz
+    ZoneInfo = lambda x: pytz.timezone(x)
+
 class KotogawaDataCollector:
     def __init__(self):
         self.base_dir = Path(__file__).parent.parent
@@ -556,10 +563,19 @@ class KotogawaDataCollector:
         # 10分前のデータを取得していたが、最新の10分単位時刻に変更
         observation_time = current_time.replace(minute=minutes, second=0, microsecond=0)
         
-        # データを統合
+        # データを統合（日本時間で保存）
+        jst = ZoneInfo('Asia/Tokyo') if 'ZoneInfo' in globals() else None
+        if jst:
+            timestamp_jst = datetime.now(jst)
+            observation_time_jst = observation_time.replace(tzinfo=jst)
+        else:
+            # fallback: システム時刻を使用
+            timestamp_jst = datetime.now()
+            observation_time_jst = observation_time
+        
         data = {
-            'timestamp': datetime.now().isoformat(),
-            'data_time': observation_time.isoformat(),  # 観測時刻を追加
+            'timestamp': timestamp_jst.isoformat(),
+            'data_time': observation_time_jst.isoformat(),  # 観測時刻を追加
             'dam': dam_data,
             'river': river_data,
             'rainfall': rainfall_data
