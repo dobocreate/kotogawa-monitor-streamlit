@@ -105,7 +105,9 @@ class KotogawaDataCollector:
         minutes = (current_time.minute // 10) * 10
         # 最新の10分単位時刻のデータを取得
         observation_time = current_time.replace(minute=minutes, second=0, microsecond=0)
-        obsdt = observation_time.strftime('%Y%m%d%H%M')
+        # 山口県システムにはUTC時間で送信する
+        observation_time_utc = observation_time.astimezone(ZoneInfo('UTC'))
+        obsdt = observation_time_utc.strftime('%Y%m%d%H%M')
         
         params = {
             'check': '015',     # 厚東川ダムの観測所コード
@@ -220,7 +222,9 @@ class KotogawaDataCollector:
         minutes = (current_time.minute // 10) * 10
         # 最新の10分単位時刻のデータを取得
         observation_time = current_time.replace(minute=minutes, second=0, microsecond=0)
-        obsdt = observation_time.strftime('%Y%m%d%H%M')
+        # 山口県システムにはUTC時間で送信する
+        observation_time_utc = observation_time.astimezone(ZoneInfo('UTC'))
+        obsdt = observation_time_utc.strftime('%Y%m%d%H%M')
         
         params = {
             'check': '05067',  # 厚東川（持世寺）の観測所コード
