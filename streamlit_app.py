@@ -78,15 +78,23 @@ class KotogawaMonitor:
             return history_data
         
         error_count = 0
-        current_time = start_time
-        while current_time <= end_time:
+        processed_files = 0
+        max_files = 100  # 最大処理ファイル数制限
+        
+        current_time = end_time  # 新しいデータから逆順で処理
+        while current_time >= start_time and processed_files < max_files:
             date_dir = (_self.history_dir / 
                        current_time.strftime("%Y") / 
                        current_time.strftime("%m") / 
                        current_time.strftime("%d"))
             
             if date_dir.exists():
-                for file_path in date_dir.glob("*.json"):
+                # ファイルを降順でソートして新しいものから処理
+                json_files = sorted(date_dir.glob("*.json"), reverse=True)
+                for file_path in json_files:
+                    if processed_files >= max_files:
+                        break
+                    
                     try:
                         with open(file_path, 'r', encoding='utf-8') as f:
                             data = json.load(f)
@@ -94,6 +102,7 @@ class KotogawaMonitor:
                             # データの基本検証
                             if data and 'timestamp' in data:
                                 history_data.append(data)
+                                processed_files += 1
                             else:
                                 error_count += 1
                                 
@@ -106,7 +115,7 @@ class KotogawaMonitor:
                         if error_count <= 3:
                             st.warning(f"⚠️ 履歴データエラー: {file_path.name}")
             
-            current_time += timedelta(days=1)
+            current_time -= timedelta(days=1)
         
         # エラーサマリー表示
         if error_count > 3:
@@ -201,15 +210,69 @@ class KotogawaMonitor:
         return alerts
     
     def create_metrics_display(self, data: Dict[str, Any]) -> None:
-        """メトリクス表示を作成"""
+        """現在の状況表示を作成"""
         if not data:
             st.warning("表示するデータがありません")
             return
         
-        col1, col2, col3, col4 = st.columns(4)
+        # 観測時刻の取得
+        observation_time = data.get('data_time')
+        if observation_time:
+            try:
+                dt = datetime.fromisoformat(observation_time.replace('Z', '+00:00'))
+                obs_time_str = dt.strftime('%Y/%m/%d %H:%M')
+            except:
+                obs_time_str = observation_time
+        else:
+            obs_time_str = "不明"
         
-        # 河川水位
-        with col1:
+        # 3つのセクションに分けて表示
+        st.subheader("📊 現在の観測状況")
+        
+        # 降雨情報
+        st.markdown("### 🌧️ 降雨情報")
+        rain_col1, rain_col2, rain_col3 = st.columns(3)
+        
+        with rain_col1:
+            hourly_rain = data.get('rainfall', {}).get('hourly')
+            if hourly_rain is not None:
+                rain_color = "normal"
+                if hourly_rain > 20:
+                    rain_color = "inverse"
+                st.metric(
+                    label="60分雨量 (mm)",
+                    value=f"{hourly_rain}",
+                    delta=data.get('rainfall', {}).get('change'),
+                    delta_color=rain_color
+                )
+                if hourly_rain > 30:
+                    st.error("🌧️ 大雨注意")
+                elif hourly_rain > 10:
+                    st.warning("🌦️ 雨量多め")
+            else:
+                st.metric(label="60分雨量 (mm)", value="--")
+        
+        with rain_col2:
+            cumulative_rain = data.get('rainfall', {}).get('cumulative')
+            if cumulative_rain is not None:
+                st.metric(
+                    label="累積雨量 (mm)",
+                    value=f"{cumulative_rain}"
+                )
+            else:
+                st.metric(label="累積雨量 (mm)", value="--")
+        
+        with rain_col3:
+            st.metric(
+                label="観測日時",
+                value=obs_time_str
+            )
+        
+        # 河川情報
+        st.markdown("### 🌊 河川情報（持世寺）")
+        river_col1, river_col2 = st.columns(2)
+        
+        with river_col1:
             river_level = data.get('river', {}).get('water_level')
             river_status = data.get('river', {}).get('status', '正常')
             if river_level is not None:
@@ -221,83 +284,79 @@ class KotogawaMonitor:
                     delta_color = "normal"
                 
                 st.metric(
-                    label="河川水位 (m)",
+                    label="水位 (m)",
                     value=f"{river_level:.2f}",
                     delta=f"{level_change:.2f}" if level_change is not None else None,
                     delta_color=delta_color
                 )
+                
+                # ステータス表示
                 if river_status != '正常':
                     if river_status in ['氾濫危険', '避難判断']:
                         st.error(f"🚨 {river_status}")
                     elif river_status in ['氾濫注意', '水防団待機']:
                         st.warning(f"⚠️ {river_status}")
+                else:
+                    st.success(f"✅ {river_status}")
             else:
-                st.metric(label="河川水位 (m)", value="--")
+                st.metric(label="水位 (m)", value="--")
         
-        # ダム水位・貯水率
-        with col2:
+        with river_col2:
+            st.metric(
+                label="観測地点",
+                value="持世寺"
+            )
+        
+        # ダム情報
+        st.markdown("### 🏔️ ダム情報（厚東川ダム）")
+        dam_col1, dam_col2, dam_col3, dam_col4, dam_col5 = st.columns(5)
+        
+        with dam_col1:
             dam_level = data.get('dam', {}).get('water_level')
-            storage_rate = data.get('dam', {}).get('storage_rate')
-            
             if dam_level is not None:
                 st.metric(
-                    label="ダム水位 (m)",
+                    label="貯水位 (m)",
                     value=f"{dam_level:.2f}",
                     delta=data.get('dam', {}).get('storage_change')
                 )
-            elif storage_rate is not None:
+            else:
+                st.metric(label="貯水位 (m)", value="--")
+        
+        with dam_col2:
+            storage_rate = data.get('dam', {}).get('storage_rate')
+            if storage_rate is not None:
                 st.metric(
-                    label="ダム貯水率 (%)",
-                    value=f"{storage_rate:.1f}",
-                    delta=data.get('dam', {}).get('storage_change')
+                    label="貯水率 (%)",
+                    value=f"{storage_rate:.1f}"
                 )
             else:
-                st.metric(label="ダム水位 (m)", value="--")
+                st.metric(label="貯水率 (%)", value="--")
         
-        # 流入量
-        with col3:
+        with dam_col3:
             inflow = data.get('dam', {}).get('inflow')
             if inflow is not None:
                 st.metric(
-                    label="ダム流入量 (m³/s)",
+                    label="流入量 (m³/s)",
                     value=f"{inflow:.2f}"
                 )
             else:
-                hourly_rain = data.get('rainfall', {}).get('hourly')
-                if hourly_rain is not None:
-                    rain_color = "normal"
-                    if hourly_rain > 20:
-                        rain_color = "inverse"
-                    st.metric(
-                        label="時間雨量 (mm)",
-                        value=f"{hourly_rain}",
-                        delta=data.get('rainfall', {}).get('change'),
-                        delta_color=rain_color
-                    )
-                    if hourly_rain > 30:
-                        st.error("🌧️ 大雨注意")
-                    elif hourly_rain > 10:
-                        st.warning("🌦️ 雨量多め")
-                else:
-                    st.metric(label="時間雨量 (mm)", value="--")
+                st.metric(label="流入量 (m³/s)", value="--")
         
-        # 流出量または累積雨量
-        with col4:
+        with dam_col4:
             outflow = data.get('dam', {}).get('outflow')
             if outflow is not None:
                 st.metric(
-                    label="ダム流出量 (m³/s)",
+                    label="全放流量 (m³/s)",
                     value=f"{outflow:.2f}"
                 )
             else:
-                cumulative_rain = data.get('rainfall', {}).get('cumulative')
-                if cumulative_rain is not None:
-                    st.metric(
-                        label="累積雨量 (mm)",
-                        value=f"{cumulative_rain}"
-                    )
-                else:
-                    st.metric(label="累積雨量 (mm)", value="--")
+                st.metric(label="全放流量 (m³/s)", value="--")
+        
+        with dam_col5:
+            st.metric(
+                label="観測日時",
+                value=obs_time_str
+            )
     
     def create_time_series_graph(self, history_data: List[Dict[str, Any]]) -> go.Figure:
         """時系列グラフを作成"""
@@ -439,10 +498,10 @@ def main():
     # サイドバー設定
     st.sidebar.header("設定")
     
-    # 自動更新設定
-    auto_refresh = st.sidebar.checkbox("自動更新 (30秒)", value=False)
-    if auto_refresh:
-        st.rerun()
+    # 自動更新設定（一時的に無効化）
+    # auto_refresh = st.sidebar.checkbox("自動更新 (30秒)", value=False)
+    # if auto_refresh:
+    #     st.rerun()
     
     # 表示期間設定
     display_hours = st.sidebar.selectbox(
@@ -468,7 +527,14 @@ def main():
     
     # データ読み込み
     latest_data = monitor.load_latest_data()
-    history_data = monitor.load_history_data(display_hours)
+    
+    # 履歴データの読み込みを一時的に無効化（ローディング問題のデバッグ用）
+    try:
+        with st.spinner("履歴データを読み込み中..."):
+            history_data = monitor.load_history_data(display_hours)
+    except Exception as e:
+        st.warning(f"履歴データの読み込みに失敗しました: {e}")
+        history_data = []
     
     # 最終更新時刻表示
     col1, col2 = st.columns([3, 1])
@@ -517,8 +583,7 @@ def main():
         else:
             st.info("ℹ️ データ確認中...")
     
-    # メトリクス表示
-    st.subheader("現在の状況")
+    # 現在の状況表示
     monitor.create_metrics_display(latest_data)
     
     # タブによる表示切り替え
