@@ -26,7 +26,7 @@ class KotogawaDataCollector:
         
         # URLs for data sources
         self.dam_url = "https://y-bousai.pref.yamaguchi.lg.jp/citizen/dam/kdm_graph.aspx"
-        self.river_url = "https://y-bousai.pref.yamaguchi.lg.jp/citizen/water/kwl_graph.aspx"
+        self.river_url = "https://y-bousai.pref.yamaguchi.lg.jp/citizen/water/kwl_table.aspx"
         
         # Request settings
         self.headers = {
@@ -173,7 +173,15 @@ class KotogawaDataCollector:
     
     def collect_river_data(self) -> Dict[str, Any]:
         """河川データを収集する"""
-        params = {'stncd': '067'}
+        # 現在時刻をYYYYMMDDHHMM形式で生成
+        current_time = datetime.now()
+        obsdt = current_time.strftime('%Y%m%d%H%M')
+        
+        params = {
+            'check': '05067',  # 厚東川（持世寺）の観測所コード
+            'obsdt': obsdt,     # 現在時刻
+            'pop': '1'
+        }
         soup = self.fetch_page(self.river_url, params)
         
         if not soup:
