@@ -173,13 +173,17 @@ class KotogawaDataCollector:
     
     def collect_river_data(self) -> Dict[str, Any]:
         """河川データを収集する"""
-        # 現在時刻をYYYYMMDDHHMM形式で生成
+        # 現在時刻を取得し、10分単位に丸める（過去方向）
         current_time = datetime.now()
-        obsdt = current_time.strftime('%Y%m%d%H%M')
+        # 分を10で割って切り捨て、10を掛けることで10分単位に
+        minutes = (current_time.minute // 10) * 10
+        # 10分前のデータを取得（データ更新の遅延を考慮）
+        observation_time = current_time.replace(minute=minutes, second=0, microsecond=0) - timedelta(minutes=10)
+        obsdt = observation_time.strftime('%Y%m%d%H%M')
         
         params = {
             'check': '05067',  # 厚東川（持世寺）の観測所コード
-            'obsdt': obsdt,     # 現在時刻
+            'obsdt': obsdt,     # 10分単位に丸めた観測時刻
             'pop': '1'
         }
         soup = self.fetch_page(self.river_url, params)
@@ -442,9 +446,15 @@ class KotogawaDataCollector:
         river_data = self.collect_river_data()
         rainfall_data = self.collect_rainfall_data()
         
+        # 観測時刻を計算（10分単位で最新の観測時刻）
+        current_time = datetime.now()
+        minutes = (current_time.minute // 10) * 10
+        observation_time = current_time.replace(minute=minutes, second=0, microsecond=0)
+        
         # データを統合
         data = {
             'timestamp': datetime.now().isoformat(),
+            'data_time': observation_time.isoformat(),  # 観測時刻を追加
             'dam': dam_data,
             'river': river_data,
             'rainfall': rainfall_data
