@@ -555,21 +555,28 @@ def main():
         st.warning(f"履歴データの読み込みに失敗しました: {e}")
         history_data = []
     
-    # 最終更新時刻表示
+    # 最終更新時刻と観測時刻表示
     col1, col2 = st.columns([3, 1])
     with col1:
         if latest_data and latest_data.get('timestamp'):
             try:
+                # データ取得時刻（timestamp）
                 timestamp = datetime.fromisoformat(latest_data['timestamp'].replace('Z', '+00:00'))
-                # タイムゾーンがない場合は日本時間として扱う
+                # タイムゾーンがない場合は日本時間として扱う（変換なし）
                 if timestamp.tzinfo is None:
                     timestamp = timestamp.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                
+                # 観測時刻（data_time）
+                data_time_str = latest_data.get('data_time', '')
+                if data_time_str:
+                    data_time = datetime.fromisoformat(data_time_str.replace('Z', '+00:00'))
+                    if data_time.tzinfo is None:
+                        data_time = data_time.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                    st.info(f"観測時刻: {data_time.strftime('%Y年%m月%d日 %H:%M')} | 取得時刻: {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}")
                 else:
-                    # UTCから日本時間に変換
-                    timestamp = timestamp.astimezone(ZoneInfo('Asia/Tokyo'))
-                st.info(f"最終更新: {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}")
-            except:
-                st.info(f"最終更新: {latest_data.get('timestamp', '不明')}")
+                    st.info(f"最終更新: {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}")
+            except Exception as e:
+                st.info(f"最終更新: {latest_data.get('timestamp', '不明')} (時刻解析エラー)")
         else:
             st.warning("データが取得できていません")
     
@@ -679,12 +686,9 @@ def main():
     if latest_data and latest_data.get('timestamp'):
         try:
             last_update = datetime.fromisoformat(latest_data['timestamp'].replace('Z', '+00:00'))
-            # タイムゾーンがない場合は日本時間として扱う
+            # タイムゾーンがない場合は日本時間として扱う（変換なし）
             if last_update.tzinfo is None:
                 last_update = last_update.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-            else:
-                # UTCから日本時間に変換
-                last_update = last_update.astimezone(ZoneInfo('Asia/Tokyo'))
             
             # 現在時刻（日本時間）
             now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))

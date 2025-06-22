@@ -91,12 +91,12 @@ class KotogawaDataCollector:
     
     def collect_dam_data(self) -> Dict[str, Union[float, None]]:
         """ダムデータを収集する"""
-        # 現在時刻を取得し、10分単位に丸める（過去方向）
+        # 現在時刻を取得し、10分単位に丸める
         current_time = datetime.now()
         # 分を10で割って切り捨て、10を掛けることで10分単位に
         minutes = (current_time.minute // 10) * 10
-        # 10分前のデータを取得（データ更新の遅延を考慮）
-        observation_time = current_time.replace(minute=minutes, second=0, microsecond=0) - timedelta(minutes=10)
+        # 最新の10分単位時刻のデータを取得
+        observation_time = current_time.replace(minute=minutes, second=0, microsecond=0)
         obsdt = observation_time.strftime('%Y%m%d%H%M')
         
         params = {
@@ -205,12 +205,12 @@ class KotogawaDataCollector:
     
     def collect_river_data(self) -> Dict[str, Any]:
         """河川データを収集する"""
-        # 現在時刻を取得し、10分単位に丸める（過去方向）
+        # 現在時刻を取得し、10分単位に丸める
         current_time = datetime.now()
         # 分を10で割って切り捨て、10を掛けることで10分単位に
         minutes = (current_time.minute // 10) * 10
-        # 10分前のデータを取得（データ更新の遅延を考慮）
-        observation_time = current_time.replace(minute=minutes, second=0, microsecond=0) - timedelta(minutes=10)
+        # 最新の10分単位時刻のデータを取得
+        observation_time = current_time.replace(minute=minutes, second=0, microsecond=0)
         obsdt = observation_time.strftime('%Y%m%d%H%M')
         
         params = {
@@ -553,6 +553,7 @@ class KotogawaDataCollector:
         # 観測時刻を計算（10分単位で最新の観測時刻）
         current_time = datetime.now()
         minutes = (current_time.minute // 10) * 10
+        # 10分前のデータを取得していたが、最新の10分単位時刻に変更
         observation_time = current_time.replace(minute=minutes, second=0, microsecond=0)
         
         # データを統合
