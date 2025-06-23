@@ -180,23 +180,15 @@ class KotogawaMonitor:
         else:
             alerts['river'] = '正常'
         
-        # ダム水位・貯水率チェック
-        dam_storage = data.get('dam', {}).get('storage_rate')
+        # ダム水位チェック
         dam_level = data.get('dam', {}).get('water_level')
         
-        if dam_storage is not None:
-            if dam_storage >= thresholds['dam_danger']:
+        if dam_level is not None:
+            # ダム水位による判定
+            if dam_level >= thresholds['dam_danger']:  # 設計最高水位
                 alerts['dam'] = '危険'
                 alert_level = max(alert_level, 3)
-            elif dam_storage >= thresholds['dam_warning']:
-                alerts['dam'] = '警戒'
-                alert_level = max(alert_level, 2)
-        elif dam_level is not None:
-            # ダム水位による判定（最高水位40mに対する割合）
-            if dam_level >= 38.0:  # 95%相当
-                alerts['dam'] = '危険'
-                alert_level = max(alert_level, 3)
-            elif dam_level >= 36.0:  # 90%相当
+            elif dam_level >= thresholds['dam_warning']:  # 洪水時最高水位
                 alerts['dam'] = '警戒'
                 alert_level = max(alert_level, 2)
         
@@ -545,8 +537,8 @@ def main():
     st.sidebar.subheader("アラート設定")
     river_warning = st.sidebar.number_input("河川警戒水位 (m)", value=3.0, step=0.1)
     river_danger = st.sidebar.number_input("河川危険水位 (m)", value=5.0, step=0.1)
-    dam_warning = st.sidebar.number_input("ダム警戒貯水率 (%)", value=90.0, step=1.0)
-    dam_danger = st.sidebar.number_input("ダム危険貯水率 (%)", value=95.0, step=1.0)
+    dam_warning = st.sidebar.number_input("ダム警戒水位 (m)", value=39.2, step=0.1, help="洪水時最高水位")
+    dam_danger = st.sidebar.number_input("ダム危険水位 (m)", value=40.0, step=0.1, help="設計最高水位")
     
     thresholds = {
         'river_warning': river_warning,
@@ -606,7 +598,11 @@ def main():
             river_status = latest_data.get('river', {}).get('status', '不明')
             alert_details.append(f"河川: {river_status}")
         if alerts['dam'] != '正常':
-            alert_details.append(f"ダム: {alerts['dam']}")
+            dam_level = latest_data.get('dam', {}).get('water_level')
+            if dam_level is not None:
+                alert_details.append(f"ダム: {alerts['dam']} ({dam_level:.2f}m)")
+            else:
+                alert_details.append(f"ダム: {alerts['dam']}")
         if alerts['rainfall'] != '正常':
             hourly_rain = latest_data.get('rainfall', {}).get('hourly', 0)
             alert_details.append(f"雨量: {hourly_rain}mm/h")
@@ -665,13 +661,17 @@ def main():
     
     # 警戒レベル説明
     with st.sidebar.expander("🚨 警戒レベル説明"):
-        st.write("""
+        st.write(f"""
         **河川水位基準**
         - 正常: 3.80m未満
         - 水防団待機: 3.80m以上
         - 氾濫注意: 5.00m以上
         - 避難判断: 5.10m以上
         - 氾濫危険: 5.50m以上
+        
+        **ダム水位基準**
+        - 警戒: {dam_warning}m以上（洪水時最高水位）
+        - 危険: {dam_danger}m以上（設計最高水位）
         
         **雨量基準**
         - 注意: 10mm/h以上
