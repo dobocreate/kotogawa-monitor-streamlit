@@ -345,13 +345,15 @@ class KotogawaDataCollector:
             return {
                 'water_level': None,
                 'level_change': None,
-                'status': 'データなし'
+                'status': 'データなし',
+                'actual_observation_time': None
             }
         
         river_data = {
             'water_level': None,
             'level_change': None,
-            'status': '正常'
+            'status': '正常',
+            'actual_observation_time': None
         }
         
         # 警戒レベル閾値（サイトから取得した実際の値）
@@ -423,6 +425,7 @@ class KotogawaDataCollector:
                                         else:
                                             river_data['status'] = '正常'
                                         
+                                        river_data['actual_observation_time'] = f"{date_text} {time_text}"
                                         break  # 目標行が見つかったら終了
                                 except ValueError:
                                     print(f"Invalid river water level: {water_level_text}")
@@ -432,36 +435,118 @@ class KotogawaDataCollector:
                 if river_data['water_level'] is not None:
                     break  # データが見つかったらテーブル検索終了
             
-            # JavaScriptから現在値を抽出
-            scripts = soup.find_all('script')
-            for script in scripts:
-                if script.string:
-                    script_text = script.string
+            # 目標データが見つからなかった場合、最終行（最新データ）を取得
+            if river_data['water_level'] is None:
+                print(f"Target river data not found. Looking for the latest available data...")
+                
+                for table in tables:
+                    rows = table.find_all('tr')
+                    # 最後から順に有効なデータ行を探す
+                    for row in reversed(rows):
+                        cells = row.find_all('td')
+                        if len(cells) >= 4:
+                            try:
+                                date_text = cells[0].get_text().strip()
+                                time_text = cells[1].get_text().strip()
+                                
+                                # 日付形式のチェック（YYYY/MM/DD）
+                                if re.match(r'\d{4}/\d{2}/\d{2}', date_text) and re.match(r'\d{2}:\d{2}', time_text):
+                                    # この観測時刻のデータが既に保存されているかチェック
+                                    obs_datetime = datetime.strptime(f"{date_text} {time_text}", "%Y/%m/%d %H:%M")
+                                    obs_datetime = obs_datetime.replace(tzinfo=jst)
+                                    
+                                    # ファイルの存在確認
+                                    date_dir = self.history_dir / obs_datetime.strftime("%Y") / obs_datetime.strftime("%m") / obs_datetime.strftime("%d")
+                                    history_file = date_dir / f"{obs_datetime.strftime('%H%M')}.json"
+                                    
+                                    if history_file.exists():
+                                        print(f"River data for {date_text} {time_text} already exists. Skipping.")
+                                        continue
+                                    
+                                    print(f"Found latest river data: {date_text} {time_text}")
+                                    
+                                    # データを抽出
+                                    water_level_text = cells[2].get_text().strip()
+                                    
+                                    # 水位
+                                    try:
+                                        level = float(water_level_text)
+                                        if 0.5 <= level <= 10:  # 合理的な水位範囲
+                                            river_data['water_level'] = level
+                                            print(f"River water level: {level}m")
+                                            
+                                            # 水位変化（列３があれば）
+                                            if len(cells) > 3:
+                                                try:
+                                                    change_text = cells[3].get_text().strip()
+                                                    change_match = re.search(r'([+-]?\d+\.\d+)', change_text)
+                                                    if change_match:
+                                                        change = float(change_match.group(1))
+                                                        river_data['level_change'] = round(change, 2)
+                                                    else:
+                                                        river_data['level_change'] = 0.0
+                                                except (ValueError, IndexError):
+                                                    river_data['level_change'] = 0.0
+                                            else:
+                                                river_data['level_change'] = 0.0
+                                            
+                                            # 警戒レベルの判定
+                                            if level >= thresholds['danger']:
+                                                river_data['status'] = '氾濫危険'
+                                            elif level >= thresholds['evacuation']:
+                                                river_data['status'] = '避難判断'
+                                            elif level >= thresholds['caution']:
+                                                river_data['status'] = '氾濫注意'
+                                            elif level >= thresholds['preparedness']:
+                                                river_data['status'] = '水防団待機'
+                                            else:
+                                                river_data['status'] = '正常'
+                                            
+                                            river_data['actual_observation_time'] = f"{date_text} {time_text}"
+                                            break
+                                    except ValueError:
+                                        pass
+                                        
+                            except (IndexError, ValueError) as e:
+                                continue
                     
-                    # 現在水位の数値を検索
-                    current_match = re.search(r'最新値.*?(\d+\.\d+)', script_text)
-                    if current_match:
+                    if river_data['water_level'] is not None:
+                        break
+            
+            # 最終的にデータが取得できなかった場合はJavaScriptやHTML全体から探す
+            if river_data['water_level'] is None:
+                # JavaScriptから現在値を抽出
+                scripts = soup.find_all('script')
+                for script in scripts:
+                    if script.string:
+                        script_text = script.string
+                        
+                        # 現在水位の数値を検索
+                        current_match = re.search(r'最新値.*?(\d+\.\d+)', script_text)
+                        if current_match:
+                            try:
+                                level = float(current_match.group(1))
+                                if 0.5 <= level <= 10:  # 合理的な範囲
+                                    river_data['water_level'] = level
+                                    print(f"Found river level from JavaScript: {level}m")
+                            except ValueError:
+                                pass
+                
+                # HTMLテキスト全体から最新値を検索
+                if river_data['water_level'] is None:
+                    full_text = soup.get_text()
+                    latest_matches = re.findall(r'(\d+\.\d{2})', full_text)
+                    
+                    # 最後に見つかった合理的な値を使用
+                    for match in reversed(latest_matches):
                         try:
-                            level = float(current_match.group(1))
-                            if 0 <= level <= 10:  # 合理的な範囲
+                            level = float(match)
+                            if 0.5 <= level <= 10:
                                 river_data['water_level'] = level
+                                print(f"Found river level from HTML text: {level}m")
+                                break
                         except ValueError:
-                            pass
-            
-            # HTMLテキスト全体から最新値を検索
-            full_text = soup.get_text()
-            latest_matches = re.findall(r'(\d+\.\d{2})', full_text)
-            
-            if latest_matches and not river_data['water_level']:
-                # 最後に見つかった合理的な値を使用
-                for match in reversed(latest_matches):
-                    try:
-                        level = float(match)
-                        if 0 <= level <= 10:
-                            river_data['water_level'] = level
-                            break
-                    except ValueError:
-                        continue
+                            continue
                         
         except Exception as e:
             print(f"Error extracting river data: {e}")
@@ -920,6 +1005,7 @@ class KotogawaDataCollector:
         
         # 実際の観測時刻を使用（最新データを取得した場合）
         actual_obs_time = None
+        # ダムデータの実際の観測時刻をチェック
         if 'dam' in data_collected and data_collected['dam'].get('actual_observation_time'):
             try:
                 actual_obs_time = datetime.strptime(
@@ -927,7 +1013,21 @@ class KotogawaDataCollector:
                     "%Y/%m/%d %H:%M"
                 ).replace(tzinfo=jst)
                 observation_time_jst = actual_obs_time
-                print(f"Using actual observation time: {actual_obs_time}")
+                print(f"Using actual dam observation time: {actual_obs_time}")
+            except ValueError:
+                pass
+        
+        # 河川データの実際の観測時刻をチェック（ダムと異なる場合がある）
+        if 'river' in data_collected and data_collected['river'].get('actual_observation_time'):
+            try:
+                river_obs_time = datetime.strptime(
+                    data_collected['river']['actual_observation_time'], 
+                    "%Y/%m/%d %H:%M"
+                ).replace(tzinfo=jst)
+                # ダムと河川で異なる時刻の場合、より新しい方を使用
+                if actual_obs_time is None or river_obs_time > actual_obs_time:
+                    observation_time_jst = river_obs_time
+                    print(f"Using actual river observation time: {river_obs_time}")
             except ValueError:
                 pass
         
@@ -942,6 +1042,8 @@ class KotogawaDataCollector:
         # actual_observation_timeは保存データから削除（内部使用のみ）
         if 'actual_observation_time' in data['dam']:
             del data['dam']['actual_observation_time']
+        if 'actual_observation_time' in data['river']:
+            del data['river']['actual_observation_time']
         
         # エラーがある場合はエラーファイルを保存
         if errors:
