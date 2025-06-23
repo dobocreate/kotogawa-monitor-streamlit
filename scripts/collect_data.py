@@ -492,24 +492,45 @@ class KotogawaDataCollector:
         
         return rainfall_data
     
-    def save_data(self, data: Dict[str, Any]) -> None:
+    def save_data(self, data: Dict[str, Any], is_error: bool = False, error_info: Dict[str, Any] = None) -> None:
         """データを保存する"""
-        timestamp = datetime.now()
+        jst = ZoneInfo('Asia/Tokyo')
+        current_time = datetime.now(jst)
         
-        # 最新データを保存
-        latest_file = self.data_dir / "latest.json"
-        with open(latest_file, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=2, default=str)
+        # 最新データを保存（エラーの場合はlatest.jsonは更新しない）
+        if not is_error:
+            latest_file = self.data_dir / "latest.json"
+            with open(latest_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2, default=str)
         
         # 履歴データを保存
-        date_dir = self.history_dir / timestamp.strftime("%Y") / timestamp.strftime("%m") / timestamp.strftime("%d")
+        date_dir = self.history_dir / current_time.strftime("%Y") / current_time.strftime("%m") / current_time.strftime("%d")
         date_dir.mkdir(parents=True, exist_ok=True)
         
-        history_file = date_dir / f"{timestamp.strftime('%H%M')}.json"
-        with open(history_file, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=2, default=str)
+        # ファイル名の決定
+        if is_error:
+            # エラー時：error_HHMM.json（エラー発生時刻）
+            history_file = date_dir / f"error_{current_time.strftime('%H%M')}.json"
+            save_data = {
+                'error_time': current_time.isoformat(),
+                'error_info': error_info,
+                'partial_data': data
+            }
+        else:
+            # 正常時：HHMM.json（観測時刻）
+            if 'data_time' in data:
+                # ISO形式の文字列からdatetimeオブジェクトに変換
+                observation_time = datetime.fromisoformat(data['data_time'])
+                history_file = date_dir / f"{observation_time.strftime('%H%M')}.json"
+            else:
+                # data_timeがない場合は現在時刻を使用（フォールバック）
+                history_file = date_dir / f"{current_time.strftime('%H%M')}.json"
+            save_data = data
         
-        print(f"Data saved: {timestamp}")
+        with open(history_file, 'w', encoding='utf-8') as f:
+            json.dump(save_data, f, ensure_ascii=False, indent=2, default=str)
+        
+        print(f"Data saved: {history_file.name}")
     
     def cleanup_old_data(self, days_to_keep: int = 7) -> None:
         """古いデータを削除する"""
@@ -564,16 +585,83 @@ class KotogawaDataCollector:
         """全てのデータを収集する"""
         print("Starting data collection...")
         
-        # データ収集
-        dam_data = self.collect_dam_data()
-        river_data = self.collect_river_data()
-        rainfall_data = self.collect_rainfall_data()
+        # エラー情報の収集用
+        errors = []
+        data_collected = {}
         
         # 観測時刻を計算（10分単位で最新の観測時刻）- 日本時間で統一
         jst = ZoneInfo('Asia/Tokyo')
         current_time = datetime.now(jst)
         minutes = (current_time.minute // 10) * 10
         observation_time = current_time.replace(minute=minutes, second=0, microsecond=0)
+        
+        # ダムデータ収集
+        print("Collecting dam data...")
+        try:
+            dam_data = self.collect_dam_data()
+            data_collected['dam'] = dam_data
+            if all(v is None for k, v in dam_data.items() if k != 'storage_change'):
+                errors.append({
+                    'step': 'dam_data_collection',
+                    'error': 'All dam data values are None',
+                    'data': dam_data
+                })
+        except Exception as e:
+            print(f"Error collecting dam data: {e}")
+            errors.append({
+                'step': 'dam_data_collection',
+                'error': str(e),
+                'error_type': type(e).__name__
+            })
+            data_collected['dam'] = {
+                'water_level': None,
+                'storage_rate': None,
+                'inflow': None,
+                'outflow': None,
+                'storage_change': None
+            }
+        
+        # 河川データ収集
+        print("Collecting river data...")
+        try:
+            river_data = self.collect_river_data()
+            data_collected['river'] = river_data
+            if river_data['water_level'] is None:
+                errors.append({
+                    'step': 'river_data_collection',
+                    'error': 'River water level is None',
+                    'data': river_data
+                })
+        except Exception as e:
+            print(f"Error collecting river data: {e}")
+            errors.append({
+                'step': 'river_data_collection',
+                'error': str(e),
+                'error_type': type(e).__name__
+            })
+            data_collected['river'] = {
+                'water_level': None,
+                'level_change': 0.0,
+                'status': '不明'
+            }
+        
+        # 雨量データ収集
+        print("Collecting rainfall data...")
+        try:
+            rainfall_data = self.collect_rainfall_data()
+            data_collected['rainfall'] = rainfall_data
+        except Exception as e:
+            print(f"Error collecting rainfall data: {e}")
+            errors.append({
+                'step': 'rainfall_data_collection',
+                'error': str(e),
+                'error_type': type(e).__name__
+            })
+            data_collected['rainfall'] = {
+                'hourly': 0,
+                'cumulative': 0,
+                'change': 0
+            }
         
         # データを統合（日本時間で保存）
         timestamp_jst = datetime.now(jst)
@@ -582,18 +670,28 @@ class KotogawaDataCollector:
         data = {
             'timestamp': timestamp_jst.isoformat(),
             'data_time': observation_time_jst.isoformat(),  # 観測時刻を追加
-            'dam': dam_data,
-            'river': river_data,
-            'rainfall': rainfall_data
+            'dam': data_collected.get('dam', {}),
+            'river': data_collected.get('river', {}),
+            'rainfall': data_collected.get('rainfall', {})
         }
         
-        # データ保存
-        self.save_data(data)
+        # エラーがある場合はエラーファイルを保存
+        if errors:
+            error_info = {
+                'errors': errors,
+                'total_errors': len(errors),
+                'observation_time': observation_time_jst.isoformat()
+            }
+            self.save_data(data, is_error=True, error_info=error_info)
+            print(f"Data collection completed with {len(errors)} errors")
+        else:
+            # 正常データの保存
+            self.save_data(data)
+            print("Data collection completed successfully")
         
         # 古いデータのクリーンアップ
         self.cleanup_old_data()
         
-        print("Data collection completed successfully")
         return data
 
 def main():
@@ -602,10 +700,35 @@ def main():
     
     try:
         data = collector.collect_all_data()
-        print("Collection successful!")
+        print("Collection process completed!")
         print(f"Latest data: {json.dumps(data, ensure_ascii=False, indent=2, default=str)}")
     except Exception as e:
-        print(f"Error during data collection: {e}")
+        print(f"Critical error during data collection: {e}")
+        # クリティカルエラーの場合もエラーファイルを保存
+        try:
+            from zoneinfo import ZoneInfo
+        except ImportError:
+            import pytz
+            ZoneInfo = lambda x: pytz.timezone(x)
+        jst = ZoneInfo('Asia/Tokyo')
+        current_time = datetime.now(jst)
+        error_data = {
+            'timestamp': current_time.isoformat(),
+            'data_time': None,
+            'dam': {'water_level': None, 'storage_rate': None, 'inflow': None, 'outflow': None, 'storage_change': None},
+            'river': {'water_level': None, 'level_change': 0.0, 'status': '不明'},
+            'rainfall': {'hourly': 0, 'cumulative': 0, 'change': 0}
+        }
+        error_info = {
+            'errors': [{
+                'step': 'main_execution',
+                'error': str(e),
+                'error_type': type(e).__name__
+            }],
+            'total_errors': 1,
+            'observation_time': None
+        }
+        collector.save_data(error_data, is_error=True, error_info=error_info)
         return 1
     
     return 0
