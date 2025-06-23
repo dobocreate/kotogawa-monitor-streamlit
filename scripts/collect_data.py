@@ -654,7 +654,8 @@ class KotogawaDataCollector:
                 'precipitation_probability': [],
                 'precipitation_times': []
             },
-            'update_time': None
+            'update_time': None,
+            'weekly_forecast': []
         }
         
         try:
@@ -865,10 +866,70 @@ class KotogawaDataCollector:
                                         break
                                 break
             
+            # 週間予報データの収集（7日間）
+            if len(forecast_data) > 1:
+                week_forecast = forecast_data[1]
+                if 'timeSeries' in week_forecast and len(week_forecast['timeSeries']) > 0:
+                    ts = week_forecast['timeSeries'][0]
+                    time_defines = ts.get('timeDefines', [])
+                    
+                    # 山口県のデータを取得
+                    for area in ts.get('areas', []):
+                        if area.get('area', {}).get('code') == '350000':
+                            weather_codes = area.get('weatherCodes', [])
+                            pops = area.get('pops', [])
+                            
+                            weekly_data = []
+                            for i, time_str in enumerate(time_defines):
+                                try:
+                                    date_obj = datetime.fromisoformat(time_str)
+                                    date_jst = date_obj.astimezone(jst)
+                                    
+                                    day_data = {
+                                        'date': date_jst.strftime('%Y-%m-%d'),
+                                        'day_of_week': date_jst.strftime('%a'),
+                                        'weather_code': weather_codes[i] if i < len(weather_codes) else None,
+                                        'weather_text': None,
+                                        'precipitation_probability': None
+                                    }
+                                    
+                                    # 天気コードから天気テキストを生成
+                                    if day_data['weather_code']:
+                                        weather_code_map = {
+                                            '100': '晴れ', '101': '晴れ時々くもり', '102': '晴れ一時雨',
+                                            '110': '晴れ時々くもり一時雨', '111': '晴れ時々くもり一時雪',
+                                            '112': '晴れ一時雨', '113': '晴れ時々雨', '114': '晴れ一時雪',
+                                            '200': 'くもり', '201': 'くもり時々晴れ', '202': 'くもり一時雨',
+                                            '203': 'くもり時々雨', '204': 'くもり一時雪', '210': 'くもり時々晴れ一時雨',
+                                            '211': 'くもり時々晴れ一時雪', '212': 'くもり一時雨か雪', '213': 'くもり一時雨か雷雨',
+                                            '300': '雨', '301': '雨時々晴れ', '302': '雨時々くもり',
+                                            '303': '雨時々雪', '308': '大雨', '311': '雨のち晴れ',
+                                            '313': '雨のちくもり', '314': '雨のち雪',
+                                            '400': '雪', '401': '雪時々晴れ', '402': '雪時々くもり',
+                                            '403': '雪時々雨', '406': '大雪', '411': '雪のち晴れ',
+                                            '413': '雪のちくもり', '414': '雪のち雨'
+                                        }
+                                        day_data['weather_text'] = weather_code_map.get(day_data['weather_code'], f"天気コード{day_data['weather_code']}")
+                                    
+                                    # 降水確率
+                                    if i < len(pops) and pops[i] != '':
+                                        try:
+                                            day_data['precipitation_probability'] = int(pops[i])
+                                        except ValueError:
+                                            pass
+                                    
+                                    weekly_data.append(day_data)
+                                except (ValueError, IndexError):
+                                    continue
+                            
+                            weather_data['weekly_forecast'] = weekly_data
+                            break
+            
             print(f"Weather data collected successfully")
             print(f"Today: {weather_data['today']['weather_text']}, Max: {weather_data['today']['temp_max']}°C, Min: {weather_data['today']['temp_min']}°C")
             print(f"Tomorrow: {weather_data['tomorrow']['weather_text']}, Max: {weather_data['tomorrow']['temp_max']}°C, Min: {weather_data['tomorrow']['temp_min']}°C")
             print(f"Day after tomorrow: {weather_data['day_after_tomorrow']['weather_text']}, Max: {weather_data['day_after_tomorrow']['temp_max']}°C, Min: {weather_data['day_after_tomorrow']['temp_min']}°C")
+            print(f"Weekly forecast: {len(weather_data['weekly_forecast'])} days")
             
         except requests.RequestException as e:
             print(f"Error fetching weather data: {e}")
@@ -1253,7 +1314,8 @@ class KotogawaDataCollector:
                     'precipitation_probability': [],
                     'precipitation_times': []
                 },
-                'update_time': None
+                'update_time': None,
+                'weekly_forecast': []
             }
         
         # データを統合（日本時間で保存）

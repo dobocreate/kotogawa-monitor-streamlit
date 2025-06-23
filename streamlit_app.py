@@ -373,6 +373,77 @@ class KotogawaMonitor:
             st.info("💧 降水の可能性があります。河川・ダムの状況を定期的にご確認ください。")
         
         st.markdown("---")
+        
+        # 週間予報の表示
+        self.create_weekly_forecast_display(data)
+    
+    def create_weekly_forecast_display(self, data: Dict[str, Any]) -> None:
+        """週間予報情報を表示する"""
+        weather_data = data.get('weather', {})
+        weekly_forecast = weather_data.get('weekly_forecast', [])
+        
+        if not weekly_forecast:
+            return
+        
+        st.markdown("## 📅 週間天気予報（山口県）")
+        
+        # 週間予報を表形式で表示
+        if len(weekly_forecast) >= 7:
+            # 7列に分けて表示
+            cols = st.columns(7)
+            
+            for i, day_data in enumerate(weekly_forecast[:7]):
+                with cols[i]:
+                    # 日付と曜日
+                    try:
+                        date_obj = datetime.strptime(day_data['date'], '%Y-%m-%d')
+                        month_day = date_obj.strftime('%m/%d')
+                        day_of_week = day_data.get('day_of_week', date_obj.strftime('%a'))
+                        
+                        # 今日・明日・明後日のラベル
+                        jst = ZoneInfo('Asia/Tokyo')
+                        today = datetime.now(jst).date()
+                        target_date = date_obj.date()
+                        
+                        if target_date == today:
+                            day_label = "今日"
+                        elif target_date == today + timedelta(days=1):
+                            day_label = "明日"
+                        elif target_date == today + timedelta(days=2):
+                            day_label = "明後日"
+                        else:
+                            day_label = day_of_week
+                        
+                        st.markdown(f"**{month_day}**")
+                        st.markdown(f"**{day_label}**")
+                    except:
+                        st.markdown(f"**{day_data.get('date', '')}**")
+                    
+                    # 天気
+                    weather_text = day_data.get('weather_text', 'データなし')
+                    # 長い天気予報文を短縮
+                    if len(weather_text) > 8:
+                        weather_short = weather_text.replace('時々', '時々').replace('一時', '一時')[:8] + "..."
+                    else:
+                        weather_short = weather_text
+                    st.markdown(f"{weather_short}")
+                    
+                    # 降水確率
+                    precip_prob = day_data.get('precipitation_probability')
+                    if precip_prob is not None:
+                        # 高い降水確率は色を変える
+                        if precip_prob >= 70:
+                            st.markdown(f"🌧️ **{precip_prob}%**")
+                        elif precip_prob >= 50:
+                            st.markdown(f"☔ **{precip_prob}%**")
+                        elif precip_prob >= 30:
+                            st.markdown(f"🌤️ {precip_prob}%")
+                        else:
+                            st.markdown(f"☀️ {precip_prob}%")
+                    else:
+                        st.markdown("--")
+        
+        st.markdown("---")
     
     def create_metrics_display(self, data: Dict[str, Any]) -> None:
         """現在の状況表示を作成"""
