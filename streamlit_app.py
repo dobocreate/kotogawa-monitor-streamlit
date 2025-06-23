@@ -83,8 +83,19 @@ class KotogawaMonitor:
             st.error(f"❌ データ読み込みエラー: {e}")
             return None
     
-    @st.cache_data(ttl=600)  # 10分間キャッシュ
-    def load_history_data(_self, hours: int = 24) -> List[Dict[str, Any]]:
+    def get_cache_key(self) -> str:
+        """キャッシュキー用の最新ファイル時刻を取得"""
+        try:
+            # latest.jsonの更新時刻を取得
+            latest_file = self.data_dir / "latest.json"
+            if latest_file.exists():
+                return str(latest_file.stat().st_mtime)
+            return "no_file"
+        except Exception:
+            return "error"
+    
+    @st.cache_data(ttl=300)  # 5分間キャッシュ（短縮）
+    def load_history_data(_self, hours: int = 24, cache_key: str = None) -> List[Dict[str, Any]]:
         """履歴データを読み込む"""
         history_data = []
         end_time = datetime.now()
@@ -550,10 +561,13 @@ def main():
     # データ読み込み
     latest_data = monitor.load_latest_data()
     
-    # 履歴データの読み込みを一時的に無効化（ローディング問題のデバッグ用）
+    # キャッシュキー取得
+    cache_key = monitor.get_cache_key()
+    
+    # 履歴データの読み込み
     try:
         with st.spinner("履歴データを読み込み中..."):
-            history_data = monitor.load_history_data(display_hours)
+            history_data = monitor.load_history_data(display_hours, cache_key)
     except Exception as e:
         st.warning(f"履歴データの読み込みに失敗しました: {e}")
         history_data = []
@@ -585,6 +599,8 @@ def main():
     
     with col2:
         if st.button("🔄 更新", type="primary"):
+            # 特定のキャッシュ関数をクリア
+            monitor.load_history_data.clear()
             st.cache_data.clear()
             st.rerun()
     
