@@ -246,6 +246,108 @@ class KotogawaMonitor:
         
         return alerts
     
+    def create_weather_forecast_display(self, data: Dict[str, Any]) -> None:
+        """天気予報情報を表示する"""
+        st.markdown("## 🌤️ 天気予報（宇部市）")
+        
+        weather_data = data.get('weather', {})
+        
+        if not weather_data or not weather_data.get('today', {}).get('weather_text'):
+            st.info("⚠️ 天気予報データが利用できません")
+            return
+        
+        # 更新時刻の表示
+        if weather_data.get('update_time'):
+            try:
+                update_time = datetime.fromisoformat(weather_data['update_time'])
+                st.caption(f"予報更新時刻: {update_time.strftime('%Y-%m-%d %H:%M')} JST")
+            except:
+                pass
+        
+        # 今日・明日の天気予報を横並びで表示
+        col1, col2 = st.columns(2)
+        
+        # 今日の天気
+        with col1:
+            st.markdown("### 今日")
+            today = weather_data.get('today', {})
+            
+            # 天気
+            weather_text = today.get('weather_text', 'データなし')
+            st.markdown(f"**天気:** {weather_text}")
+            
+            # 気温
+            temp_max = today.get('temp_max')
+            temp_min = today.get('temp_min')
+            if temp_max is not None and temp_min is not None:
+                st.markdown(f"**気温:** {temp_max}°C / {temp_min}°C")
+            elif temp_max is not None:
+                st.markdown(f"**最高気温:** {temp_max}°C")
+            elif temp_min is not None:
+                st.markdown(f"**最低気温:** {temp_min}°C")
+            
+            # 降水確率（4時間帯）
+            precip_prob = today.get('precipitation_probability', [])
+            if any(p is not None for p in precip_prob):
+                time_labels = ["0-6時", "6-12時", "12-18時", "18-24時"]
+                prob_text = []
+                for i, prob in enumerate(precip_prob):
+                    if prob is not None:
+                        prob_text.append(f"{time_labels[i]}: {prob}%")
+                    else:
+                        prob_text.append(f"{time_labels[i]}: --")
+                st.markdown(f"**降水確率:**")
+                for pt in prob_text:
+                    st.markdown(f"　{pt}")
+        
+        # 明日の天気
+        with col2:
+            st.markdown("### 明日")
+            tomorrow = weather_data.get('tomorrow', {})
+            
+            # 天気
+            weather_text = tomorrow.get('weather_text', 'データなし')
+            st.markdown(f"**天気:** {weather_text}")
+            
+            # 気温
+            temp_max = tomorrow.get('temp_max')
+            temp_min = tomorrow.get('temp_min')
+            if temp_max is not None and temp_min is not None:
+                st.markdown(f"**気温:** {temp_max}°C / {temp_min}°C")
+            elif temp_max is not None:
+                st.markdown(f"**最高気温:** {temp_max}°C")
+            elif temp_min is not None:
+                st.markdown(f"**最低気温:** {temp_min}°C")
+            
+            # 降水確率（4時間帯）
+            precip_prob = tomorrow.get('precipitation_probability', [])
+            if any(p is not None for p in precip_prob):
+                time_labels = ["0-6時", "6-12時", "12-18時", "18-24時"]
+                prob_text = []
+                for i, prob in enumerate(precip_prob):
+                    if prob is not None:
+                        prob_text.append(f"{time_labels[i]}: {prob}%")
+                    else:
+                        prob_text.append(f"{time_labels[i]}: --")
+                st.markdown(f"**降水確率:**")
+                for pt in prob_text:
+                    st.markdown(f"　{pt}")
+        
+        # 警戒メッセージ
+        today_precip = weather_data.get('today', {}).get('precipitation_probability', [])
+        tomorrow_precip = weather_data.get('tomorrow', {}).get('precipitation_probability', [])
+        
+        # 今日・明日の最大降水確率を取得
+        max_today = max([p for p in today_precip if p is not None], default=0)
+        max_tomorrow = max([p for p in tomorrow_precip if p is not None], default=0)
+        
+        if max_today >= 70 or max_tomorrow >= 70:
+            st.warning("⚠️ 降水確率が高くなっています。水位の変化にご注意ください。")
+        elif max_today >= 50 or max_tomorrow >= 50:
+            st.info("💧 降水の可能性があります。河川・ダムの状況を定期的にご確認ください。")
+        
+        st.markdown("---")
+    
     def create_metrics_display(self, data: Dict[str, Any]) -> None:
         """現在の状況表示を作成"""
         if not data:
@@ -669,6 +771,9 @@ def main():
     
     # 現在の状況表示
     monitor.create_metrics_display(latest_data)
+    
+    # 天気予報表示
+    monitor.create_weather_forecast_display(latest_data)
     
     # タブによる表示切り替え
     tab1, tab2 = st.tabs(["📊 グラフ", "📋 データテーブル"])

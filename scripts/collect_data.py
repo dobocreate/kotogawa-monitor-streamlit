@@ -627,6 +627,150 @@ class KotogawaDataCollector:
         
         return rainfall_data
     
+    def collect_weather_data(self) -> Dict[str, Any]:
+        """気象庁APIから天気予報データを収集する"""
+        weather_data = {
+            'today': {
+                'weather_code': None,
+                'weather_text': None,
+                'temp_max': None,
+                'temp_min': None,
+                'precipitation_probability': [None, None, None, None]
+            },
+            'tomorrow': {
+                'weather_code': None,
+                'weather_text': None,
+                'temp_max': None,
+                'temp_min': None,
+                'precipitation_probability': [None, None, None, None]
+            },
+            'update_time': None
+        }
+        
+        try:
+            # 山口県の天気予報データを取得
+            url = "https://www.jma.go.jp/bosai/forecast/data/forecast/350000.json"
+            response = requests.get(url, headers=self.headers, timeout=self.timeout)
+            response.raise_for_status()
+            
+            forecast_data = response.json()
+            
+            if not forecast_data or len(forecast_data) == 0:
+                print("No weather forecast data available")
+                return weather_data
+            
+            # 最新の予報データを取得
+            latest_forecast = forecast_data[0]
+            
+            # 更新時刻を設定
+            if 'reportDatetime' in latest_forecast:
+                try:
+                    jst = ZoneInfo('Asia/Tokyo')
+                    update_time = datetime.fromisoformat(latest_forecast['reportDatetime'].replace('Z', '+00:00'))
+                    update_time_jst = update_time.astimezone(jst)
+                    weather_data['update_time'] = update_time_jst.isoformat()
+                except (ValueError, KeyError):
+                    pass
+            
+            # 宇部市のエリア情報を探す（エリアコード350012）
+            target_area = None
+            if 'timeSeries' in latest_forecast:
+                for series in latest_forecast['timeSeries']:
+                    if 'areas' in series:
+                        for area in series['areas']:
+                            if area.get('area', {}).get('code') == '350012':
+                                target_area = area
+                                break
+                        if target_area:
+                            break
+            
+            # エリアが見つからない場合は山口県西部を使用
+            if not target_area and 'timeSeries' in latest_forecast:
+                for series in latest_forecast['timeSeries']:
+                    if 'areas' in series:
+                        for area in series['areas']:
+                            if '西部' in area.get('area', {}).get('name', ''):
+                                target_area = area
+                                break
+                        if target_area:
+                            break
+            
+            if target_area:
+                # 天気情報の取得
+                if 'weathers' in target_area and len(target_area['weathers']) >= 2:
+                    # 今日の天気
+                    today_weather = target_area['weathers'][0]
+                    weather_data['today']['weather_text'] = today_weather
+                    
+                    # 明日の天気
+                    tomorrow_weather = target_area['weathers'][1]
+                    weather_data['tomorrow']['weather_text'] = tomorrow_weather
+                
+                # 降水確率の取得
+                if 'pops' in target_area:
+                    pops = target_area['pops']
+                    if len(pops) >= 8:  # 今日4つ + 明日4つ
+                        # 今日の降水確率（4時間帯）
+                        today_pops = []
+                        for i in range(4):
+                            try:
+                                pop = int(pops[i]) if pops[i] != '' else None
+                                today_pops.append(pop)
+                            except (ValueError, IndexError):
+                                today_pops.append(None)
+                        weather_data['today']['precipitation_probability'] = today_pops
+                        
+                        # 明日の降水確率（4時間帯）
+                        tomorrow_pops = []
+                        for i in range(4, 8):
+                            try:
+                                pop = int(pops[i]) if pops[i] != '' else None
+                                tomorrow_pops.append(pop)
+                            except (ValueError, IndexError):
+                                tomorrow_pops.append(None)
+                        weather_data['tomorrow']['precipitation_probability'] = tomorrow_pops
+            
+            # 気温データの取得
+            if 'timeSeries' in latest_forecast:
+                for series in latest_forecast['timeSeries']:
+                    if 'areas' in series:
+                        for area in series['areas']:
+                            area_code = area.get('area', {}).get('code')
+                            if area_code == '350012' or '西部' in area.get('area', {}).get('name', ''):
+                                # 最高気温
+                                if 'tempsMax' in area and len(area['tempsMax']) >= 2:
+                                    try:
+                                        today_max = int(area['tempsMax'][0]) if area['tempsMax'][0] != '' else None
+                                        tomorrow_max = int(area['tempsMax'][1]) if area['tempsMax'][1] != '' else None
+                                        weather_data['today']['temp_max'] = today_max
+                                        weather_data['tomorrow']['temp_max'] = tomorrow_max
+                                    except (ValueError, IndexError):
+                                        pass
+                                
+                                # 最低気温
+                                if 'tempsMin' in area and len(area['tempsMin']) >= 2:
+                                    try:
+                                        today_min = int(area['tempsMin'][0]) if area['tempsMin'][0] != '' else None
+                                        tomorrow_min = int(area['tempsMin'][1]) if area['tempsMin'][1] != '' else None
+                                        weather_data['today']['temp_min'] = today_min
+                                        weather_data['tomorrow']['temp_min'] = tomorrow_min
+                                    except (ValueError, IndexError):
+                                        pass
+                                break
+            
+            print(f"Weather data collected successfully")
+            print(f"Today: {weather_data['today']['weather_text']}, Max: {weather_data['today']['temp_max']}°C, Min: {weather_data['today']['temp_min']}°C")
+            print(f"Tomorrow: {weather_data['tomorrow']['weather_text']}, Max: {weather_data['tomorrow']['temp_max']}°C, Min: {weather_data['tomorrow']['temp_min']}°C")
+            
+        except requests.RequestException as e:
+            print(f"Error fetching weather data: {e}")
+        except json.JSONDecodeError as e:
+            print(f"Error parsing weather data JSON: {e}")
+        except Exception as e:
+            print(f"Unexpected error collecting weather data: {e}")
+        
+        return weather_data
+    
     def save_data(self, data: Dict[str, Any], is_error: bool = False, error_info: Dict[str, Any] = None) -> None:
         """データを保存する"""
         jst = ZoneInfo('Asia/Tokyo')
@@ -964,6 +1108,36 @@ class KotogawaDataCollector:
                 'change': 0
             }
         
+        # 天気予報データ収集
+        print("Collecting weather forecast data...")
+        try:
+            weather_data = self.collect_weather_data()
+            data_collected['weather'] = weather_data
+        except Exception as e:
+            print(f"Error collecting weather data: {e}")
+            errors.append({
+                'step': 'weather_data_collection',
+                'error': str(e),
+                'error_type': type(e).__name__
+            })
+            data_collected['weather'] = {
+                'today': {
+                    'weather_code': None,
+                    'weather_text': None,
+                    'temp_max': None,
+                    'temp_min': None,
+                    'precipitation_probability': [None, None, None, None]
+                },
+                'tomorrow': {
+                    'weather_code': None,
+                    'weather_text': None,
+                    'temp_max': None,
+                    'temp_min': None,
+                    'precipitation_probability': [None, None, None, None]
+                },
+                'update_time': None
+            }
+        
         # データを統合（日本時間で保存）
         timestamp_jst = datetime.now(jst)
         observation_time_jst = observation_time  # 既にJST
@@ -1001,7 +1175,8 @@ class KotogawaDataCollector:
             'data_time': observation_time_jst.isoformat(),  # 観測時刻を追加
             'dam': data_collected.get('dam', {}),
             'river': data_collected.get('river', {}),
-            'rainfall': data_collected.get('rainfall', {})
+            'rainfall': data_collected.get('rainfall', {}),
+            'weather': data_collected.get('weather', {})
         }
         
         # actual_observation_timeは保存データから削除（内部使用のみ）
@@ -1055,7 +1230,8 @@ def main():
             'data_time': None,
             'dam': {'water_level': None, 'storage_rate': None, 'inflow': None, 'outflow': None, 'storage_change': None},
             'river': {'water_level': None, 'level_change': 0.0, 'status': '不明'},
-            'rainfall': {'hourly': 0, 'cumulative': 0, 'change': 0}
+            'rainfall': {'hourly': 0, 'cumulative': 0, 'change': 0},
+            'weather': {'today': {'weather_text': None, 'temp_max': None, 'temp_min': None}, 'tomorrow': {'weather_text': None, 'temp_max': None, 'temp_min': None}, 'update_time': None}
         }
         error_info = {
             'errors': [{
