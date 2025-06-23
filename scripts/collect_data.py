@@ -178,6 +178,7 @@ class KotogawaDataCollector:
                                     if 30 <= level <= 40:  # 妥当性チェック
                                         dam_data['water_level'] = level
                                 except ValueError:
+                                    pass
                                 
                                 # 貯水率
                                 try:
@@ -185,6 +186,7 @@ class KotogawaDataCollector:
                                     if 0 <= rate <= 100:  # 妥当性チェック
                                         dam_data['storage_rate'] = rate
                                 except ValueError:
+                                    pass
                                 
                                 # 流入量
                                 try:
@@ -192,6 +194,7 @@ class KotogawaDataCollector:
                                     if 0 <= inflow <= 100:  # 範囲を拡張
                                         dam_data['inflow'] = inflow
                                 except ValueError:
+                                    pass
                                 
                                 # 全放流量
                                 try:
@@ -199,6 +202,7 @@ class KotogawaDataCollector:
                                     if 0 <= outflow <= 100:  # 範囲を拡張
                                         dam_data['outflow'] = outflow
                                 except ValueError:
+                                    pass
                                 
                                 break  # 目標行が見つかったら終了
                         except (IndexError, ValueError) as e:
@@ -218,6 +222,7 @@ class KotogawaDataCollector:
                 dam_data['storage_change'] = round(water_levels[-1] - water_levels[-2], 2)
                 
         except Exception as e:
+            pass
         
         return dam_data
     
@@ -320,6 +325,7 @@ class KotogawaDataCollector:
                                         
                                         break  # 目標行が見つかったら終了
                                 except ValueError:
+                                    pass
                         except (IndexError, ValueError) as e:
                             continue
                 
@@ -358,6 +364,7 @@ class KotogawaDataCollector:
                         continue
                         
         except Exception as e:
+            pass
         
         return river_data
     
@@ -432,6 +439,7 @@ class KotogawaDataCollector:
                                     if self.validate_rainfall_data(hourly, 0):
                                         rainfall_data['hourly'] = hourly
                                 except ValueError:
+                                    pass
                                 
                                 # 累積雨量
                                 try:
@@ -439,6 +447,7 @@ class KotogawaDataCollector:
                                     if self.validate_rainfall_data(0, cumulative):
                                         rainfall_data['cumulative'] = cumulative
                                 except ValueError:
+                                    pass
                                 
                                 break  # 目標行が見つかったら終了
                         except (IndexError, ValueError) as e:
@@ -452,9 +461,10 @@ class KotogawaDataCollector:
             
             # 最終的な検証
             if not self.validate_rainfall_data(rainfall_data['hourly'], rainfall_data['cumulative']):
-                
+                pass
             
         except Exception as e:
+            pass
         
         return rainfall_data
     
@@ -514,10 +524,13 @@ class KotogawaDataCollector:
                                     import shutil
                                     shutil.rmtree(day_dir)
                             except (ValueError, OSError) as e:
+                                pass
                                 
                     except (ValueError, OSError) as e:
+                        pass
                         
             except (ValueError, OSError) as e:
+                pass
     
     def collect_all_data(self) -> Dict[str, Any]:
         """全てのデータを収集する"""
