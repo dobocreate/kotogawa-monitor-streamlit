@@ -307,15 +307,9 @@ class KotogawaDataCollector:
                     if dam_data['water_level'] is not None:
                         break
             
-            # 貯水率の計算（水位から）
-            if dam_data['water_level'] and not dam_data['storage_rate']:
-                # 最低水位20m、最高水位40mと仮定
-                level = dam_data['water_level']
-                dam_data['storage_rate'] = ((level - 20) / (40 - 20)) * 100
-            
-            # 変化量の計算
-            if len(water_levels) >= 2:
-                dam_data['storage_change'] = round(water_levels[-1] - water_levels[-2], 2)
+            # 最終的にデータが取得できなかった場合はnullを保持
+            if dam_data['water_level'] is None:
+                print("No valid dam data found. Keeping null values.")
                 
         except Exception as e:
             print(f"Error extracting dam data: {e}")
@@ -352,7 +346,7 @@ class KotogawaDataCollector:
         river_data = {
             'water_level': None,
             'level_change': None,
-            'status': '正常',
+            'status': None,
             'actual_observation_time': None
         }
         
@@ -513,40 +507,11 @@ class KotogawaDataCollector:
                     if river_data['water_level'] is not None:
                         break
             
-            # 最終的にデータが取得できなかった場合はJavaScriptやHTML全体から探す
+            # 最終的にデータが取得できなかった場合はnullを保持
             if river_data['water_level'] is None:
-                # JavaScriptから現在値を抽出
-                scripts = soup.find_all('script')
-                for script in scripts:
-                    if script.string:
-                        script_text = script.string
-                        
-                        # 現在水位の数値を検索
-                        current_match = re.search(r'最新値.*?(\d+\.\d+)', script_text)
-                        if current_match:
-                            try:
-                                level = float(current_match.group(1))
-                                if 0.5 <= level <= 10:  # 合理的な範囲
-                                    river_data['water_level'] = level
-                                    print(f"Found river level from JavaScript: {level}m")
-                            except ValueError:
-                                pass
-                
-                # HTMLテキスト全体から最新値を検索
-                if river_data['water_level'] is None:
-                    full_text = soup.get_text()
-                    latest_matches = re.findall(r'(\d+\.\d{2})', full_text)
-                    
-                    # 最後に見つかった合理的な値を使用
-                    for match in reversed(latest_matches):
-                        try:
-                            level = float(match)
-                            if 0.5 <= level <= 10:
-                                river_data['water_level'] = level
-                                print(f"Found river level from HTML text: {level}m")
-                                break
-                        except ValueError:
-                            continue
+                print("No valid river data found. Keeping null value.")
+                # 水位が取得できない場合はステータスもnullに
+                river_data['status'] = None
                         
         except Exception as e:
             print(f"Error extracting river data: {e}")
@@ -977,8 +942,8 @@ class KotogawaDataCollector:
             })
             data_collected['river'] = {
                 'water_level': None,
-                'level_change': 0.0,
-                'status': '不明'
+                'level_change': None,
+                'status': None
             }
         
         # 雨量データ収集
