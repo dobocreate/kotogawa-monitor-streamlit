@@ -121,7 +121,8 @@ class KotogawaDataCollector:
                 'storage_rate': None,
                 'inflow': None,
                 'outflow': None,
-                'storage_change': None
+                'storage_change': None,
+                'actual_observation_time': None
             }
         
         dam_data = {
@@ -129,7 +130,8 @@ class KotogawaDataCollector:
             'storage_rate': None,
             'inflow': None,
             'outflow': None,
-            'storage_change': None
+            'storage_change': None,
+            'actual_observation_time': None
         }
         
         try:
@@ -215,12 +217,95 @@ class KotogawaDataCollector:
                                 except ValueError:
                                     print(f"Invalid outflow: {outflow_text}")
                                 
+                                dam_data['actual_observation_time'] = f"{date_text} {time_text}"
                                 break  # 目標行が見つかったら終了
                         except (IndexError, ValueError) as e:
                             continue
                 
                 if dam_data['water_level'] is not None:
                     break  # データが見つかったらテーブル検索終了
+            
+            # 目標データが見つからなかった場合、最終行（最新データ）を取得
+            if dam_data['water_level'] is None:
+                print(f"Target data not found. Looking for the latest available data...")
+                
+                for table in tables:
+                    rows = table.find_all('tr')
+                    # 最後から順に有効なデータ行を探す
+                    for row in reversed(rows):
+                        cells = row.find_all('td')
+                        if len(cells) >= 9:
+                            try:
+                                date_text = cells[0].get_text().strip()
+                                time_text = cells[1].get_text().strip()
+                                
+                                # 日付形式のチェック（YYYY/MM/DD）
+                                if re.match(r'\d{4}/\d{2}/\d{2}', date_text) and re.match(r'\d{2}:\d{2}', time_text):
+                                    # この観測時刻のデータが既に保存されているかチェック
+                                    obs_datetime = datetime.strptime(f"{date_text} {time_text}", "%Y/%m/%d %H:%M")
+                                    obs_datetime = obs_datetime.replace(tzinfo=jst)
+                                    
+                                    # ファイルの存在確認
+                                    date_dir = self.history_dir / obs_datetime.strftime("%Y") / obs_datetime.strftime("%m") / obs_datetime.strftime("%d")
+                                    history_file = date_dir / f"{obs_datetime.strftime('%H%M')}.json"
+                                    
+                                    if history_file.exists():
+                                        print(f"Data for {date_text} {time_text} already exists. Skipping.")
+                                        continue
+                                    
+                                    print(f"Found latest data: {date_text} {time_text}")
+                                    
+                                    # データを抽出
+                                    water_level_text = cells[2].get_text().strip()
+                                    storage_rate_text = cells[3].get_text().strip()
+                                    inflow_text = cells[4].get_text().strip()
+                                    outflow_text = cells[5].get_text().strip()
+                                    
+                                    # 貯水位
+                                    try:
+                                        level = float(water_level_text)
+                                        if 30 <= level <= 40:
+                                            dam_data['water_level'] = level
+                                            print(f"Dam water level: {level}m")
+                                    except ValueError:
+                                        pass
+                                    
+                                    # 貯水率
+                                    try:
+                                        rate = float(storage_rate_text)
+                                        if 0 <= rate <= 100:
+                                            dam_data['storage_rate'] = rate
+                                            print(f"Storage rate: {rate}%")
+                                    except ValueError:
+                                        pass
+                                    
+                                    # 流入量
+                                    try:
+                                        inflow = float(inflow_text)
+                                        if 0 <= inflow <= 100:
+                                            dam_data['inflow'] = inflow
+                                            print(f"Inflow: {inflow} m³/s")
+                                    except ValueError:
+                                        pass
+                                    
+                                    # 全放流量
+                                    try:
+                                        outflow = float(outflow_text)
+                                        if 0 <= outflow <= 100:
+                                            dam_data['outflow'] = outflow
+                                            print(f"Outflow: {outflow} m³/s")
+                                    except ValueError:
+                                        pass
+                                    
+                                    if dam_data['water_level'] is not None:
+                                        dam_data['actual_observation_time'] = f"{date_text} {time_text}"
+                                        break
+                                        
+                            except (IndexError, ValueError) as e:
+                                continue
+                    
+                    if dam_data['water_level'] is not None:
+                        break
             
             # 貯水率の計算（水位から）
             if dam_data['water_level'] and not dam_data['storage_rate']:
@@ -581,6 +666,172 @@ class KotogawaDataCollector:
             except (ValueError, OSError) as e:
                 print(f"Error processing year directory {year_dir}: {e}")
     
+    def create_daily_summary(self) -> None:
+        """前日の日次サマリーを作成する"""
+        try:
+            jst = ZoneInfo('Asia/Tokyo')
+            current_time = datetime.now(jst)
+            yesterday = current_time - timedelta(days=1)
+            
+            # 前日のディレクトリ
+            yesterday_dir = self.history_dir / yesterday.strftime("%Y") / yesterday.strftime("%m") / yesterday.strftime("%d")
+            if not yesterday_dir.exists():
+                return
+            
+            # 既に日次サマリーが存在する場合はスキップ
+            summary_file = yesterday_dir / "daily_summary.json"
+            if summary_file.exists():
+                return
+            
+            print(f"Creating daily summary for {yesterday.strftime('%Y-%m-%d')}...")
+            
+            # 前日のすべてのデータファイルを読み込む
+            daily_data = {}
+            error_count = 0
+            successful_count = 0
+            
+            for file_path in sorted(yesterday_dir.glob("*.json")):
+                # daily_summary.json自体はスキップ
+                if file_path.name == "daily_summary.json":
+                    continue
+                
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        file_data = json.load(f)
+                    
+                    # エラーファイルとデータファイルを区別
+                    if file_path.name.startswith("error_"):
+                        error_count += 1
+                    else:
+                        successful_count += 1
+                        # 観測時刻をキーとしてデータを保存
+                        obs_time = file_path.stem  # ファイル名から拡張子を除いた部分
+                        daily_data[obs_time] = file_data
+                
+                except (json.JSONDecodeError, OSError) as e:
+                    print(f"Error reading {file_path}: {e}")
+                    continue
+            
+            # 日次統計を計算
+            statistics = self._calculate_daily_statistics(daily_data)
+            
+            # サマリーデータの作成
+            summary = {
+                'date': yesterday.strftime('%Y-%m-%d'),
+                'created_at': current_time.isoformat(),
+                'total_records': successful_count,
+                'error_count': error_count,
+                'statistics': statistics,
+                'hourly_data': daily_data  # 時刻をキーとした全データ
+            }
+            
+            # サマリーファイルを保存
+            with open(summary_file, 'w', encoding='utf-8') as f:
+                json.dump(summary, f, ensure_ascii=False, indent=2, default=str)
+            
+            print(f"Daily summary created: {summary_file.name}")
+            
+        except Exception as e:
+            print(f"Error creating daily summary: {e}")
+    
+    def _calculate_daily_statistics(self, daily_data: Dict[str, Any]) -> Dict[str, Any]:
+        """日次統計を計算する"""
+        stats = {
+            'dam': {
+                'water_level': {'min': None, 'max': None, 'avg': None},
+                'storage_rate': {'min': None, 'max': None, 'avg': None},
+                'inflow': {'min': None, 'max': None, 'avg': None, 'total': None},
+                'outflow': {'min': None, 'max': None, 'avg': None, 'total': None}
+            },
+            'river': {
+                'water_level': {'min': None, 'max': None, 'avg': None}
+            },
+            'rainfall': {
+                'hourly': {'max': None, 'total': None},
+                'cumulative': {'max': None}
+            }
+        }
+        
+        # 各データタイプごとに値を収集
+        dam_levels = []
+        dam_rates = []
+        dam_inflows = []
+        dam_outflows = []
+        river_levels = []
+        hourly_rains = []
+        cumulative_rains = []
+        
+        for time_key, data in daily_data.items():
+            if 'dam' in data:
+                if data['dam'].get('water_level') is not None:
+                    dam_levels.append(data['dam']['water_level'])
+                if data['dam'].get('storage_rate') is not None:
+                    dam_rates.append(data['dam']['storage_rate'])
+                if data['dam'].get('inflow') is not None:
+                    dam_inflows.append(data['dam']['inflow'])
+                if data['dam'].get('outflow') is not None:
+                    dam_outflows.append(data['dam']['outflow'])
+            
+            if 'river' in data and data['river'].get('water_level') is not None:
+                river_levels.append(data['river']['water_level'])
+            
+            if 'rainfall' in data:
+                if data['rainfall'].get('hourly') is not None:
+                    hourly_rains.append(data['rainfall']['hourly'])
+                if data['rainfall'].get('cumulative') is not None:
+                    cumulative_rains.append(data['rainfall']['cumulative'])
+        
+        # 統計値の計算
+        if dam_levels:
+            stats['dam']['water_level'] = {
+                'min': min(dam_levels),
+                'max': max(dam_levels),
+                'avg': round(sum(dam_levels) / len(dam_levels), 2)
+            }
+        
+        if dam_rates:
+            stats['dam']['storage_rate'] = {
+                'min': min(dam_rates),
+                'max': max(dam_rates),
+                'avg': round(sum(dam_rates) / len(dam_rates), 1)
+            }
+        
+        if dam_inflows:
+            stats['dam']['inflow'] = {
+                'min': min(dam_inflows),
+                'max': max(dam_inflows),
+                'avg': round(sum(dam_inflows) / len(dam_inflows), 2),
+                'total': round(sum(dam_inflows) * 600 / 1000000, 2)  # m³/s * 600秒 / 1000000 = 百万m³
+            }
+        
+        if dam_outflows:
+            stats['dam']['outflow'] = {
+                'min': min(dam_outflows),
+                'max': max(dam_outflows),
+                'avg': round(sum(dam_outflows) / len(dam_outflows), 2),
+                'total': round(sum(dam_outflows) * 600 / 1000000, 2)  # m³/s * 600秒 / 1000000 = 百万m³
+            }
+        
+        if river_levels:
+            stats['river']['water_level'] = {
+                'min': min(river_levels),
+                'max': max(river_levels),
+                'avg': round(sum(river_levels) / len(river_levels), 2)
+            }
+        
+        if hourly_rains:
+            stats['rainfall']['hourly'] = {
+                'max': max(hourly_rains),
+                'total': sum(hourly_rains)
+            }
+        
+        if cumulative_rains:
+            stats['rainfall']['cumulative'] = {
+                'max': max(cumulative_rains)
+            }
+        
+        return stats
+    
     def collect_all_data(self) -> Dict[str, Any]:
         """全てのデータを収集する"""
         print("Starting data collection...")
@@ -667,6 +918,19 @@ class KotogawaDataCollector:
         timestamp_jst = datetime.now(jst)
         observation_time_jst = observation_time  # 既にJST
         
+        # 実際の観測時刻を使用（最新データを取得した場合）
+        actual_obs_time = None
+        if 'dam' in data_collected and data_collected['dam'].get('actual_observation_time'):
+            try:
+                actual_obs_time = datetime.strptime(
+                    data_collected['dam']['actual_observation_time'], 
+                    "%Y/%m/%d %H:%M"
+                ).replace(tzinfo=jst)
+                observation_time_jst = actual_obs_time
+                print(f"Using actual observation time: {actual_obs_time}")
+            except ValueError:
+                pass
+        
         data = {
             'timestamp': timestamp_jst.isoformat(),
             'data_time': observation_time_jst.isoformat(),  # 観測時刻を追加
@@ -674,6 +938,10 @@ class KotogawaDataCollector:
             'river': data_collected.get('river', {}),
             'rainfall': data_collected.get('rainfall', {})
         }
+        
+        # actual_observation_timeは保存データから削除（内部使用のみ）
+        if 'actual_observation_time' in data['dam']:
+            del data['dam']['actual_observation_time']
         
         # エラーがある場合はエラーファイルを保存
         if errors:
@@ -691,6 +959,9 @@ class KotogawaDataCollector:
         
         # 古いデータのクリーンアップ
         self.cleanup_old_data()
+        
+        # 日次サマリーの作成（前日分）
+        self.create_daily_summary()
         
         return data
 
