@@ -422,9 +422,15 @@ class KotogawaMonitor:
         # データをDataFrameに変換
         df_data = []
         for item in history_data:
-            timestamp = item.get('timestamp', '')
+            # 観測時刻（data_time）を使用、なければtimestampを使用
+            data_time = item.get('data_time') or item.get('timestamp', '')
             try:
-                dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+                dt = datetime.fromisoformat(data_time.replace('Z', '+00:00'))
+                # タイムゾーンがない場合はJSTとして扱う
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                else:
+                    dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
             except:
                 continue
                 
@@ -521,12 +527,18 @@ class KotogawaMonitor:
         
         table_data = []
         for item in history_data[-20:]:  # 最新20件
-            timestamp = item.get('timestamp', '')
+            # 観測時刻（data_time）を使用、なければtimestampを使用
+            data_time = item.get('data_time') or item.get('timestamp', '')
             try:
-                dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+                dt = datetime.fromisoformat(data_time.replace('Z', '+00:00'))
+                # タイムゾーンがない場合はJSTとして扱う
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                else:
+                    dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
                 formatted_time = dt.strftime('%Y-%m-%d %H:%M')
             except:
-                formatted_time = timestamp
+                formatted_time = data_time
             
             table_data.append({
                 '時刻': formatted_time,
