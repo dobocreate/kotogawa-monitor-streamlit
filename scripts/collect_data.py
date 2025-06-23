@@ -635,14 +635,24 @@ class KotogawaDataCollector:
                 'weather_text': None,
                 'temp_max': None,
                 'temp_min': None,
-                'precipitation_probability': [None, None, None, None]
+                'precipitation_probability': [],
+                'precipitation_times': []
             },
             'tomorrow': {
                 'weather_code': None,
                 'weather_text': None,
                 'temp_max': None,
                 'temp_min': None,
-                'precipitation_probability': [None, None, None, None]
+                'precipitation_probability': [],
+                'precipitation_times': []
+            },
+            'day_after_tomorrow': {
+                'weather_code': None,
+                'weather_text': None,
+                'temp_max': None,
+                'temp_min': None,
+                'precipitation_probability': [],
+                'precipitation_times': []
             },
             'update_time': None
         }
@@ -684,83 +694,181 @@ class KotogawaDataCollector:
                         if target_area:
                             break
             
-            # エリアが見つからない場合は山口県西部を使用
-            if not target_area and 'timeSeries' in latest_forecast:
-                for series in latest_forecast['timeSeries']:
-                    if 'areas' in series:
-                        for area in series['areas']:
-                            if '西部' in area.get('area', {}).get('name', ''):
-                                target_area = area
-                                break
-                        if target_area:
+            # 短期予報から天気情報を取得（今日・明日）
+            jst = ZoneInfo('Asia/Tokyo')
+            now = datetime.now(jst)
+            
+            # 西部エリアのデータを取得
+            west_area_weather = None
+            west_area_pop = None
+            pop_time_defines = None
+            
+            if 'timeSeries' in latest_forecast:
+                # 天気情報（timeSeries[0]）
+                if len(latest_forecast['timeSeries']) > 0:
+                    for area in latest_forecast['timeSeries'][0].get('areas', []):
+                        if area.get('area', {}).get('code') == '350010':  # 西部
+                            west_area_weather = area
+                            break
+                
+                # 降水確率情報（timeSeries[1]）
+                if len(latest_forecast['timeSeries']) > 1:
+                    pop_time_defines = latest_forecast['timeSeries'][1].get('timeDefines', [])
+                    for area in latest_forecast['timeSeries'][1].get('areas', []):
+                        if area.get('area', {}).get('code') == '350010':  # 西部
+                            west_area_pop = area
                             break
             
-            if target_area:
-                # 天気情報の取得
-                if 'weathers' in target_area and len(target_area['weathers']) >= 2:
-                    # 今日の天気
-                    today_weather = target_area['weathers'][0]
-                    weather_data['today']['weather_text'] = today_weather
-                    
-                    # 明日の天気
-                    tomorrow_weather = target_area['weathers'][1]
-                    weather_data['tomorrow']['weather_text'] = tomorrow_weather
+            # 天気情報の設定
+            if west_area_weather and 'weathers' in west_area_weather:
+                weathers = west_area_weather['weathers']
+                weather_codes = west_area_weather.get('weatherCodes', [])
                 
-                # 降水確率の取得
-                if 'pops' in target_area:
-                    pops = target_area['pops']
-                    if len(pops) >= 8:  # 今日4つ + 明日4つ
-                        # 今日の降水確率（4時間帯）
-                        today_pops = []
-                        for i in range(4):
-                            try:
-                                pop = int(pops[i]) if pops[i] != '' else None
-                                today_pops.append(pop)
-                            except (ValueError, IndexError):
-                                today_pops.append(None)
-                        weather_data['today']['precipitation_probability'] = today_pops
-                        
-                        # 明日の降水確率（4時間帯）
-                        tomorrow_pops = []
-                        for i in range(4, 8):
-                            try:
-                                pop = int(pops[i]) if pops[i] != '' else None
-                                tomorrow_pops.append(pop)
-                            except (ValueError, IndexError):
-                                tomorrow_pops.append(None)
-                        weather_data['tomorrow']['precipitation_probability'] = tomorrow_pops
+                if len(weathers) >= 1:
+                    weather_data['today']['weather_text'] = weathers[0]
+                    if len(weather_codes) >= 1:
+                        weather_data['today']['weather_code'] = weather_codes[0]
+                
+                if len(weathers) >= 2:
+                    weather_data['tomorrow']['weather_text'] = weathers[1]
+                    if len(weather_codes) >= 2:
+                        weather_data['tomorrow']['weather_code'] = weather_codes[1]
             
-            # 気温データの取得
+            # 降水確率の設定（時間別）
+            if west_area_pop and 'pops' in west_area_pop and pop_time_defines:
+                pops = west_area_pop['pops']
+                
+                # 時刻と降水確率をペアにする
+                today_pops = []
+                today_times = []
+                tomorrow_pops = []
+                tomorrow_times = []
+                
+                for i, time_str in enumerate(pop_time_defines):
+                    if i < len(pops):
+                        try:
+                            time_obj = datetime.fromisoformat(time_str.replace('Z', '+00:00'))
+                            time_jst = time_obj.astimezone(jst)
+                            pop_value = int(pops[i]) if pops[i] != '' else None
+                            
+                            # 日付で振り分け
+                            if time_jst.date() == now.date():
+                                today_pops.append(pop_value)
+                                today_times.append(time_jst.strftime('%H時'))
+                            elif time_jst.date() == (now + timedelta(days=1)).date():
+                                tomorrow_pops.append(pop_value)
+                                tomorrow_times.append(time_jst.strftime('%H時'))
+                        except (ValueError, IndexError):
+                            continue
+                
+                weather_data['today']['precipitation_probability'] = today_pops
+                weather_data['today']['precipitation_times'] = today_times
+                weather_data['tomorrow']['precipitation_probability'] = tomorrow_pops
+                weather_data['tomorrow']['precipitation_times'] = tomorrow_times
+            
+            # 週間予報から明後日の天気情報を取得
+            if len(forecast_data) > 1:
+                week_forecast = forecast_data[1]
+                if 'timeSeries' in week_forecast and len(week_forecast['timeSeries']) > 0:
+                    time_defines = week_forecast['timeSeries'][0].get('timeDefines', [])
+                    
+                    # 明後日の日付を探す
+                    day_after_tomorrow = now + timedelta(days=2)
+                    day_after_tomorrow_str = day_after_tomorrow.strftime('%Y-%m-%d')
+                    
+                    for i, time_str in enumerate(time_defines):
+                        if day_after_tomorrow_str in time_str:
+                            # 山口県全体のデータを探す（週間予報は県単位）
+                            for area in week_forecast['timeSeries'][0].get('areas', []):
+                                if area.get('area', {}).get('code') == '350000':  # 山口県
+                                    if 'weatherCodes' in area and i < len(area['weatherCodes']):
+                                        weather_data['day_after_tomorrow']['weather_code'] = area['weatherCodes'][i]
+                                    
+                                    # 週間予報の降水確率
+                                    if 'pops' in area and i < len(area['pops']):
+                                        try:
+                                            pop = int(area['pops'][i]) if area['pops'][i] != '' else None
+                                            weather_data['day_after_tomorrow']['precipitation_probability'] = [pop]
+                                            weather_data['day_after_tomorrow']['precipitation_times'] = ['日中']
+                                        except ValueError:
+                                            pass
+                                    
+                                    # 天気コードから天気テキストを生成（簡易版）
+                                    weather_code_map = {
+                                        '100': '晴れ', '101': '晴れ時々くもり', '102': '晴れ一時雨',
+                                        '110': '晴れ時々くもり一時雨', '111': '晴れ時々くもり一時雪',
+                                        '112': '晴れ一時雨', '113': '晴れ時々雨', '114': '晴れ一時雪',
+                                        '200': 'くもり', '201': 'くもり時々晴れ', '202': 'くもり一時雨',
+                                        '203': 'くもり時々雨', '204': 'くもり一時雪', '210': 'くもり時々晴れ一時雨',
+                                        '211': 'くもり時々晴れ一時雪', '212': 'くもり一時雨か雪', '213': 'くもり一時雨か雷雨',
+                                        '300': '雨', '301': '雨時々晴れ', '302': '雨時々くもり',
+                                        '303': '雨時々雪', '308': '大雨', '311': '雨のち晴れ',
+                                        '313': '雨のちくもり', '314': '雨のち雪',
+                                        '400': '雪', '401': '雪時々晴れ', '402': '雪時々くもり',
+                                        '403': '雪時々雨', '406': '大雪', '411': '雪のち晴れ',
+                                        '413': '雪のちくもり', '414': '雪のち雨'
+                                    }
+                                    if weather_data['day_after_tomorrow']['weather_code'] in weather_code_map:
+                                        weather_data['day_after_tomorrow']['weather_text'] = weather_code_map[weather_data['day_after_tomorrow']['weather_code']]
+                                    break
+                            break
+            
+            # 気温データの取得（短期予報から）
             if 'timeSeries' in latest_forecast:
                 for series in latest_forecast['timeSeries']:
                     if 'areas' in series:
+                        # 下関の気温データを使用（宇部に最も近い観測地点）
                         for area in series['areas']:
                             area_code = area.get('area', {}).get('code')
-                            if area_code == '350012' or '西部' in area.get('area', {}).get('name', ''):
-                                # 最高気温
-                                if 'tempsMax' in area and len(area['tempsMax']) >= 2:
-                                    try:
-                                        today_max = int(area['tempsMax'][0]) if area['tempsMax'][0] != '' else None
-                                        tomorrow_max = int(area['tempsMax'][1]) if area['tempsMax'][1] != '' else None
-                                        weather_data['today']['temp_max'] = today_max
-                                        weather_data['tomorrow']['temp_max'] = tomorrow_max
-                                    except (ValueError, IndexError):
-                                        pass
+                            area_name = area.get('area', {}).get('name', '')
+                            if area_code == '81428' or '下関' in area_name:
+                                # 気温データ
+                                if 'temps' in area:
+                                    temps = area['temps']
+                                    # 通常、[今日の最高, 今日の最低, 明日の最低, 明日の最高] の順
+                                    if len(temps) >= 4:
+                                        try:
+                                            weather_data['today']['temp_max'] = int(temps[0]) if temps[0] != '' else None
+                                            weather_data['today']['temp_min'] = int(temps[1]) if temps[1] != '' else None
+                                            weather_data['tomorrow']['temp_min'] = int(temps[2]) if temps[2] != '' else None
+                                            weather_data['tomorrow']['temp_max'] = int(temps[3]) if temps[3] != '' else None
+                                        except (ValueError, IndexError):
+                                            pass
+                                break
+            
+            # 週間予報から明後日の気温データを取得
+            if len(forecast_data) > 1 and 'timeSeries' in forecast_data[1]:
+                for series in forecast_data[1]['timeSeries']:
+                    if 'areas' in series:
+                        for area in series['areas']:
+                            if area.get('area', {}).get('code') == '350000':  # 山口県
+                                # 気温データの探索
+                                time_defines = series.get('timeDefines', [])
+                                temps_max = area.get('tempsMax', [])
+                                temps_min = area.get('tempsMin', [])
                                 
-                                # 最低気温
-                                if 'tempsMin' in area and len(area['tempsMin']) >= 2:
-                                    try:
-                                        today_min = int(area['tempsMin'][0]) if area['tempsMin'][0] != '' else None
-                                        tomorrow_min = int(area['tempsMin'][1]) if area['tempsMin'][1] != '' else None
-                                        weather_data['today']['temp_min'] = today_min
-                                        weather_data['tomorrow']['temp_min'] = tomorrow_min
-                                    except (ValueError, IndexError):
-                                        pass
+                                day_after_tomorrow = now + timedelta(days=2)
+                                day_after_tomorrow_str = day_after_tomorrow.strftime('%Y-%m-%d')
+                                
+                                for i, time_str in enumerate(time_defines):
+                                    if day_after_tomorrow_str in time_str:
+                                        if i < len(temps_max) and temps_max[i] != '':
+                                            try:
+                                                weather_data['day_after_tomorrow']['temp_max'] = int(temps_max[i])
+                                            except ValueError:
+                                                pass
+                                        if i < len(temps_min) and temps_min[i] != '':
+                                            try:
+                                                weather_data['day_after_tomorrow']['temp_min'] = int(temps_min[i])
+                                            except ValueError:
+                                                pass
+                                        break
                                 break
             
             print(f"Weather data collected successfully")
             print(f"Today: {weather_data['today']['weather_text']}, Max: {weather_data['today']['temp_max']}°C, Min: {weather_data['today']['temp_min']}°C")
             print(f"Tomorrow: {weather_data['tomorrow']['weather_text']}, Max: {weather_data['tomorrow']['temp_max']}°C, Min: {weather_data['tomorrow']['temp_min']}°C")
+            print(f"Day after tomorrow: {weather_data['day_after_tomorrow']['weather_text']}, Max: {weather_data['day_after_tomorrow']['temp_max']}°C, Min: {weather_data['day_after_tomorrow']['temp_min']}°C")
             
         except requests.RequestException as e:
             print(f"Error fetching weather data: {e}")
@@ -1126,14 +1234,24 @@ class KotogawaDataCollector:
                     'weather_text': None,
                     'temp_max': None,
                     'temp_min': None,
-                    'precipitation_probability': [None, None, None, None]
+                    'precipitation_probability': [],
+                    'precipitation_times': []
                 },
                 'tomorrow': {
                     'weather_code': None,
                     'weather_text': None,
                     'temp_max': None,
                     'temp_min': None,
-                    'precipitation_probability': [None, None, None, None]
+                    'precipitation_probability': [],
+                    'precipitation_times': []
+                },
+                'day_after_tomorrow': {
+                    'weather_code': None,
+                    'weather_text': None,
+                    'temp_max': None,
+                    'temp_min': None,
+                    'precipitation_probability': [],
+                    'precipitation_times': []
                 },
                 'update_time': None
             }

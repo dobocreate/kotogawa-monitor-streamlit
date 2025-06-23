@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-06-24T07:12:20.602647+09:00",
+  "timestamp": "2025-06-24T07:21:28.965642+09:00",
   "data_time": "2025-06-24T07:00:00+09:00",
   "dam": {
     "water_level": 36.71,
@@ -20,27 +20,49 @@
   },
   "weather": {
     "today": {
-      "weather_code": null,
+      "weather_code": "302",
       "weather_text": "雨　時々　くもり　所により　雷　を伴う",
-      "temp_max": null,
-      "temp_min": null,
+      "temp_max": 26,
+      "temp_min": 26,
       "precipitation_probability": [
-        null,
-        null,
-        null,
-        null
+        90,
+        90,
+        80
+      ],
+      "precipitation_times": [
+        "06時",
+        "12時",
+        "18時"
       ]
     },
     "tomorrow": {
-      "weather_code": null,
+      "weather_code": "203",
       "weather_text": "くもり　時々　雨　所により　雷　を伴う",
+      "temp_max": 29,
+      "temp_min": 25,
+      "precipitation_probability": [
+        70,
+        40,
+        50,
+        70
+      ],
+      "precipitation_times": [
+        "00時",
+        "06時",
+        "12時",
+        "18時"
+      ]
+    },
+    "day_after_tomorrow": {
+      "weather_code": "202",
+      "weather_text": "くもり一時雨",
       "temp_max": null,
       "temp_min": null,
       "precipitation_probability": [
-        null,
-        null,
-        null,
-        null
+        60
+      ],
+      "precipitation_times": [
+        "日中"
       ]
     },
     "update_time": "2025-06-24T05:00:00+09:00"
