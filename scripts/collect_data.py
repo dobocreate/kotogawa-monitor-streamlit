@@ -64,14 +64,19 @@ class KotogawaDataCollector:
                 
             except requests.RequestException as e:
                 last_error = e
+                error_msg = f"Attempt {attempt + 1}/{self.max_retries} failed: {type(e).__name__}: {e}"
+                print(error_msg)
                 
                 if attempt < self.max_retries - 1:
                     wait_time = self.retry_delay * (attempt + 1)  # 指数バックオフ
+                    print(f"Waiting {wait_time} seconds before retry...")
                     time.sleep(wait_time)
                 else:
+                    print(f"Failed to fetch {url} after {self.max_retries} attempts. Last error: {last_error}")
                     return None
             except Exception as e:
                 last_error = e
+                print(f"Unexpected error on attempt {attempt + 1}: {type(e).__name__}: {e}")
                 if attempt < self.max_retries - 1:
                     time.sleep(self.retry_delay)
                 else:
@@ -105,7 +110,7 @@ class KotogawaDataCollector:
         
         params = {
             'check': '015',     # 厚東川ダムの観測所コード
-            'obsdt': obsdt,     # 10分単位に丸めた観測時刻
+            'obsdt': obsdt,     # 15分単位に丸めた観測時刻
             'pop': '1'
         }
         soup = self.fetch_page(self.dam_url, params)
@@ -152,6 +157,7 @@ class KotogawaDataCollector:
             target_date = observation_time.strftime('%Y/%m/%d')
             target_time = observation_time.strftime('%H:%M')
             
+            print(f"Looking for dam data: {target_date} {target_time}")
             
             for table in tables:
                 rows = table.find_all('tr')
@@ -164,6 +170,7 @@ class KotogawaDataCollector:
                             
                             # 日時が完全一致する行を探す
                             if date_text == target_date and time_text == target_time:
+                                print(f"Found matching row: {date_text} {time_text}")
                                 
                                 # 列位置に基づいてデータを抽出
                                 # 列2: 貯水位, 列3: 貯水率, 列4: 流入量, 列5: 全放流量
@@ -177,32 +184,36 @@ class KotogawaDataCollector:
                                     level = float(water_level_text)
                                     if 30 <= level <= 40:  # 妥当性チェック
                                         dam_data['water_level'] = level
+                                        print(f"Dam water level: {level}m")
                                 except ValueError:
-                                    pass
+                                    print(f"Invalid water level: {water_level_text}")
                                 
                                 # 貯水率
                                 try:
                                     rate = float(storage_rate_text)
                                     if 0 <= rate <= 100:  # 妥当性チェック
                                         dam_data['storage_rate'] = rate
+                                        print(f"Storage rate: {rate}%")
                                 except ValueError:
-                                    pass
+                                    print(f"Invalid storage rate: {storage_rate_text}")
                                 
                                 # 流入量
                                 try:
                                     inflow = float(inflow_text)
                                     if 0 <= inflow <= 100:  # 範囲を拡張
                                         dam_data['inflow'] = inflow
+                                        print(f"Inflow: {inflow} m³/s")
                                 except ValueError:
-                                    pass
+                                    print(f"Invalid inflow: {inflow_text}")
                                 
                                 # 全放流量
                                 try:
                                     outflow = float(outflow_text)
                                     if 0 <= outflow <= 100:  # 範囲を拡張
                                         dam_data['outflow'] = outflow
+                                        print(f"Outflow: {outflow} m³/s")
                                 except ValueError:
-                                    pass
+                                    print(f"Invalid outflow: {outflow_text}")
                                 
                                 break  # 目標行が見つかったら終了
                         except (IndexError, ValueError) as e:
@@ -222,7 +233,7 @@ class KotogawaDataCollector:
                 dam_data['storage_change'] = round(water_levels[-1] - water_levels[-2], 2)
                 
         except Exception as e:
-            pass
+            print(f"Error extracting dam data: {e}")
         
         return dam_data
     
@@ -240,7 +251,7 @@ class KotogawaDataCollector:
         
         params = {
             'check': '05067',  # 厚東川（持世寺）の観測所コード
-            'obsdt': obsdt,     # 10分単位に丸めた観測時刻
+            'obsdt': obsdt,     # 15分単位に丸めた観測時刻
             'pop': '1'
         }
         soup = self.fetch_page(self.river_url, params)
@@ -272,6 +283,7 @@ class KotogawaDataCollector:
             target_date = observation_time.strftime('%Y/%m/%d')
             target_time = observation_time.strftime('%H:%M')
             
+            print(f"Looking for river data: {target_date} {target_time}")
             
             for table in tables:
                 rows = table.find_all('tr')
@@ -284,6 +296,7 @@ class KotogawaDataCollector:
                             
                             # 日時が完全一致する行を探す
                             if date_text == target_date and time_text == target_time:
+                                print(f"Found matching river row: {date_text} {time_text}")
                                 
                                 # 列位置に基づいてデータを抽出
                                 # 列2: 水位, 列3: 水位変化（推定）
@@ -294,6 +307,7 @@ class KotogawaDataCollector:
                                     level = float(water_level_text)
                                     if 0.5 <= level <= 10:  # 合理的な水位範囲
                                         river_data['water_level'] = level
+                                        print(f"River water level: {level}m")
                                         
                                         # 水位変化（列3があれば）
                                         if len(cells) > 3:
@@ -304,6 +318,7 @@ class KotogawaDataCollector:
                                                 if change_match:
                                                     change = float(change_match.group(1))
                                                     river_data['level_change'] = round(change, 2)
+                                                    print(f"Water level change: {change}m")
                                                 else:
                                                     river_data['level_change'] = 0.0
                                             except (ValueError, IndexError):
@@ -325,7 +340,7 @@ class KotogawaDataCollector:
                                         
                                         break  # 目標行が見つかったら終了
                                 except ValueError:
-                                    pass
+                                    print(f"Invalid river water level: {water_level_text}")
                         except (IndexError, ValueError) as e:
                             continue
                 
@@ -364,7 +379,7 @@ class KotogawaDataCollector:
                         continue
                         
         except Exception as e:
-            pass
+            print(f"Error extracting river data: {e}")
         
         return river_data
     
@@ -380,22 +395,22 @@ class KotogawaDataCollector:
         
         # 論理的整合性チェック（時間雨量 > 0 なら累積雨量も > 0 であるべき）
         if hourly > 0 and cumulative == 0:
-            pass
+            print(f"Warning: Hourly rainfall {hourly}mm but cumulative is 0mm - data may be inconsistent")
         
         return True
     
     def collect_rainfall_data(self) -> Dict[str, Any]:
         """雨量データを収集する"""
-        # 日本時間で現在時刻を取得し、10分単位に丸める
+        # 日本時間で現在時刻を取得し、15分単位に丸める
         jst = ZoneInfo('Asia/Tokyo')
         current_time = datetime.now(jst)
-        minutes = (current_time.minute // 10) * 10
+        minutes = (current_time.minute // 15) * 15
         observation_time = current_time.replace(minute=minutes, second=0, microsecond=0)
         obsdt = observation_time.strftime('%Y%m%d%H%M')
         
         params = {
             'check': '015',     # 厚東川ダムの観測所コード
-            'obsdt': obsdt,     # 10分単位に丸めた観測時刻  
+            'obsdt': obsdt,     # 15分単位に丸めた観測時刻  
             'pop': '1'
         }
         soup = self.fetch_page(self.dam_url, params)
@@ -407,6 +422,7 @@ class KotogawaDataCollector:
         }
         
         if not soup:
+            print("Failed to fetch rainfall data: No soup returned")
             return rainfall_data
         
         try:
@@ -415,6 +431,7 @@ class KotogawaDataCollector:
             target_date = observation_time.strftime('%Y/%m/%d')
             target_time = observation_time.strftime('%H:%M')
             
+            print(f"Looking for rainfall data: {target_date} {target_time}")
             
             for table in tables:
                 rows = table.find_all('tr')
@@ -427,6 +444,7 @@ class KotogawaDataCollector:
                             
                             # 日時が完全一致する行を探す
                             if date_text == target_date and time_text == target_time:
+                                print(f"Found matching rainfall row: {date_text} {time_text}")
                                 
                                 # 列位置に基づいて雨量データを抽出
                                 # 列7: 60分雨量, 列8: 累積雨量
@@ -438,16 +456,18 @@ class KotogawaDataCollector:
                                     hourly = int(hourly_text)
                                     if self.validate_rainfall_data(hourly, 0):
                                         rainfall_data['hourly'] = hourly
+                                        print(f"Hourly rainfall: {hourly}mm")
                                 except ValueError:
-                                    pass
+                                    print(f"Invalid hourly rainfall: {hourly_text}")
                                 
                                 # 累積雨量
                                 try:
                                     cumulative = int(cumulative_text)
                                     if self.validate_rainfall_data(0, cumulative):
                                         rainfall_data['cumulative'] = cumulative
+                                        print(f"Cumulative rainfall: {cumulative}mm")
                                 except ValueError:
-                                    pass
+                                    print(f"Invalid cumulative rainfall: {cumulative_text}")
                                 
                                 break  # 目標行が見つかったら終了
                         except (IndexError, ValueError) as e:
@@ -461,10 +481,14 @@ class KotogawaDataCollector:
             
             # 最終的な検証
             if not self.validate_rainfall_data(rainfall_data['hourly'], rainfall_data['cumulative']):
-                pass
+                print(f"Warning: Invalid rainfall data detected - hourly: {rainfall_data['hourly']}, cumulative: {rainfall_data['cumulative']}")
+            
+            print(f"Final rainfall data: hourly={rainfall_data['hourly']}mm, cumulative={rainfall_data['cumulative']}mm")
             
         except Exception as e:
-            pass
+            print(f"Error extracting rainfall data: {type(e).__name__}: {e}")
+            import traceback
+            traceback.print_exc()
         
         return rainfall_data
     
@@ -485,6 +509,7 @@ class KotogawaDataCollector:
         with open(history_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2, default=str)
         
+        print(f"Data saved: {timestamp}")
     
     def cleanup_old_data(self, days_to_keep: int = 7) -> None:
         """古いデータを削除する"""
@@ -500,6 +525,7 @@ class KotogawaDataCollector:
                     # Remove entire year directory
                     import shutil
                     shutil.rmtree(year_dir)
+                    print(f"Removed old data directory: {year_dir}")
                     continue
                     
                 for month_dir in year_dir.iterdir():
@@ -511,6 +537,7 @@ class KotogawaDataCollector:
                         if year == cutoff_date.year and month < cutoff_date.month:
                             import shutil
                             shutil.rmtree(month_dir)
+                            print(f"Removed old data directory: {month_dir}")
                             continue
                             
                         for day_dir in month_dir.iterdir():
@@ -523,17 +550,19 @@ class KotogawaDataCollector:
                                 if dir_date < cutoff_date:
                                     import shutil
                                     shutil.rmtree(day_dir)
+                                    print(f"Removed old data directory: {day_dir}")
                             except (ValueError, OSError) as e:
-                                pass
+                                print(f"Error processing day directory {day_dir}: {e}")
                                 
                     except (ValueError, OSError) as e:
-                        pass
+                        print(f"Error processing month directory {month_dir}: {e}")
                         
             except (ValueError, OSError) as e:
-                pass
+                print(f"Error processing year directory {year_dir}: {e}")
     
     def collect_all_data(self) -> Dict[str, Any]:
         """全てのデータを収集する"""
+        print("Starting data collection...")
         
         # データ収集
         dam_data = self.collect_dam_data()
@@ -564,6 +593,7 @@ class KotogawaDataCollector:
         # 古いデータのクリーンアップ
         self.cleanup_old_data()
         
+        print("Data collection completed successfully")
         return data
 
 def main():
@@ -572,7 +602,10 @@ def main():
     
     try:
         data = collector.collect_all_data()
+        print("Collection successful!")
+        print(f"Latest data: {json.dumps(data, ensure_ascii=False, indent=2, default=str)}")
     except Exception as e:
+        print(f"Error during data collection: {e}")
         return 1
     
     return 0
