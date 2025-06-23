@@ -98,7 +98,8 @@ class KotogawaMonitor:
     def load_history_data(_self, hours: int = 24, cache_key: str = None) -> List[Dict[str, Any]]:
         """履歴データを読み込む"""
         history_data = []
-        end_time = datetime.now()
+        # JST（日本標準時）で現在時刻を取得
+        end_time = datetime.now(ZoneInfo('Asia/Tokyo'))
         start_time = end_time - timedelta(hours=hours)
         
         if not _self.history_dir.exists():
@@ -109,7 +110,8 @@ class KotogawaMonitor:
         processed_files = 0
         max_files = 100  # 最大処理ファイル数制限
         
-        current_time = end_time  # 新しいデータから逆順で処理
+        # JST時刻で日付ディレクトリを処理（新しいデータから逆順で処理）
+        current_time = end_time
         while current_time >= start_time and processed_files < max_files:
             date_dir = (_self.history_dir / 
                        current_time.strftime("%Y") / 
@@ -127,10 +129,25 @@ class KotogawaMonitor:
                         with open(file_path, 'r', encoding='utf-8') as f:
                             data = json.load(f)
                             
-                            # データの基本検証
+                            # データの基本検証とJST時刻での範囲チェック
                             if data and 'timestamp' in data:
-                                history_data.append(data)
-                                processed_files += 1
+                                # タイムスタンプをJSTで解析
+                                try:
+                                    data_timestamp = datetime.fromisoformat(data['timestamp'].replace('Z', '+00:00'))
+                                    if data_timestamp.tzinfo is None:
+                                        data_timestamp = data_timestamp.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                                    else:
+                                        data_timestamp = data_timestamp.astimezone(ZoneInfo('Asia/Tokyo'))
+                                    
+                                    # 指定期間内のデータのみ追加
+                                    if start_time <= data_timestamp <= end_time:
+                                        history_data.append(data)
+                                        processed_files += 1
+                                    
+                                except Exception as e:
+                                    # タイムスタンプ解析エラーの場合も追加（後方互換性）
+                                    history_data.append(data)
+                                    processed_files += 1
                             else:
                                 error_count += 1
                                 
