@@ -1,0 +1,41 @@
+{
+  "error_time": "2025-06-23T15:34:16.914492+09:00",
+  "error_info": {
+    "errors": [
+      {
+        "step": "dam_data_collection",
+        "error": "All dam data values are None",
+        "data": {
+          "water_level": null,
+          "storage_rate": null,
+          "inflow": null,
+          "outflow": null,
+          "storage_change": null
+        }
+      }
+    ],
+    "total_errors": 1,
+    "observation_time": "2025-06-23T15:30:00+09:00"
+  },
+  "partial_data": {
+    "timestamp": "2025-06-23T15:34:16.914461+09:00",
+    "data_time": "2025-06-23T15:30:00+09:00",
+    "dam": {
+      "water_level": null,
+      "storage_rate": null,
+      "inflow": null,
+      "outflow": null,
+      "storage_change": null
+    },
+    "river": {
+      "water_level": 0.01,
+      "level_change": null,
+      "status": "正常"
+    },
+    "rainfall": {
+      "hourly": 0,
+      "cumulative": 0,
+      "change": 0
+    }
+  }
+}
