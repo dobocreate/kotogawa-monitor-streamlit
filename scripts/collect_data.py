@@ -101,16 +101,16 @@ class KotogawaDataCollector:
         # 日本時間で現在時刻を取得し、10分単位に丸める
         jst = ZoneInfo('Asia/Tokyo')
         current_time = datetime.now(jst)
-        # 分を15で割って切り捨て、15を掛けることで15分単位に
-        minutes = (current_time.minute // 15) * 15
-        # 最新の15分単位時刻のデータを取得
+        # 分を10で割って切り捨て、10を掛けることで10分単位に
+        minutes = (current_time.minute // 10) * 10
+        # 最新の10分単位時刻のデータを取得
         observation_time = current_time.replace(minute=minutes, second=0, microsecond=0)
         # 山口県システムにはJST時間で送信する
         obsdt = observation_time.strftime('%Y%m%d%H%M')
         
         params = {
             'check': '015',     # 厚東川ダムの観測所コード
-            'obsdt': obsdt,     # 15分単位に丸めた観測時刻
+            'obsdt': obsdt,     # 10分単位に丸めた観測時刻
             'pop': '1'
         }
         soup = self.fetch_page(self.dam_url, params)
@@ -242,16 +242,16 @@ class KotogawaDataCollector:
         # 日本時間で現在時刻を取得し、10分単位に丸める
         jst = ZoneInfo('Asia/Tokyo')
         current_time = datetime.now(jst)
-        # 分を15で割って切り捨て、15を掛けることで15分単位に
-        minutes = (current_time.minute // 15) * 15
-        # 最新の15分単位時刻のデータを取得
+        # 分を10で割って切り捨て、10を掛けることで10分単位に
+        minutes = (current_time.minute // 10) * 10
+        # 最新の10分単位時刻のデータを取得
         observation_time = current_time.replace(minute=minutes, second=0, microsecond=0)
         # 山口県システムにはJST時間で送信する
         obsdt = observation_time.strftime('%Y%m%d%H%M')
         
         params = {
             'check': '05067',  # 厚東川（持世寺）の観測所コード
-            'obsdt': obsdt,     # 15分単位に丸めた観測時刻
+            'obsdt': obsdt,     # 10分単位に丸めた観測時刻
             'pop': '1'
         }
         soup = self.fetch_page(self.river_url, params)
@@ -401,16 +401,16 @@ class KotogawaDataCollector:
     
     def collect_rainfall_data(self) -> Dict[str, Any]:
         """雨量データを収集する"""
-        # 日本時間で現在時刻を取得し、15分単位に丸める
+        # 日本時間で現在時刻を取得し、10分単位に丸める
         jst = ZoneInfo('Asia/Tokyo')
         current_time = datetime.now(jst)
-        minutes = (current_time.minute // 15) * 15
+        minutes = (current_time.minute // 10) * 10
         observation_time = current_time.replace(minute=minutes, second=0, microsecond=0)
         obsdt = observation_time.strftime('%Y%m%d%H%M')
         
         params = {
             'check': '015',     # 厚東川ダムの観測所コード
-            'obsdt': obsdt,     # 15分単位に丸めた観測時刻  
+            'obsdt': obsdt,     # 10分単位に丸めた観測時刻  
             'pop': '1'
         }
         soup = self.fetch_page(self.dam_url, params)
@@ -569,10 +569,10 @@ class KotogawaDataCollector:
         river_data = self.collect_river_data()
         rainfall_data = self.collect_rainfall_data()
         
-        # 観測時刻を計算（15分単位で最新の観測時刻）- 日本時間で統一
+        # 観測時刻を計算（10分単位で最新の観測時刻）- 日本時間で統一
         jst = ZoneInfo('Asia/Tokyo')
         current_time = datetime.now(jst)
-        minutes = (current_time.minute // 15) * 15
+        minutes = (current_time.minute // 10) * 10
         observation_time = current_time.replace(minute=minutes, second=0, microsecond=0)
         
         # データを統合（日本時間で保存）
