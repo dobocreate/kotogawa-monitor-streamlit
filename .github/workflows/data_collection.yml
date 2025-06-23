@@ -2,8 +2,8 @@ name: Data Collection
 
 on:
   schedule:
-    # 15分ごとに実行 (UTC時間) - 毎時0,15,30,45分
-    - cron: '0,15,30,45 * * * *'
+    # 10分ごとに実行 (UTC時間) - 毎時0,10,20,30,40,50分
+    - cron: '0,10,20,30,40,50 * * * *'
   workflow_dispatch: # 手動実行も可能
 
 jobs:
