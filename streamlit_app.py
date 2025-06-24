@@ -1025,6 +1025,12 @@ def main():
     # サイドバー設定
     st.sidebar.header("設定")
     
+    # 手動更新ボタン
+    if st.sidebar.button("🔄 手動更新", type="primary", key="sidebar_refresh"):
+        monitor.load_history_data.clear()
+        st.cache_data.clear()
+        st.rerun()
+    
     # 自動更新設定
     refresh_interval = st.sidebar.selectbox(
         "自動更新間隔",
@@ -1154,10 +1160,8 @@ def main():
         with col1:
             st.info(update_info)
         with col2:
-            if st.button("🔄 手動更新", type="primary", key="header_refresh"):
-                monitor.load_history_data.clear()
-                st.cache_data.clear()
-                st.rerun()
+            # 空のカラム（手動更新ボタンはサイドバーに移動）
+            pass
         
         # アラート状態表示
         if "危険" in alert_status:
