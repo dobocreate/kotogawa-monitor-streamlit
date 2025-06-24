@@ -690,7 +690,7 @@ class KotogawaMonitor:
         # 軸の設定
         fig.update_yaxes(
             title_text="河川水位 (m)",
-            range=[0, 5],
+            range=[0, 6],
             dtick=1,
             secondary_y=False
         )
@@ -980,11 +980,12 @@ class KotogawaMonitor:
                 formatted_time = data_time
             
             table_data.append({
-                '時刻': formatted_time,
-                '河川水位(m)': item.get('river', {}).get('water_level', '--'),
+                'ダム貯水位(m)': item.get('dam', {}).get('water_level', '--'),
                 'ダム貯水率(%)': item.get('dam', {}).get('storage_rate', '--'),
-                '時間雨量(mm)': item.get('rainfall', {}).get('hourly', '--'),
-                '河川状態': item.get('river', {}).get('status', '--')
+                'ダム流入量(m³/s)': item.get('dam', {}).get('inflow', '--'),
+                'ダム全放流量(m³/s)': item.get('dam', {}).get('outflow', '--'),
+                '水位(m)（持世寺）': item.get('river', {}).get('water_level', '--'),
+                '観測日時': formatted_time
             })
         
         return pd.DataFrame(table_data).iloc[::-1]  # 新しい順に並び替え
