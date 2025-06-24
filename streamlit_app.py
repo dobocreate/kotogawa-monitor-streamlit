@@ -543,18 +543,8 @@ class KotogawaMonitor:
                     border_style = "border-left: 2px solid #ddd;" if i > 0 else ""
                     
                     # 統一されたコンテナの開始
-                    st.markdown(f'''
-                    <div style="
-                        {border_style}
-                        padding: 10px 5px;
-                        min-height: 180px;
-                        display: flex;
-                        flex-direction: column;
-                        justify-content: flex-start;
-                        align-items: center;
-                        text-align: center;
-                    ">
-                    ''', unsafe_allow_html=True)
+                    container_style = f"{border_style} padding: 10px 5px; min-height: 180px; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; text-align: center;"
+                    st.markdown(f'<div style="{container_style}">', unsafe_allow_html=True)
                     
                     # 日付と曜日
                     try:
@@ -578,15 +568,11 @@ class KotogawaMonitor:
                             day_label = weekday_jp.get(day_of_week, day_of_week)
                         
                         # 日付と曜日を表示
-                        st.markdown(f'''
-                        <div style="font-weight: bold; margin-bottom: 5px;">{month_day}</div>
-                        <div style="font-weight: bold; margin-bottom: 15px;">{day_label}</div>
-                        ''', unsafe_allow_html=True)
+                        st.markdown(f'<div style="font-weight: bold; margin-bottom: 5px;">{month_day}</div>', unsafe_allow_html=True)
+                        st.markdown(f'<div style="font-weight: bold; margin-bottom: 15px;">{day_label}</div>', unsafe_allow_html=True)
                     except:
-                        st.markdown(f'''
-                        <div style="font-weight: bold; margin-bottom: 5px;">{day_data.get('date', '')}</div>
-                        <div style="font-weight: bold; margin-bottom: 15px;">--</div>
-                        ''', unsafe_allow_html=True)
+                        st.markdown(f'<div style="font-weight: bold; margin-bottom: 5px;">{day_data.get("date", "")}</div>', unsafe_allow_html=True)
+                        st.markdown('<div style="font-weight: bold; margin-bottom: 15px;">--</div>', unsafe_allow_html=True)
                     
                     # 天気アイコン
                     weather_code = day_data.get('weather_code', '')
@@ -600,12 +586,8 @@ class KotogawaMonitor:
                         weather_short = weather_text
                     
                     # 天気アイコンとテキストを表示
-                    st.markdown(f'''
-                    <div style="margin: 15px 0;">
-                        <div style="font-size: 24px; margin-bottom: 5px;">{weather_icon}</div>
-                        <div style="font-size: 10px; color: #666;">{weather_short}</div>
-                    </div>
-                    ''', unsafe_allow_html=True)
+                    st.markdown(f'<div style="font-size: 24px; margin: 15px 0 5px 0;">{weather_icon}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div style="font-size: 10px; color: #666; margin-bottom: 15px;">{weather_short}</div>', unsafe_allow_html=True)
                     
                     # 降水確率
                     precip_prob = day_data.get('precipitation_probability')
