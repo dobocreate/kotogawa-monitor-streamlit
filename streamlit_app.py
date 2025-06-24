@@ -21,6 +21,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import streamlit as st
+from streamlit_autorefresh import st_autorefresh
 
 # ページ設定
 st.set_page_config(
@@ -1000,10 +1001,26 @@ def main():
     # サイドバー設定
     st.sidebar.header("設定")
     
-    # 自動更新設定（一時的に無効化）
-    # auto_refresh = st.sidebar.checkbox("自動更新 (30秒)", value=False)
-    # if auto_refresh:
-    #     st.rerun()
+    # 自動更新設定
+    refresh_interval = st.sidebar.selectbox(
+        "自動更新間隔",
+        options=[
+            ("自動更新なし", 0),
+            ("10分", 10 * 60 * 1000),
+            ("30分", 30 * 60 * 1000),
+            ("60分", 60 * 60 * 1000)
+        ],
+        index=1,  # デフォルトは10分
+        format_func=lambda x: x[0]
+    )
+    
+    # 自動更新の実行
+    if refresh_interval[1] > 0:
+        count = st_autorefresh(
+            interval=refresh_interval[1],
+            limit=None,
+            key="autorefresh"
+        )
     
     # 表示期間設定
     display_hours = st.sidebar.selectbox(
@@ -1028,7 +1045,8 @@ def main():
     }
     
     # データ読み込み
-    latest_data = monitor.load_latest_data()
+    with st.spinner('データを更新中...'):
+        latest_data = monitor.load_latest_data()
     
     # キャッシュキー取得
     cache_key = monitor.get_cache_key()
@@ -1058,16 +1076,24 @@ def main():
                     data_time = datetime.fromisoformat(data_time_str.replace('Z', '+00:00'))
                     if data_time.tzinfo is None:
                         data_time = data_time.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-                    st.info(f"観測時刻: {data_time.strftime('%Y年%m月%d日 %H:%M')} | 取得時刻: {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}")
+                    # 現在時刻
+                    now = datetime.now(ZoneInfo('Asia/Tokyo'))
+                    update_info = f"📅 観測時刻: {data_time.strftime('%Y年%m月%d日 %H:%M')} | 取得時刻: {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}"
+                    
+                    # 自動更新が有効な場合は次回更新時刻も表示
+                    if refresh_interval[1] > 0:
+                        update_info += f" | 最終確認: {now.strftime('%H:%M:%S')}"
+                    
+                    st.info(update_info)
                 else:
-                    st.info(f"最終更新: {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}")
+                    st.info(f"📅 最終更新: {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}")
             except Exception as e:
                 st.info(f"最終更新: {latest_data.get('timestamp', '不明')} (時刻解析エラー)")
         else:
-            st.warning("データが取得できていません")
+            st.warning("⚠️ データが取得できていません")
     
     with col2:
-        if st.button("🔄 更新", type="primary"):
+        if st.button("🔄 手動更新", type="primary"):
             # 特定のキャッシュ関数をクリア
             monitor.load_history_data.clear()
             st.cache_data.clear()
