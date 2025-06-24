@@ -608,7 +608,7 @@ class KotogawaMonitor:
             )
     
     def create_river_water_level_graph(self, history_data: List[Dict[str, Any]]) -> go.Figure:
-        """河川水位グラフを作成（河川水位 + 時間雨量の二軸表示）"""
+        """河川水位グラフを作成（河川水位 + ダム全放流量の二軸表示）"""
         if not history_data:
             fig = go.Figure()
             fig.add_annotation(
@@ -640,10 +640,10 @@ class KotogawaMonitor:
             if river_level is not None:
                 row['river_level'] = river_level
             
-            # 雨量
-            rainfall = item.get('rainfall', {}).get('hourly')
-            if rainfall is not None:
-                row['rainfall'] = rainfall
+            # ダム全放流量
+            outflow = item.get('dam', {}).get('outflow')
+            if outflow is not None:
+                row['outflow'] = outflow
             
             df_data.append(row)
         
@@ -674,15 +674,15 @@ class KotogawaMonitor:
                 secondary_y=False
             )
         
-        # 時間雨量（右軸）
-        if 'rainfall' in df.columns:
+        # ダム全放流量（右軸）
+        if 'outflow' in df.columns:
             fig.add_trace(
-                go.Bar(
+                go.Scatter(
                     x=df['timestamp'],
-                    y=df['rainfall'],
-                    name='時間雨量（宇部市）',
-                    marker_color='#87CEEB',
-                    opacity=0.7
+                    y=df['outflow'],
+                    mode='lines+markers',
+                    name='全放流量（厚東川ダム）',
+                    line=dict(color='#d62728')
                 ),
                 secondary_y=True
             )
@@ -695,9 +695,9 @@ class KotogawaMonitor:
             secondary_y=False
         )
         fig.update_yaxes(
-            title_text="時間雨量 (mm/h)",
-            range=[0, 50],
-            dtick=5,
+            title_text="全放流量 (m³/s)",
+            range=[0, 500],
+            dtick=100,
             secondary_y=True
         )
         
@@ -705,7 +705,6 @@ class KotogawaMonitor:
         
         fig.update_layout(
             height=400,
-            title_text="河川水位・時間雨量",
             showlegend=True,
             legend=dict(
                 orientation="h",
@@ -830,7 +829,7 @@ class KotogawaMonitor:
         return fig
     
     def create_dam_flow_graph(self, history_data: List[Dict[str, Any]]) -> go.Figure:
-        """ダム流入出量グラフを作成（流入量・全放流量 + 時間雨量の二軸表示）"""
+        """ダム流入出量グラフを作成（流入量・全放流量 + 累加雨量の二軸表示）"""
         if not history_data:
             fig = go.Figure()
             fig.add_annotation(
@@ -867,10 +866,10 @@ class KotogawaMonitor:
             if outflow is not None:
                 row['outflow'] = outflow
             
-            # 雨量
-            rainfall = item.get('rainfall', {}).get('hourly')
-            if rainfall is not None:
-                row['rainfall'] = rainfall
+            # 累加雨量
+            cumulative_rainfall = item.get('rainfall', {}).get('cumulative')
+            if cumulative_rainfall is not None:
+                row['cumulative_rainfall'] = cumulative_rainfall
             
             df_data.append(row)
         
@@ -914,15 +913,16 @@ class KotogawaMonitor:
                 secondary_y=False
             )
         
-        # 時間雨量（右軸）
-        if 'rainfall' in df.columns:
+        # 累加雨量（右軸）
+        if 'cumulative_rainfall' in df.columns:
             fig.add_trace(
-                go.Bar(
+                go.Scatter(
                     x=df['timestamp'],
-                    y=df['rainfall'],
-                    name='時間雨量（宇部市）',
-                    marker_color='#87CEEB',
-                    opacity=0.7
+                    y=df['cumulative_rainfall'],
+                    mode='lines+markers',
+                    name='累加雨量（宇部市）',
+                    line=dict(color='#87CEEB'),
+                    fill='tonexty'
                 ),
                 secondary_y=True
             )
@@ -935,9 +935,9 @@ class KotogawaMonitor:
             secondary_y=False
         )
         fig.update_yaxes(
-            title_text="時間雨量 (mm/h)",
-            range=[0, 50],
-            dtick=5,
+            title_text="累加雨量 (mm)",
+            range=[0, 200],
+            dtick=50,
             secondary_y=True
         )
         
@@ -945,7 +945,6 @@ class KotogawaMonitor:
         
         fig.update_layout(
             height=400,
-            title_text="ダム流入出量・時間雨量",
             showlegend=True,
             legend=dict(
                 orientation="h",
@@ -1115,16 +1114,16 @@ def main():
     tab1, tab2 = st.tabs(["📊 グラフ", "📋 データテーブル"])
     
     with tab1:
-        st.subheader("河川水位・時間雨量")
+        st.subheader("河川水位・全放流量")
         fig1 = monitor.create_river_water_level_graph(history_data)
         st.plotly_chart(fig1, use_container_width=True)
         
-        st.subheader("ダム貯水位・時間雨量")
-        fig2 = monitor.create_dam_water_level_graph(history_data)
+        st.subheader("ダム流入出量・累加雨量")
+        fig2 = monitor.create_dam_flow_graph(history_data)
         st.plotly_chart(fig2, use_container_width=True)
         
-        st.subheader("ダム流入出量・時間雨量")
-        fig3 = monitor.create_dam_flow_graph(history_data)
+        st.subheader("ダム貯水位・時間雨量")
+        fig3 = monitor.create_dam_water_level_graph(history_data)
         st.plotly_chart(fig3, use_container_width=True)
     
     with tab2:
