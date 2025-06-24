@@ -607,8 +607,8 @@ class KotogawaMonitor:
                 value=obs_time_str
             )
     
-    def create_time_series_graph(self, history_data: List[Dict[str, Any]]) -> go.Figure:
-        """時系列グラフを作成"""
+    def create_river_water_level_graph(self, history_data: List[Dict[str, Any]]) -> go.Figure:
+        """河川水位グラフを作成（河川水位 + 時間雨量の二軸表示）"""
         if not history_data:
             fig = go.Figure()
             fig.add_annotation(
@@ -640,10 +640,116 @@ class KotogawaMonitor:
             if river_level is not None:
                 row['river_level'] = river_level
             
-            # ダム貯水率
-            dam_storage = item.get('dam', {}).get('storage_rate')
-            if dam_storage is not None:
-                row['dam_storage'] = dam_storage
+            # 雨量
+            rainfall = item.get('rainfall', {}).get('hourly')
+            if rainfall is not None:
+                row['rainfall'] = rainfall
+            
+            df_data.append(row)
+        
+        if not df_data:
+            fig = go.Figure()
+            fig.add_annotation(
+                text="有効なデータがありません",
+                xref="paper", yref="paper",
+                x=0.5, y=0.5, showarrow=False
+            )
+            return fig
+        
+        df = pd.DataFrame(df_data)
+        
+        # 二軸グラフを作成
+        fig = make_subplots(specs=[[{"secondary_y": True}]])
+        
+        # 河川水位（左軸）
+        if 'river_level' in df.columns:
+            fig.add_trace(
+                go.Scatter(
+                    x=df['timestamp'],
+                    y=df['river_level'],
+                    mode='lines+markers',
+                    name='河川水位（持世寺）',
+                    line=dict(color='#1f77b4')
+                ),
+                secondary_y=False
+            )
+        
+        # 時間雨量（右軸）
+        if 'rainfall' in df.columns:
+            fig.add_trace(
+                go.Bar(
+                    x=df['timestamp'],
+                    y=df['rainfall'],
+                    name='時間雨量（宇部市）',
+                    marker_color='#87CEEB',
+                    opacity=0.7
+                ),
+                secondary_y=True
+            )
+        
+        # 軸の設定
+        fig.update_yaxes(
+            title_text="河川水位 (m)",
+            range=[0, 5],
+            dtick=1,
+            secondary_y=False
+        )
+        fig.update_yaxes(
+            title_text="時間雨量 (mm/h)",
+            range=[0, 50],
+            dtick=5,
+            secondary_y=True
+        )
+        
+        fig.update_xaxes(title_text="時刻")
+        
+        fig.update_layout(
+            height=400,
+            title_text="河川水位・時間雨量",
+            showlegend=True,
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1
+            )
+        )
+        
+        return fig
+    
+    def create_dam_water_level_graph(self, history_data: List[Dict[str, Any]]) -> go.Figure:
+        """ダム水位グラフを作成（ダム水位 + 時間雨量の二軸表示）"""
+        if not history_data:
+            fig = go.Figure()
+            fig.add_annotation(
+                text="表示するデータがありません",
+                xref="paper", yref="paper",
+                x=0.5, y=0.5, showarrow=False
+            )
+            return fig
+        
+        # データをDataFrameに変換
+        df_data = []
+        for item in history_data:
+            # 観測時刻（data_time）を使用、なければtimestampを使用
+            data_time = item.get('data_time') or item.get('timestamp', '')
+            try:
+                dt = datetime.fromisoformat(data_time.replace('Z', '+00:00'))
+                # タイムゾーンがない場合はJSTとして扱う
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                else:
+                    dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
+            except:
+                continue
+                
+            row = {'timestamp': dt}
+            
+            # ダム水位
+            dam_level = item.get('dam', {}).get('water_level')
+            if dam_level is not None:
+                row['dam_level'] = dam_level
             
             # 雨量
             rainfall = item.get('rainfall', {}).get('hourly')
@@ -663,59 +769,192 @@ class KotogawaMonitor:
         
         df = pd.DataFrame(df_data)
         
-        # サブプロットを作成
-        fig = make_subplots(
-            rows=3, cols=1,
-            subplot_titles=('河川水位 (m)', 'ダム貯水率 (%)', '時間雨量 (mm)'),
-            vertical_spacing=0.08,
-            shared_xaxes=True
-        )
+        # 二軸グラフを作成
+        fig = make_subplots(specs=[[{"secondary_y": True}]])
         
-        # 河川水位
-        if 'river_level' in df.columns:
+        # ダム水位（左軸）
+        if 'dam_level' in df.columns:
             fig.add_trace(
                 go.Scatter(
                     x=df['timestamp'],
-                    y=df['river_level'],
+                    y=df['dam_level'],
                     mode='lines+markers',
-                    name='河川水位',
-                    line=dict(color='#1f77b4')
-                ),
-                row=1, col=1
-            )
-        
-        # ダム貯水率
-        if 'dam_storage' in df.columns:
-            fig.add_trace(
-                go.Scatter(
-                    x=df['timestamp'],
-                    y=df['dam_storage'],
-                    mode='lines+markers',
-                    name='ダム貯水率',
+                    name='ダム水位（厚東川ダム）',
                     line=dict(color='#ff7f0e')
                 ),
-                row=2, col=1
+                secondary_y=False
             )
         
-        # 雨量（棒グラフ）
+        # 時間雨量（右軸）
         if 'rainfall' in df.columns:
             fig.add_trace(
                 go.Bar(
                     x=df['timestamp'],
                     y=df['rainfall'],
-                    name='時間雨量',
-                    marker_color='#2ca02c'
+                    name='時間雨量（宇部市）',
+                    marker_color='#87CEEB',
+                    opacity=0.7
                 ),
-                row=3, col=1
+                secondary_y=True
             )
         
-        fig.update_layout(
-            height=600,
-            showlegend=False,
-            title_text="時系列データ"
+        # 軸の設定
+        fig.update_yaxes(
+            title_text="ダム水位 (m)",
+            range=[0, 5],
+            dtick=1,
+            secondary_y=False
+        )
+        fig.update_yaxes(
+            title_text="時間雨量 (mm/h)",
+            range=[0, 50],
+            dtick=5,
+            secondary_y=True
         )
         
-        fig.update_xaxes(title_text="時刻", row=3, col=1)
+        fig.update_xaxes(title_text="時刻")
+        
+        fig.update_layout(
+            height=400,
+            title_text="ダム水位・時間雨量",
+            showlegend=True,
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1
+            )
+        )
+        
+        return fig
+    
+    def create_dam_flow_graph(self, history_data: List[Dict[str, Any]]) -> go.Figure:
+        """ダム流入出量グラフを作成（流入量・全放流量 + 時間雨量の二軸表示）"""
+        if not history_data:
+            fig = go.Figure()
+            fig.add_annotation(
+                text="表示するデータがありません",
+                xref="paper", yref="paper",
+                x=0.5, y=0.5, showarrow=False
+            )
+            return fig
+        
+        # データをDataFrameに変換
+        df_data = []
+        for item in history_data:
+            # 観測時刻（data_time）を使用、なければtimestampを使用
+            data_time = item.get('data_time') or item.get('timestamp', '')
+            try:
+                dt = datetime.fromisoformat(data_time.replace('Z', '+00:00'))
+                # タイムゾーンがない場合はJSTとして扱う
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                else:
+                    dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
+            except:
+                continue
+                
+            row = {'timestamp': dt}
+            
+            # ダム流入量
+            inflow = item.get('dam', {}).get('inflow')
+            if inflow is not None:
+                row['inflow'] = inflow
+            
+            # ダム全放流量
+            outflow = item.get('dam', {}).get('outflow')
+            if outflow is not None:
+                row['outflow'] = outflow
+            
+            # 雨量
+            rainfall = item.get('rainfall', {}).get('hourly')
+            if rainfall is not None:
+                row['rainfall'] = rainfall
+            
+            df_data.append(row)
+        
+        if not df_data:
+            fig = go.Figure()
+            fig.add_annotation(
+                text="有効なデータがありません",
+                xref="paper", yref="paper",
+                x=0.5, y=0.5, showarrow=False
+            )
+            return fig
+        
+        df = pd.DataFrame(df_data)
+        
+        # 二軸グラフを作成
+        fig = make_subplots(specs=[[{"secondary_y": True}]])
+        
+        # ダム流入量（左軸）
+        if 'inflow' in df.columns:
+            fig.add_trace(
+                go.Scatter(
+                    x=df['timestamp'],
+                    y=df['inflow'],
+                    mode='lines+markers',
+                    name='流入量（厚東川ダム）',
+                    line=dict(color='#2ca02c')
+                ),
+                secondary_y=False
+            )
+        
+        # ダム全放流量（左軸）
+        if 'outflow' in df.columns:
+            fig.add_trace(
+                go.Scatter(
+                    x=df['timestamp'],
+                    y=df['outflow'],
+                    mode='lines+markers',
+                    name='全放流量（厚東川ダム）',
+                    line=dict(color='#d62728')
+                ),
+                secondary_y=False
+            )
+        
+        # 時間雨量（右軸）
+        if 'rainfall' in df.columns:
+            fig.add_trace(
+                go.Bar(
+                    x=df['timestamp'],
+                    y=df['rainfall'],
+                    name='時間雨量（宇部市）',
+                    marker_color='#87CEEB',
+                    opacity=0.7
+                ),
+                secondary_y=True
+            )
+        
+        # 軸の設定
+        fig.update_yaxes(
+            title_text="流量 (m³/s)",
+            range=[0, 500],
+            dtick=100,
+            secondary_y=False
+        )
+        fig.update_yaxes(
+            title_text="時間雨量 (mm/h)",
+            range=[0, 50],
+            dtick=5,
+            secondary_y=True
+        )
+        
+        fig.update_xaxes(title_text="時刻")
+        
+        fig.update_layout(
+            height=400,
+            title_text="ダム流入出量・時間雨量",
+            showlegend=True,
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1
+            )
+        )
         
         return fig
     
@@ -876,9 +1115,17 @@ def main():
     tab1, tab2 = st.tabs(["📊 グラフ", "📋 データテーブル"])
     
     with tab1:
-        st.subheader("時系列グラフ")
-        fig = monitor.create_time_series_graph(history_data)
-        st.plotly_chart(fig, use_container_width=True)
+        st.subheader("河川水位・時間雨量")
+        fig1 = monitor.create_river_water_level_graph(history_data)
+        st.plotly_chart(fig1, use_container_width=True)
+        
+        st.subheader("ダム水位・時間雨量")
+        fig2 = monitor.create_dam_water_level_graph(history_data)
+        st.plotly_chart(fig2, use_container_width=True)
+        
+        st.subheader("ダム流入出量・時間雨量")
+        fig3 = monitor.create_dam_flow_graph(history_data)
+        st.plotly_chart(fig3, use_container_width=True)
     
     with tab2:
         st.subheader("データテーブル")
