@@ -46,7 +46,7 @@ class KotogawaDataCollector:
         # Yahoo! Weather API settings
         self.yahoo_api_url = "https://map.yahooapis.jp/weather/V1/place"
         self.yahoo_app_id = "dj00aiZpPW5YTFVqSXc0S2dCcSZzPWNvbnN1bWVyc2VjcmV0Jng9MDA-"
-        self.coordinates = "131.256999,34.032230"  # 経度,緯度
+        self.coordinates = "131.289496,34.079891"  # 経度,緯度
         
     def fetch_page(self, url: str, params: Dict[str, str]) -> Optional[BeautifulSoup]:
         """指定されたURLからHTMLを取得し、BeautifulSoupオブジェクトを返す"""
@@ -913,12 +913,12 @@ class KotogawaDataCollector:
         }
         
         try:
-            # 5分間隔でデータを取得
+            # 10分間隔でデータを取得
             params = {
                 'coordinates': self.coordinates,
                 'appid': self.yahoo_app_id,
                 'output': 'json',
-                'interval': '5'
+                'interval': '10'
             }
             
             print(f"Fetching precipitation intensity from Yahoo API...")

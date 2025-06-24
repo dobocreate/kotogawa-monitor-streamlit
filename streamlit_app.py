@@ -650,7 +650,7 @@ class KotogawaMonitor:
                     precipitation_intensity_data.get('observation') or 
                     precipitation_intensity_data.get('forecast')
                 ):
-                    st.subheader("降水強度（5分間隔）")
+                    st.subheader("Yahoo! Weather API")
                     # 更新時刻を表示
                     if precipitation_intensity_data.get('update_time'):
                         try:
@@ -1015,6 +1015,14 @@ class KotogawaMonitor:
             if rainfall is not None:
                 row['rainfall'] = rainfall
             
+            # Yahoo! Weather API降水強度データ
+            precipitation_intensity = item.get('precipitation_intensity', {})
+            if precipitation_intensity.get('observation'):
+                # 最新の観測値を取得
+                latest_obs = precipitation_intensity['observation'][-1] if precipitation_intensity['observation'] else None
+                if latest_obs:
+                    row['precipitation_intensity'] = latest_obs.get('intensity', 0)
+            
             df_data.append(row)
         
         if not df_data:
@@ -1053,6 +1061,19 @@ class KotogawaMonitor:
                     name='時間雨量（宇部市）',
                     marker_color='#87CEEB',
                     opacity=0.7
+                ),
+                secondary_y=True
+            )
+        
+        # Yahoo! Weather API降水強度（右軸）
+        if 'precipitation_intensity' in df.columns:
+            fig.add_trace(
+                go.Bar(
+                    x=df['timestamp'],
+                    y=df['precipitation_intensity'],
+                    name='降水強度（厚東川ダム）',
+                    marker_color='#FF6B6B',
+                    opacity=0.8
                 ),
                 secondary_y=True
             )
@@ -1294,33 +1315,29 @@ class KotogawaMonitor:
                 except (ValueError, KeyError):
                     continue
         
-        # 観測データのプロット
+        # 観測データのプロット（棒グラフ）
         if obs_times and obs_intensities:
-            fig.add_trace(go.Scatter(
+            fig.add_trace(go.Bar(
                 x=obs_times,
                 y=obs_intensities,
-                mode='lines+markers',
                 name='観測値',
-                line=dict(color='#2E86AB', width=2),
-                marker=dict(size=4, color='#2E86AB'),
+                marker=dict(color='#2E86AB'),
                 hovertemplate='<b>観測値</b><br>%{x|%H:%M}<br>降水強度: %{y:.1f} mm/h<extra></extra>'
             ))
         
-        # 予測データのプロット
+        # 予測データのプロット（棒グラフ）
         if forecast_times and forecast_intensities:
-            fig.add_trace(go.Scatter(
+            fig.add_trace(go.Bar(
                 x=forecast_times,
                 y=forecast_intensities,
-                mode='lines+markers',
                 name='予測値',
-                line=dict(color='#A23B72', width=2, dash='dash'),
-                marker=dict(size=4, color='#A23B72'),
+                marker=dict(color='#A23B72', opacity=0.7),
                 hovertemplate='<b>予測値</b><br>%{x|%H:%M}<br>降水強度: %{y:.1f} mm/h<extra></extra>'
             ))
         
         # レイアウト設定
         fig.update_layout(
-            title="降水強度（5分間隔）",
+            title="Yahoo! Weather API",
             height=400,
             showlegend=True,
             legend=dict(
