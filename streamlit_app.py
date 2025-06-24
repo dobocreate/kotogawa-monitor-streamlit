@@ -332,19 +332,20 @@ class KotogawaMonitor:
                 fig.add_trace(go.Scatter(
                     x=precip_times,
                     y=precip_prob,
-                    mode='lines+markers',
+                    mode='lines+markers+text',
                     text=[f'{p}%' if p is not None else '--' for p in precip_prob],
                     textposition='top center',
+                    textfont=dict(size=12, color='black'),
                     line=dict(color='#4488ff', width=3),
                     marker=dict(
-                        size=8,
+                        size=12,
                         color=['#ff4444' if p and p >= 70 else '#ff8844' if p and p >= 50 else '#4488ff' if p else '#cccccc' for p in precip_prob],
                         line=dict(width=2, color='white')
                     )
                 ))
                 fig.update_layout(
                     height=200,
-                    margin=dict(l=20, r=20, t=10, b=30),
+                    margin=dict(l=20, r=20, t=30, b=30),
                     xaxis_title="",
                     yaxis_title="降水確率 (%)",
                     yaxis=dict(range=[0, 100]),
@@ -384,19 +385,20 @@ class KotogawaMonitor:
                 fig.add_trace(go.Scatter(
                     x=precip_times,
                     y=precip_prob,
-                    mode='lines+markers',
+                    mode='lines+markers+text',
                     text=[f'{p}%' if p is not None else '--' for p in precip_prob],
                     textposition='top center',
+                    textfont=dict(size=12, color='black'),
                     line=dict(color='#4488ff', width=3),
                     marker=dict(
-                        size=8,
+                        size=12,
                         color=['#ff4444' if p and p >= 70 else '#ff8844' if p and p >= 50 else '#4488ff' if p else '#cccccc' for p in precip_prob],
                         line=dict(width=2, color='white')
                     )
                 ))
                 fig.update_layout(
                     height=200,
-                    margin=dict(l=20, r=20, t=10, b=30),
+                    margin=dict(l=20, r=20, t=30, b=30),
                     xaxis_title="",
                     yaxis_title="降水確率 (%)",
                     yaxis=dict(range=[0, 100]),
