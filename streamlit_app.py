@@ -474,7 +474,7 @@ class KotogawaMonitor:
         st.subheader("📊 現在の観測状況")
         
         # 降雨情報
-        st.markdown("### 🌧️ 降雨情報")
+        st.markdown(f"### 🌧️ 降雨情報｜{obs_time_str} 更新")
         rain_col1, rain_col2, rain_col3 = st.columns(3)
         
         with rain_col1:
@@ -507,13 +507,11 @@ class KotogawaMonitor:
                 st.metric(label="累積雨量 (mm)", value="--")
         
         with rain_col3:
-            st.metric(
-                label="観測日時",
-                value=obs_time_str
-            )
+            # 空のカラム（観測日時はタイトルに表示済み）
+            pass
         
         # 河川情報
-        st.markdown("### 🌊 河川情報（持世寺）")
+        st.markdown(f"### 🌊 河川情報（持世寺）｜{obs_time_str} 更新")
         river_col1, river_col2, river_col3 = st.columns(3)
         
         with river_col1:
@@ -552,13 +550,11 @@ class KotogawaMonitor:
             )
         
         with river_col3:
-            st.metric(
-                label="観測日時",
-                value=obs_time_str
-            )
+            # 空のカラム（観測日時はタイトルに表示済み）
+            pass
         
         # ダム情報
-        st.markdown("### 🏔️ ダム情報（厚東川ダム）")
+        st.markdown(f"### 🏔️ ダム情報（厚東川ダム）｜{obs_time_str} 更新")
         dam_col1, dam_col2, dam_col3, dam_col4, dam_col5 = st.columns(5)
         
         with dam_col1:
@@ -603,10 +599,8 @@ class KotogawaMonitor:
                 st.metric(label="全放流量 (m³/s)", value="--")
         
         with dam_col5:
-            st.metric(
-                label="観測日時",
-                value=obs_time_str
-            )
+            # 空のカラム（観測日時はタイトルに表示済み）
+            pass
     
     def create_river_water_level_graph(self, history_data: List[Dict[str, Any]], enable_interaction: bool = False) -> go.Figure:
         """河川水位グラフを作成（河川水位 + ダム全放流量の二軸表示）"""
@@ -1023,7 +1017,7 @@ def main():
     monitor = KotogawaMonitor()
     
     # ヘッダー
-    st.title("🌊 厚東川リアルタイム監視システム")
+    st.markdown("<h1 style='text-align: center;'>🌊 厚東川氾濫監視システム</h1>", unsafe_allow_html=True)
     
     # サイドバー設定
     st.sidebar.header("設定")
@@ -1093,45 +1087,62 @@ def main():
         st.warning(f"履歴データの読み込みに失敗しました: {e}")
         history_data = []
     
-    # 最終更新時刻と観測時刻表示
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        if latest_data and latest_data.get('timestamp'):
-            try:
-                # データ取得時刻（timestamp）
-                timestamp = datetime.fromisoformat(latest_data['timestamp'].replace('Z', '+00:00'))
-                # タイムゾーンがない場合は日本時間として扱う（変換なし）
-                if timestamp.tzinfo is None:
-                    timestamp = timestamp.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-                
-                # 観測時刻（data_time）
-                data_time_str = latest_data.get('data_time', '')
-                if data_time_str:
-                    data_time = datetime.fromisoformat(data_time_str.replace('Z', '+00:00'))
-                    if data_time.tzinfo is None:
-                        data_time = data_time.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-                    # 現在時刻
-                    now = datetime.now(ZoneInfo('Asia/Tokyo'))
-                    update_info = f"📅 観測時刻: {data_time.strftime('%Y年%m月%d日 %H:%M')} | 取得時刻: {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}"
+    # 最終更新時刻と観測時刻表示（固定表示）
+    status_container = st.container()
+    with status_container:
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            if latest_data and latest_data.get('timestamp'):
+                try:
+                    # データ取得時刻（timestamp）
+                    timestamp = datetime.fromisoformat(latest_data['timestamp'].replace('Z', '+00:00'))
+                    # タイムゾーンがない場合は日本時間として扱う（変換なし）
+                    if timestamp.tzinfo is None:
+                        timestamp = timestamp.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
                     
-                    # 自動更新が有効な場合は次回更新時刻も表示
-                    if refresh_interval[1] > 0:
-                        update_info += f" | 最終確認: {now.strftime('%H:%M:%S')}"
-                    
-                    st.info(update_info)
-                else:
-                    st.info(f"📅 最終更新: {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}")
-            except Exception as e:
-                st.info(f"最終更新: {latest_data.get('timestamp', '不明')} (時刻解析エラー)")
-        else:
-            st.warning("⚠️ データが取得できていません")
+                    # 観測時刻（data_time）
+                    data_time_str = latest_data.get('data_time', '')
+                    if data_time_str:
+                        data_time = datetime.fromisoformat(data_time_str.replace('Z', '+00:00'))
+                        if data_time.tzinfo is None:
+                            data_time = data_time.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                        # 現在時刻
+                        now = datetime.now(ZoneInfo('Asia/Tokyo'))
+                        update_info = f"📅 観測時刻: {data_time.strftime('%Y年%m月%d日 %H:%M')} | 取得時刻: {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}"
+                        
+                        # 自動更新が有効な場合は次回更新時刻も表示
+                        if refresh_interval[1] > 0:
+                            update_info += f" | 最終確認: {now.strftime('%H:%M:%S')}"
+                        
+                        st.info(update_info)
+                    else:
+                        st.info(f"📅 最終更新: {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}")
+                except Exception as e:
+                    st.info(f"最終更新: {latest_data.get('timestamp', '不明')} (時刻解析エラー)")
+            else:
+                st.warning("⚠️ データが取得できていません")
+        
+        with col2:
+            if st.button("🔄 手動更新", type="primary"):
+                # 特定のキャッシュ関数をクリア
+                monitor.load_history_data.clear()
+                st.cache_data.clear()
+                st.rerun()
     
-    with col2:
-        if st.button("🔄 手動更新", type="primary"):
-            # 特定のキャッシュ関数をクリア
-            monitor.load_history_data.clear()
-            st.cache_data.clear()
-            st.rerun()
+    # 固定位置にスタイルを適用
+    st.markdown("""
+    <style>
+    .stContainer:first-child {
+        position: sticky;
+        top: 0;
+        background-color: white;
+        z-index: 999;
+        padding: 10px 0;
+        margin-bottom: 10px;
+        border-bottom: 1px solid #e6e6e6;
+    }
+    </style>
+    """, unsafe_allow_html=True)
     
     # アラート表示
     if latest_data:
