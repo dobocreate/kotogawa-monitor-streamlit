@@ -28,7 +28,7 @@ st.set_page_config(
     page_title="厚東川監視システム",
     page_icon="🌊",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 class KotogawaMonitor:
@@ -608,7 +608,7 @@ class KotogawaMonitor:
                 value=obs_time_str
             )
     
-    def create_river_water_level_graph(self, history_data: List[Dict[str, Any]]) -> go.Figure:
+    def create_river_water_level_graph(self, history_data: List[Dict[str, Any]], enable_interaction: bool = False) -> go.Figure:
         """河川水位グラフを作成（河川水位 + ダム全放流量の二軸表示）"""
         if not history_data:
             fig = go.Figure()
@@ -708,18 +708,27 @@ class KotogawaMonitor:
             height=400,
             showlegend=True,
             legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=1.02,
+                orientation="v",
+                yanchor="top",
+                y=0.98,
                 xanchor="right",
-                x=1
+                x=0.98,
+                bgcolor="rgba(255, 255, 255, 0.8)",
+                bordercolor="rgba(0, 0, 0, 0.2)",
+                borderwidth=1
             ),
             margin=dict(t=30)
         )
         
+        # インタラクションが無効の場合は軸を固定
+        if not enable_interaction:
+            fig.update_xaxes(fixedrange=True)
+            fig.update_yaxes(fixedrange=True, secondary_y=False)
+            fig.update_yaxes(fixedrange=True, secondary_y=True)
+        
         return fig
     
-    def create_dam_water_level_graph(self, history_data: List[Dict[str, Any]]) -> go.Figure:
+    def create_dam_water_level_graph(self, history_data: List[Dict[str, Any]], enable_interaction: bool = False) -> go.Figure:
         """ダム水位グラフを作成（ダム水位 + 時間雨量の二軸表示）"""
         if not history_data:
             fig = go.Figure()
@@ -819,18 +828,27 @@ class KotogawaMonitor:
             height=400,
             showlegend=True,
             legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=1.02,
+                orientation="v",
+                yanchor="top",
+                y=0.98,
                 xanchor="right",
-                x=1
+                x=0.98,
+                bgcolor="rgba(255, 255, 255, 0.8)",
+                bordercolor="rgba(0, 0, 0, 0.2)",
+                borderwidth=1
             ),
             margin=dict(t=30)
         )
         
+        # インタラクションが無効の場合は軸を固定
+        if not enable_interaction:
+            fig.update_xaxes(fixedrange=True)
+            fig.update_yaxes(fixedrange=True, secondary_y=False)
+            fig.update_yaxes(fixedrange=True, secondary_y=True)
+        
         return fig
     
-    def create_dam_flow_graph(self, history_data: List[Dict[str, Any]]) -> go.Figure:
+    def create_dam_flow_graph(self, history_data: List[Dict[str, Any]], enable_interaction: bool = False) -> go.Figure:
         """ダム流入出量グラフを作成（流入量・全放流量 + 累加雨量の二軸表示）"""
         if not history_data:
             fig = go.Figure()
@@ -949,14 +967,23 @@ class KotogawaMonitor:
             height=400,
             showlegend=True,
             legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=1.02,
+                orientation="v",
+                yanchor="top",
+                y=0.98,
                 xanchor="right",
-                x=1
+                x=0.98,
+                bgcolor="rgba(255, 255, 255, 0.8)",
+                bordercolor="rgba(0, 0, 0, 0.2)",
+                borderwidth=1
             ),
             margin=dict(t=30)
         )
+        
+        # インタラクションが無効の場合は軸を固定
+        if not enable_interaction:
+            fig.update_xaxes(fixedrange=True)
+            fig.update_yaxes(fixedrange=True, secondary_y=False)
+            fig.update_yaxes(fixedrange=True, secondary_y=True)
         
         return fig
     
@@ -1028,6 +1055,13 @@ def main():
         [6, 12, 24, 48, 72],
         index=2,
         format_func=lambda x: f"{x}時間"
+    )
+    
+    # グラフ操作設定
+    enable_graph_interaction = st.sidebar.checkbox(
+        "グラフのズーム・パンを有効化",
+        value=False,
+        help="チェックを入れるとグラフの拡大・縮小・移動が可能になります"
     )
     
     # アラート閾値設定
@@ -1143,17 +1177,26 @@ def main():
     tab1, tab2 = st.tabs(["📊 グラフ", "📋 データテーブル"])
     
     with tab1:
+        # Plotlyの設定
+        plotly_config = {
+            'scrollZoom': enable_graph_interaction,
+            'doubleClick': 'reset' if enable_graph_interaction else False,
+            'displayModeBar': True,
+            'displaylogo': False,
+            'modeBarButtonsToRemove': ['lasso2d', 'select2d'] if enable_graph_interaction else ['pan2d', 'zoom2d', 'lasso2d', 'select2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d']
+        }
+        
         st.subheader("河川水位・全放流量")
-        fig1 = monitor.create_river_water_level_graph(history_data)
-        st.plotly_chart(fig1, use_container_width=True)
+        fig1 = monitor.create_river_water_level_graph(history_data, enable_graph_interaction)
+        st.plotly_chart(fig1, use_container_width=True, config=plotly_config)
         
         st.subheader("ダム流入出量・累加雨量")
-        fig2 = monitor.create_dam_flow_graph(history_data)
-        st.plotly_chart(fig2, use_container_width=True)
+        fig2 = monitor.create_dam_flow_graph(history_data, enable_graph_interaction)
+        st.plotly_chart(fig2, use_container_width=True, config=plotly_config)
         
         st.subheader("ダム貯水位・時間雨量")
-        fig3 = monitor.create_dam_water_level_graph(history_data)
-        st.plotly_chart(fig3, use_container_width=True)
+        fig3 = monitor.create_dam_water_level_graph(history_data, enable_graph_interaction)
+        st.plotly_chart(fig3, use_container_width=True, config=plotly_config)
     
     with tab2:
         st.subheader("データテーブル")
