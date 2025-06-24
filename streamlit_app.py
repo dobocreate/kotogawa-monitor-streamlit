@@ -779,7 +779,7 @@ class KotogawaMonitor:
                     x=df['timestamp'],
                     y=df['dam_level'],
                     mode='lines+markers',
-                    name='ダム水位（厚東川ダム）',
+                    name='ダム貯水位（厚東川ダム）',
                     line=dict(color='#ff7f0e')
                 ),
                 secondary_y=False
@@ -800,9 +800,9 @@ class KotogawaMonitor:
         
         # 軸の設定
         fig.update_yaxes(
-            title_text="ダム水位 (m)",
-            range=[0, 5],
-            dtick=1,
+            title_text="ダム貯水位 (m)",
+            range=[30, 40],
+            dtick=2,
             secondary_y=False
         )
         fig.update_yaxes(
@@ -816,7 +816,7 @@ class KotogawaMonitor:
         
         fig.update_layout(
             height=400,
-            title_text="ダム水位・時間雨量",
+            title_text="ダム貯水位・時間雨量",
             showlegend=True,
             legend=dict(
                 orientation="h",
@@ -1119,7 +1119,7 @@ def main():
         fig1 = monitor.create_river_water_level_graph(history_data)
         st.plotly_chart(fig1, use_container_width=True)
         
-        st.subheader("ダム水位・時間雨量")
+        st.subheader("ダム貯水位・時間雨量")
         fig2 = monitor.create_dam_water_level_graph(history_data)
         st.plotly_chart(fig2, use_container_width=True)
         
