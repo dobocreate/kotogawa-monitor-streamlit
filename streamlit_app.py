@@ -31,6 +31,40 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# サイドバー表示時のレスポンシブ対応CSS
+st.markdown("""
+<style>
+    /* サイドバーが開いている時のメインコンテンツ幅調整 */
+    .main .block-container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+        max-width: 100%;
+    }
+    
+    /* サイドバーが開いている時のグラフコンテナ */
+    [data-testid="stSidebar"][aria-expanded="true"] ~ .main .block-container {
+        max-width: calc(100vw - 21rem);
+    }
+    
+    /* Plotlyグラフのレスポンシブ対応 */
+    .js-plotly-plot .plotly {
+        width: 100% !important;
+        height: auto !important;
+    }
+    
+    /* Streamlitのグラフコンテナ */
+    .stPlotlyChart {
+        width: 100% !important;
+    }
+    
+    /* メトリクス表示の調整 */
+    [data-testid="metric-container"] {
+        width: 100%;
+        min-width: 0;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 class KotogawaMonitor:
     def __init__(self):
         self.base_dir = Path(__file__).parent
@@ -1403,7 +1437,6 @@ def main():
     
     # データ統計
     st.sidebar.info(f"■ データ件数: {len(history_data)}件")
-    st.sidebar.info(f"■ 表示期間: {display_hours}時間")
     
     # 警戒レベル説明
     with st.sidebar.expander("■ 警戒レベル説明"):
