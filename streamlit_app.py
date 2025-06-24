@@ -539,18 +539,6 @@ class KotogawaMonitor:
             
             for i, day_data in enumerate(weekly_forecast[:7]):
                 with cols[i]:
-                    # 境界線のCSSを全体のCSSとして追加
-                    if i > 0:
-                        st.markdown("""
-                        <style>
-                        .weekly-forecast-column {
-                            border-left: 2px solid #ddd !important;
-                            padding-left: 10px !important;
-                        }
-                        </style>
-                        """, unsafe_allow_html=True)
-                        st.markdown('<div class="weekly-forecast-column">', unsafe_allow_html=True)
-                    
                     # 日付と曜日
                     try:
                         date_obj = datetime.strptime(day_data['date'], '%Y-%m-%d')
@@ -609,10 +597,6 @@ class KotogawaMonitor:
                         precip_text = '--'
                     
                     st.markdown(f'<p style="text-align: center; margin-bottom: 0;">{precip_text}</p>', unsafe_allow_html=True)
-                    
-                    # 境界線コンテナの終了
-                    if i > 0:
-                        st.markdown('</div>', unsafe_allow_html=True)
         
         st.markdown("---")
     
