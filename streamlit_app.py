@@ -696,8 +696,8 @@ class KotogawaMonitor:
         )
         fig.update_yaxes(
             title_text="全放流量 (m³/s)",
-            range=[0, 500],
-            dtick=100,
+            range=[0, 900],
+            dtick=150,
             secondary_y=True
         )
         
@@ -931,14 +931,14 @@ class KotogawaMonitor:
         # 軸の設定
         fig.update_yaxes(
             title_text="流量 (m³/s)",
-            range=[0, 500],
+            range=[0, 900],
             dtick=100,
             secondary_y=False
         )
         fig.update_yaxes(
             title_text="累加雨量 (mm)",
-            range=[0, 200],
-            dtick=50,
+            range=[0, 180],
+            dtick=20,
             secondary_y=True
         )
         
