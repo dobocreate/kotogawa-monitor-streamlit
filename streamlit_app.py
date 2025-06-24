@@ -712,7 +712,8 @@ class KotogawaMonitor:
                 y=1.02,
                 xanchor="right",
                 x=1
-            )
+            ),
+            margin=dict(t=30)
         )
         
         return fig
@@ -815,7 +816,6 @@ class KotogawaMonitor:
         
         fig.update_layout(
             height=400,
-            title_text="ダム貯水位・時間雨量",
             showlegend=True,
             legend=dict(
                 orientation="h",
@@ -823,7 +823,8 @@ class KotogawaMonitor:
                 y=1.02,
                 xanchor="right",
                 x=1
-            )
+            ),
+            margin=dict(t=30)
         )
         
         return fig
@@ -952,7 +953,8 @@ class KotogawaMonitor:
                 y=1.02,
                 xanchor="right",
                 x=1
-            )
+            ),
+            margin=dict(t=30)
         )
         
         return fig
