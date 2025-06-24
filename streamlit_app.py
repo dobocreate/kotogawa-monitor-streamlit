@@ -539,12 +539,17 @@ class KotogawaMonitor:
             
             for i, day_data in enumerate(weekly_forecast[:7]):
                 with cols[i]:
-                    # 全ての列に統一されたコンテナ構造を適用
-                    border_style = "border-left: 2px solid #ddd;" if i > 0 else ""
-                    
-                    # 統一されたコンテナの開始
-                    container_style = f"{border_style} padding: 10px 5px; min-height: 180px; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; text-align: center;"
-                    st.markdown(f'<div style="{container_style}">', unsafe_allow_html=True)
+                    # 境界線のCSSを全体のCSSとして追加
+                    if i > 0:
+                        st.markdown("""
+                        <style>
+                        .weekly-forecast-column {
+                            border-left: 2px solid #ddd !important;
+                            padding-left: 10px !important;
+                        }
+                        </style>
+                        """, unsafe_allow_html=True)
+                        st.markdown('<div class="weekly-forecast-column">', unsafe_allow_html=True)
                     
                     # 日付と曜日
                     try:
@@ -567,27 +572,27 @@ class KotogawaMonitor:
                             # 英語の曜日を日本語に変換
                             day_label = weekday_jp.get(day_of_week, day_of_week)
                         
-                        # 日付と曜日を表示
-                        st.markdown(f'<div style="font-weight: bold; margin-bottom: 5px;">{month_day}</div>', unsafe_allow_html=True)
-                        st.markdown(f'<div style="font-weight: bold; margin-bottom: 15px;">{day_label}</div>', unsafe_allow_html=True)
+                        # 日付と曜日を中央揃えで表示
+                        st.markdown(f'<p style="text-align: center; font-weight: bold; margin-bottom: 5px;">{month_day}</p>', unsafe_allow_html=True)
+                        st.markdown(f'<p style="text-align: center; font-weight: bold; margin-bottom: 10px;">{day_label}</p>', unsafe_allow_html=True)
                     except:
-                        st.markdown(f'<div style="font-weight: bold; margin-bottom: 5px;">{day_data.get("date", "")}</div>', unsafe_allow_html=True)
-                        st.markdown('<div style="font-weight: bold; margin-bottom: 15px;">--</div>', unsafe_allow_html=True)
+                        st.markdown(f'<p style="text-align: center; font-weight: bold; margin-bottom: 5px;">{day_data.get("date", "")}</p>', unsafe_allow_html=True)
+                        st.markdown('<p style="text-align: center; font-weight: bold; margin-bottom: 10px;">--</p>', unsafe_allow_html=True)
                     
                     # 天気アイコン
                     weather_code = day_data.get('weather_code', '')
                     weather_text = day_data.get('weather_text', 'データなし')
                     weather_icon = self.get_weather_icon(weather_code, weather_text)
                     
+                    # アイコンを中央揃えで表示
+                    st.markdown(f'<p style="text-align: center; font-size: 24px; margin: 10px 0 5px 0;">{weather_icon}</p>', unsafe_allow_html=True)
+                    
                     # 短縮版のテキスト
                     if len(weather_text) > 6:
                         weather_short = weather_text[:6] + "..."
                     else:
                         weather_short = weather_text
-                    
-                    # 天気アイコンとテキストを表示
-                    st.markdown(f'<div style="font-size: 24px; margin: 15px 0 5px 0;">{weather_icon}</div>', unsafe_allow_html=True)
-                    st.markdown(f'<div style="font-size: 10px; color: #666; margin-bottom: 15px;">{weather_short}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<p style="text-align: center; font-size: 10px; color: #666; margin-bottom: 10px;">{weather_short}</p>', unsafe_allow_html=True)
                     
                     # 降水確率
                     precip_prob = day_data.get('precipitation_probability')
@@ -603,10 +608,11 @@ class KotogawaMonitor:
                     else:
                         precip_text = '--'
                     
-                    st.markdown(f'<div style="margin-top: auto;">{precip_text}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<p style="text-align: center; margin-bottom: 0;">{precip_text}</p>', unsafe_allow_html=True)
                     
-                    # コンテナの終了
-                    st.markdown('</div>', unsafe_allow_html=True)
+                    # 境界線コンテナの終了
+                    if i > 0:
+                        st.markdown('</div>', unsafe_allow_html=True)
         
         st.markdown("---")
     
