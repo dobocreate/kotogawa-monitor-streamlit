@@ -640,6 +640,30 @@ class KotogawaMonitor:
             st.subheader("ダム貯水位・時間雨量")
             fig3 = self.create_dam_water_level_graph(history_data, enable_graph_interaction)
             st.plotly_chart(fig3, use_container_width=True, config=plotly_config)
+            
+            # 降水強度グラフの表示（最新データから取得）
+            if history_data:
+                latest_data = history_data[-1] if history_data else {}
+                precipitation_intensity_data = latest_data.get('precipitation_intensity', {})
+                
+                if precipitation_intensity_data and (
+                    precipitation_intensity_data.get('observation') or 
+                    precipitation_intensity_data.get('forecast')
+                ):
+                    st.subheader("降水強度（5分間隔）")
+                    # 更新時刻を表示
+                    if precipitation_intensity_data.get('update_time'):
+                        try:
+                            update_dt = datetime.fromisoformat(precipitation_intensity_data['update_time'])
+                            if update_dt.tzinfo is None:
+                                update_dt = update_dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                            update_str = update_dt.strftime('%H:%M:%S')
+                            st.caption(f"更新日時: {update_str}")
+                        except:
+                            pass
+                    
+                    fig4 = self.create_precipitation_intensity_graph(precipitation_intensity_data, enable_graph_interaction)
+                    st.plotly_chart(fig4, use_container_width=True, config=plotly_config)
         
         with tab2:
             st.subheader("データテーブル")
@@ -1229,6 +1253,109 @@ class KotogawaMonitor:
             fig.update_xaxes(fixedrange=True)
             fig.update_yaxes(fixedrange=True, secondary_y=False)
             fig.update_yaxes(fixedrange=True, secondary_y=True)
+        
+        return fig
+    
+    def create_precipitation_intensity_graph(self, precipitation_data: Dict[str, Any], enable_interaction: bool = True) -> go.Figure:
+        """降水強度グラフを作成"""
+        fig = go.Figure()
+        
+        # 観測データの処理
+        obs_times = []
+        obs_intensities = []
+        
+        if precipitation_data.get('observation'):
+            for item in precipitation_data['observation']:
+                try:
+                    dt = datetime.fromisoformat(item['datetime'])
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                    else:
+                        dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
+                    obs_times.append(dt)
+                    obs_intensities.append(item['intensity'])
+                except (ValueError, KeyError):
+                    continue
+        
+        # 予測データの処理
+        forecast_times = []
+        forecast_intensities = []
+        
+        if precipitation_data.get('forecast'):
+            for item in precipitation_data['forecast']:
+                try:
+                    dt = datetime.fromisoformat(item['datetime'])
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                    else:
+                        dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
+                    forecast_times.append(dt)
+                    forecast_intensities.append(item['intensity'])
+                except (ValueError, KeyError):
+                    continue
+        
+        # 観測データのプロット
+        if obs_times and obs_intensities:
+            fig.add_trace(go.Scatter(
+                x=obs_times,
+                y=obs_intensities,
+                mode='lines+markers',
+                name='観測値',
+                line=dict(color='#2E86AB', width=2),
+                marker=dict(size=4, color='#2E86AB'),
+                hovertemplate='<b>観測値</b><br>%{x|%H:%M}<br>降水強度: %{y:.1f} mm/h<extra></extra>'
+            ))
+        
+        # 予測データのプロット
+        if forecast_times and forecast_intensities:
+            fig.add_trace(go.Scatter(
+                x=forecast_times,
+                y=forecast_intensities,
+                mode='lines+markers',
+                name='予測値',
+                line=dict(color='#A23B72', width=2, dash='dash'),
+                marker=dict(size=4, color='#A23B72'),
+                hovertemplate='<b>予測値</b><br>%{x|%H:%M}<br>降水強度: %{y:.1f} mm/h<extra></extra>'
+            ))
+        
+        # レイアウト設定
+        fig.update_layout(
+            title="降水強度（5分間隔）",
+            height=400,
+            showlegend=True,
+            legend=dict(
+                orientation="v",
+                yanchor="top",
+                y=0.98,
+                xanchor="left",
+                x=0.02,
+                bgcolor="rgba(255, 255, 255, 0.8)",
+                bordercolor="rgba(0, 0, 0, 0.2)",
+                borderwidth=1
+            ),
+            margin=dict(t=30, l=40, r=40, b=40),
+            autosize=True,
+            font=dict(size=10)
+        )
+        
+        # 軸設定
+        fig.update_xaxes(
+            title_text="時刻",
+            title_font_size=10,
+            tickfont_size=9
+        )
+        
+        fig.update_yaxes(
+            title_text="降水強度 (mm/h)",
+            title_font_size=10,
+            tickfont_size=9,
+            range=[0, max(max(obs_intensities, default=0), max(forecast_intensities, default=0), 5) * 1.1]
+        )
+        
+        # インタラクションが無効の場合は軸を固定
+        if not enable_interaction:
+            fig.update_xaxes(fixedrange=True)
+            fig.update_yaxes(fixedrange=True)
         
         return fig
     

@@ -43,6 +43,11 @@ class KotogawaDataCollector:
         self.max_retries = 5  # リトライ回数を増加
         self.retry_delay = 3  # リトライ間隔（秒）
         
+        # Yahoo! Weather API settings
+        self.yahoo_api_url = "https://map.yahooapis.jp/weather/V1/place"
+        self.yahoo_app_id = "dj00aiZpPW5YTFVqSXc0S2dCcSZzPWNvbnN1bWVyc2VjcmV0Jng9MDA-"
+        self.coordinates = "131.256999,34.032230"  # 経度,緯度
+        
     def fetch_page(self, url: str, params: Dict[str, str]) -> Optional[BeautifulSoup]:
         """指定されたURLからHTMLを取得し、BeautifulSoupオブジェクトを返す"""
         last_error = None
@@ -899,6 +904,81 @@ class KotogawaDataCollector:
         
         return weather_data
     
+    def collect_precipitation_intensity(self) -> Dict[str, Any]:
+        """Yahoo! Weather APIから降水強度データを取得する"""
+        precipitation_data = {
+            'observation': [],
+            'forecast': [],
+            'update_time': None
+        }
+        
+        try:
+            # 5分間隔でデータを取得
+            params = {
+                'coordinates': self.coordinates,
+                'appid': self.yahoo_app_id,
+                'output': 'json',
+                'interval': '5'
+            }
+            
+            print(f"Fetching precipitation intensity from Yahoo API...")
+            response = requests.get(self.yahoo_api_url, params=params, headers=self.headers, timeout=self.timeout)
+            response.raise_for_status()
+            
+            data = response.json()
+            
+            if 'Feature' in data and len(data['Feature']) > 0:
+                feature = data['Feature'][0]
+                
+                # 観測データの取得
+                if 'Property' in feature and 'WeatherList' in feature['Property']:
+                    weather_list = feature['Property']['WeatherList']
+                    
+                    if 'Weather' in weather_list:
+                        weather_data = weather_list['Weather']
+                        
+                        for weather_item in weather_data:
+                            if 'Type' in weather_item and 'Date' in weather_item and 'Rainfall' in weather_item:
+                                data_type = weather_item['Type']
+                                date_str = weather_item['Date']
+                                rainfall = weather_item['Rainfall']
+                                
+                                # 日時をパース
+                                try:
+                                    # YYYYMMDDHHmmSS形式をパース
+                                    dt = datetime.strptime(date_str, '%Y%m%d%H%M%S')
+                                    jst = ZoneInfo('Asia/Tokyo')
+                                    dt_jst = dt.replace(tzinfo=jst)
+                                    
+                                    rainfall_data = {
+                                        'datetime': dt_jst.isoformat(),
+                                        'intensity': float(rainfall) if rainfall != '' else 0.0
+                                    }
+                                    
+                                    if data_type == 'observation':
+                                        precipitation_data['observation'].append(rainfall_data)
+                                    elif data_type == 'forecast':
+                                        precipitation_data['forecast'].append(rainfall_data)
+                                        
+                                except (ValueError, TypeError) as e:
+                                    print(f"Error parsing precipitation data: {e}")
+                                    continue
+                
+                # 更新時刻を設定
+                jst = ZoneInfo('Asia/Tokyo')
+                precipitation_data['update_time'] = datetime.now(jst).isoformat()
+                
+                print(f"Precipitation intensity data collected: {len(precipitation_data['observation'])} observations, {len(precipitation_data['forecast'])} forecasts")
+            
+        except requests.RequestException as e:
+            print(f"Error fetching precipitation intensity data: {e}")
+        except json.JSONDecodeError as e:
+            print(f"Error parsing precipitation intensity JSON: {e}")
+        except Exception as e:
+            print(f"Unexpected error collecting precipitation intensity: {e}")
+        
+        return precipitation_data
+    
     def save_data(self, data: Dict[str, Any], is_error: bool = False, error_info: Dict[str, Any] = None) -> None:
         """データを保存する"""
         jst = ZoneInfo('Asia/Tokyo')
@@ -1277,6 +1357,24 @@ class KotogawaDataCollector:
                 'weekly_forecast': []
             }
         
+        # 降水強度データ収集（Yahoo! Weather API）
+        print("Collecting precipitation intensity data...")
+        try:
+            precipitation_intensity_data = self.collect_precipitation_intensity()
+            data_collected['precipitation_intensity'] = precipitation_intensity_data
+        except Exception as e:
+            print(f"Error collecting precipitation intensity data: {e}")
+            errors.append({
+                'step': 'precipitation_intensity_data_collection',
+                'error': str(e),
+                'error_type': type(e).__name__
+            })
+            data_collected['precipitation_intensity'] = {
+                'observation': [],
+                'forecast': [],
+                'update_time': None
+            }
+        
         # データを統合（日本時間で保存）
         timestamp_jst = datetime.now(jst)
         observation_time_jst = observation_time  # 既にJST
@@ -1315,7 +1413,8 @@ class KotogawaDataCollector:
             'dam': data_collected.get('dam', {}),
             'river': data_collected.get('river', {}),
             'rainfall': data_collected.get('rainfall', {}),
-            'weather': data_collected.get('weather', {})
+            'weather': data_collected.get('weather', {}),
+            'precipitation_intensity': data_collected.get('precipitation_intensity', {})
         }
         
         # actual_observation_timeは保存データから削除（内部使用のみ）
