@@ -703,10 +703,10 @@ class KotogawaMonitor:
             showlegend=True,
             legend=dict(
                 orientation="v",
-                yanchor="top",
-                y=0.98,
-                xanchor="right",
-                x=0.98,
+                yanchor="bottom",
+                y=0.02,
+                xanchor="left",
+                x=0.02,
                 bgcolor="rgba(255, 255, 255, 0.8)",
                 bordercolor="rgba(0, 0, 0, 0.2)",
                 borderwidth=1
@@ -823,10 +823,10 @@ class KotogawaMonitor:
             showlegend=True,
             legend=dict(
                 orientation="v",
-                yanchor="top",
-                y=0.98,
-                xanchor="right",
-                x=0.98,
+                yanchor="bottom",
+                y=0.02,
+                xanchor="left",
+                x=0.02,
                 bgcolor="rgba(255, 255, 255, 0.8)",
                 bordercolor="rgba(0, 0, 0, 0.2)",
                 borderwidth=1
@@ -962,10 +962,10 @@ class KotogawaMonitor:
             showlegend=True,
             legend=dict(
                 orientation="v",
-                yanchor="top",
-                y=0.98,
-                xanchor="right",
-                x=0.98,
+                yanchor="bottom",
+                y=0.02,
+                xanchor="left",
+                x=0.02,
                 bgcolor="rgba(255, 255, 255, 0.8)",
                 bordercolor="rgba(0, 0, 0, 0.2)",
                 borderwidth=1
@@ -1016,8 +1016,12 @@ def main():
     """メイン関数"""
     monitor = KotogawaMonitor()
     
-    # ヘッダー
-    st.markdown("<h1 style='text-align: center;'>🌊 厚東川氾濫監視システム</h1>", unsafe_allow_html=True)
+    # 固定ヘッダー用のコンテナ
+    header_container = st.container()
+    
+    with header_container:
+        # ヘッダー
+        st.markdown("<h1 style='text-align: center;'>🌊 厚東川氾濫監視システム</h1>", unsafe_allow_html=True)
     
     # サイドバー設定
     st.sidebar.header("設定")
@@ -1087,9 +1091,7 @@ def main():
         st.warning(f"履歴データの読み込みに失敗しました: {e}")
         history_data = []
     
-    # 最終更新時刻と観測時刻表示（固定表示）
-    status_container = st.container()
-    with status_container:
+        # 最終更新時刻と観測時刻表示（ヘッダーと一緒に固定）
         col1, col2 = st.columns([3, 1])
         with col1:
             if latest_data and latest_data.get('timestamp'):
@@ -1132,14 +1134,27 @@ def main():
     # 固定位置にスタイルを適用
     st.markdown("""
     <style>
-    .stContainer:first-child {
-        position: sticky;
+    /* ヘッダーコンテナを固定 */
+    div[data-testid="stVerticalBlock"] > div:first-child {
+        position: fixed;
         top: 0;
+        left: 0;
+        right: 0;
         background-color: white;
-        z-index: 999;
-        padding: 10px 0;
-        margin-bottom: 10px;
+        z-index: 1000;
+        padding: 10px 15px;
         border-bottom: 1px solid #e6e6e6;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    /* コンテンツ全体を下にオフセット */
+    .main .block-container {
+        padding-top: 140px !important;
+    }
+    
+    /* サイドバーが開いている時の調整 */
+    .css-1d391kg {
+        padding-top: 140px !important;
     }
     </style>
     """, unsafe_allow_html=True)
