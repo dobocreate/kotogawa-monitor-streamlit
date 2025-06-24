@@ -96,8 +96,8 @@ class KotogawaDataCollector:
                 return None
         return None
     
-    def collect_dam_data(self) -> Dict[str, Union[float, None]]:
-        """ダムデータを収集する"""
+    def collect_dam_data(self) -> Dict[str, Any]:
+        """ダムデータと降雨データを収集する"""
         # 日本時間で現在時刻を取得し、10分単位に丸める
         jst = ZoneInfo('Asia/Tokyo')
         current_time = datetime.now(jst)
@@ -117,12 +117,19 @@ class KotogawaDataCollector:
         
         if not soup:
             return {
-                'water_level': None,
-                'storage_rate': None,
-                'inflow': None,
-                'outflow': None,
-                'storage_change': None,
-                'actual_observation_time': None
+                'dam': {
+                    'water_level': None,
+                    'storage_rate': None,
+                    'inflow': None,
+                    'outflow': None,
+                    'storage_change': None,
+                    'actual_observation_time': None
+                },
+                'rainfall': {
+                    'hourly': None,
+                    'cumulative': None,
+                    'change': None
+                }
             }
         
         dam_data = {
@@ -132,6 +139,12 @@ class KotogawaDataCollector:
             'outflow': None,
             'storage_change': None,
             'actual_observation_time': None
+        }
+        
+        rainfall_data = {
+            'hourly': None,
+            'cumulative': None,
+            'change': None
         }
         
         try:
@@ -217,6 +230,29 @@ class KotogawaDataCollector:
                                 except ValueError:
                                     print(f"Invalid outflow: {outflow_text}")
                                 
+                                # 降雨データの取得（列７: 60分雨量、列８: 累加雨量）
+                                if len(cells) > 7:
+                                    # 60分雨量
+                                    try:
+                                        hourly_text = cells[7].get_text().strip()
+                                        hourly = int(hourly_text)
+                                        if 0 <= hourly <= 200:  # 範囲を拡張
+                                            rainfall_data['hourly'] = hourly
+                                            print(f"Hourly rainfall: {hourly}mm")
+                                    except ValueError:
+                                        print(f"Invalid hourly rainfall: {cells[7].get_text().strip()}")
+                                
+                                if len(cells) > 8:
+                                    # 累加雨量
+                                    try:
+                                        cumulative_text = cells[8].get_text().strip()
+                                        cumulative = int(cumulative_text)
+                                        if 0 <= cumulative <= 1000:  # 範囲を拡張
+                                            rainfall_data['cumulative'] = cumulative
+                                            print(f"Cumulative rainfall: {cumulative}mm")
+                                    except ValueError:
+                                        print(f"Invalid cumulative rainfall: {cells[8].get_text().strip()}")
+                                
                                 dam_data['actual_observation_time'] = f"{date_text} {time_text}"
                                 break  # 目標行が見つかったら終了
                         except (IndexError, ValueError) as e:
@@ -297,6 +333,29 @@ class KotogawaDataCollector:
                                     except ValueError:
                                         pass
                                     
+                                    # 降雨データの取得（列７: 60分雨量、列８: 累加雨量）
+                                    if len(cells) > 7:
+                                        # 60分雨量
+                                        try:
+                                            hourly_text = cells[7].get_text().strip()
+                                            hourly = int(hourly_text)
+                                            if 0 <= hourly <= 200:  # 範囲を拡張
+                                                rainfall_data['hourly'] = hourly
+                                                print(f"Hourly rainfall: {hourly}mm")
+                                        except ValueError:
+                                            print(f"Invalid hourly rainfall: {cells[7].get_text().strip()}")
+                                    
+                                    if len(cells) > 8:
+                                        # 累加雨量
+                                        try:
+                                            cumulative_text = cells[8].get_text().strip()
+                                            cumulative = int(cumulative_text)
+                                            if 0 <= cumulative <= 1000:  # 範囲を拡張
+                                                rainfall_data['cumulative'] = cumulative
+                                                print(f"Cumulative rainfall: {cumulative}mm")
+                                        except ValueError:
+                                            print(f"Invalid cumulative rainfall: {cells[8].get_text().strip()}")
+                                    
                                     if dam_data['water_level'] is not None:
                                         dam_data['actual_observation_time'] = f"{date_text} {time_text}"
                                         break
@@ -314,7 +373,13 @@ class KotogawaDataCollector:
         except Exception as e:
             print(f"Error extracting dam data: {e}")
         
-        return dam_data
+        # 変化量の計算（現在は0を設定）
+        rainfall_data['change'] = 0 if rainfall_data['hourly'] is not None else None
+        
+        return {
+            'dam': dam_data,
+            'rainfall': rainfall_data
+        }
     
     def collect_river_data(self) -> Dict[str, Any]:
         """河川データを収集する"""
@@ -518,114 +583,8 @@ class KotogawaDataCollector:
         
         return river_data
     
-    def validate_rainfall_data(self, hourly: int, cumulative: int) -> bool:
-        """雨量データの妥当性を検証する"""
-        # 時間雨量の妥当性チェック（0-100mm/h）
-        if not (0 <= hourly <= 100):
-            return False
-        
-        # 累積雨量の妥当性チェック（0-500mm）
-        if not (0 <= cumulative <= 500):
-            return False
-        
-        # 論理的整合性チェック（時間雨量 > 0 なら累積雨量も > 0 であるべき）
-        if hourly > 0 and cumulative == 0:
-            print(f"Warning: Hourly rainfall {hourly}mm but cumulative is 0mm - data may be inconsistent")
-        
-        return True
-    
-    def collect_rainfall_data(self) -> Dict[str, Any]:
-        """雨量データを収集する"""
-        # 日本時間で現在時刻を取得し、10分単位に丸める
-        jst = ZoneInfo('Asia/Tokyo')
-        current_time = datetime.now(jst)
-        minutes = (current_time.minute // 10) * 10
-        observation_time = current_time.replace(minute=minutes, second=0, microsecond=0)
-        obsdt = observation_time.strftime('%Y%m%d%H%M')
-        
-        params = {
-            'check': '015',     # 厚東川ダムの観測所コード
-            'obsdt': obsdt,     # 10分単位に丸めた観測時刻  
-            'pop': '1'
-        }
-        soup = self.fetch_page(self.dam_url, params)
-        
-        rainfall_data = {
-            'hourly': 0,
-            'cumulative': 0,
-            'change': 0
-        }
-        
-        if not soup:
-            print("Failed to fetch rainfall data: No soup returned")
-            return rainfall_data
-        
-        try:
-            # 雨量データは同じダムテーブルから取得（列7: 60分雨量、列8: 累積雨量）
-            tables = soup.find_all('table')
-            target_date = observation_time.strftime('%Y/%m/%d')
-            target_time = observation_time.strftime('%H:%M')
-            
-            print(f"Looking for rainfall data: {target_date} {target_time}")
-            
-            for table in tables:
-                rows = table.find_all('tr')
-                for row in rows:
-                    cells = row.find_all('td')
-                    if len(cells) >= 9:  # ダムテーブルの全列数
-                        try:
-                            date_text = cells[0].get_text().strip()
-                            time_text = cells[1].get_text().strip()
-                            
-                            # 日時が完全一致する行を探す
-                            if date_text == target_date and time_text == target_time:
-                                print(f"Found matching rainfall row: {date_text} {time_text}")
-                                
-                                # 列位置に基づいて雨量データを抽出
-                                # 列7: 60分雨量, 列8: 累積雨量
-                                hourly_text = cells[7].get_text().strip()
-                                cumulative_text = cells[8].get_text().strip()
-                                
-                                # 60分雨量
-                                try:
-                                    hourly = int(hourly_text)
-                                    if self.validate_rainfall_data(hourly, 0):
-                                        rainfall_data['hourly'] = hourly
-                                        print(f"Hourly rainfall: {hourly}mm")
-                                except ValueError:
-                                    print(f"Invalid hourly rainfall: {hourly_text}")
-                                
-                                # 累積雨量
-                                try:
-                                    cumulative = int(cumulative_text)
-                                    if self.validate_rainfall_data(0, cumulative):
-                                        rainfall_data['cumulative'] = cumulative
-                                        print(f"Cumulative rainfall: {cumulative}mm")
-                                except ValueError:
-                                    print(f"Invalid cumulative rainfall: {cumulative_text}")
-                                
-                                break  # 目標行が見つかったら終了
-                        except (IndexError, ValueError) as e:
-                            continue
-                
-                if rainfall_data['hourly'] != 0 or rainfall_data['cumulative'] != 0:
-                    break  # データが見つかったらテーブル検索終了
-            
-            # 変化量の計算（前回データとの比較は省略し、0を設定）
-            rainfall_data['change'] = 0
-            
-            # 最終的な検証
-            if not self.validate_rainfall_data(rainfall_data['hourly'], rainfall_data['cumulative']):
-                print(f"Warning: Invalid rainfall data detected - hourly: {rainfall_data['hourly']}, cumulative: {rainfall_data['cumulative']}")
-            
-            print(f"Final rainfall data: hourly={rainfall_data['hourly']}mm, cumulative={rainfall_data['cumulative']}mm")
-            
-        except Exception as e:
-            print(f"Error extracting rainfall data: {type(e).__name__}: {e}")
-            import traceback
-            traceback.print_exc()
-        
-        return rainfall_data
+# 旧collect_rainfall_dataメソッドは削除されました
+    # 降雨データはcollect_dam_dataメソッドで統合取得されます
     
     def collect_weather_data(self) -> Dict[str, Any]:
         """気象庁APIから天気予報データを収集する"""
@@ -1209,21 +1168,32 @@ class KotogawaDataCollector:
         minutes = (current_time.minute // 10) * 10
         observation_time = current_time.replace(minute=minutes, second=0, microsecond=0)
         
-        # ダムデータ収集
-        print("Collecting dam data...")
+        # ダムデータと降雨データ収集
+        print("Collecting dam and rainfall data...")
         try:
-            dam_data = self.collect_dam_data()
-            data_collected['dam'] = dam_data
-            if all(v is None for k, v in dam_data.items() if k != 'storage_change'):
+            dam_rainfall_data = self.collect_dam_data()
+            data_collected['dam'] = dam_rainfall_data['dam']
+            data_collected['rainfall'] = dam_rainfall_data['rainfall']
+            
+            # ダムデータのチェック
+            if all(v is None for k, v in dam_rainfall_data['dam'].items() if k != 'storage_change'):
                 errors.append({
                     'step': 'dam_data_collection',
                     'error': 'All dam data values are None',
-                    'data': dam_data
+                    'data': dam_rainfall_data['dam']
+                })
+            
+            # 降雨データのチェック
+            if all(v is None for k, v in dam_rainfall_data['rainfall'].items()):
+                errors.append({
+                    'step': 'rainfall_data_collection',
+                    'error': 'All rainfall data values are None',
+                    'data': dam_rainfall_data['rainfall']
                 })
         except Exception as e:
-            print(f"Error collecting dam data: {e}")
+            print(f"Error collecting dam and rainfall data: {e}")
             errors.append({
-                'step': 'dam_data_collection',
+                'step': 'dam_rainfall_data_collection',
                 'error': str(e),
                 'error_type': type(e).__name__
             })
@@ -1233,6 +1203,11 @@ class KotogawaDataCollector:
                 'inflow': None,
                 'outflow': None,
                 'storage_change': None
+            }
+            data_collected['rainfall'] = {
+                'hourly': None,
+                'cumulative': None,
+                'change': None
             }
         
         # 河川データ収集
@@ -1259,23 +1234,7 @@ class KotogawaDataCollector:
                 'status': None
             }
         
-        # 雨量データ収集
-        print("Collecting rainfall data...")
-        try:
-            rainfall_data = self.collect_rainfall_data()
-            data_collected['rainfall'] = rainfall_data
-        except Exception as e:
-            print(f"Error collecting rainfall data: {e}")
-            errors.append({
-                'step': 'rainfall_data_collection',
-                'error': str(e),
-                'error_type': type(e).__name__
-            })
-            data_collected['rainfall'] = {
-                'hourly': 0,
-                'cumulative': 0,
-                'change': 0
-            }
+        # 降雨データはダムデータと同時に取得済み
         
         # 天気予報データ収集
         print("Collecting weather forecast data...")

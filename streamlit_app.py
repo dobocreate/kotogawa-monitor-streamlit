@@ -247,7 +247,7 @@ class KotogawaMonitor:
         
         return alerts
     
-    def create_weather_forecast_display(self, data: Dict[str, Any]) -> None:
+    def create_weather_forecast_display(self, data: Dict[str, Any], show_weekly: bool = True) -> None:
         """天気予報情報を表示する"""
         st.markdown("## 天気予報（宇部市）")
         
@@ -295,12 +295,18 @@ class KotogawaMonitor:
                 # Plotlyでグラフ作成
                 import plotly.graph_objects as go
                 fig = go.Figure()
-                fig.add_trace(go.Bar(
+                fig.add_trace(go.Scatter(
                     x=precip_times,
                     y=precip_prob,
+                    mode='lines+markers',
                     text=[f'{p}%' if p is not None else '--' for p in precip_prob],
-                    textposition='outside',
-                    marker_color=['#ff4444' if p and p >= 70 else '#ff8844' if p and p >= 50 else '#4488ff' if p else '#cccccc' for p in precip_prob]
+                    textposition='top center',
+                    line=dict(color='#4488ff', width=3),
+                    marker=dict(
+                        size=8,
+                        color=['#ff4444' if p and p >= 70 else '#ff8844' if p and p >= 50 else '#4488ff' if p else '#cccccc' for p in precip_prob],
+                        line=dict(width=2, color='white')
+                    )
                 ))
                 fig.update_layout(
                     height=200,
@@ -339,12 +345,18 @@ class KotogawaMonitor:
                 # Plotlyでグラフ作成
                 import plotly.graph_objects as go
                 fig = go.Figure()
-                fig.add_trace(go.Bar(
+                fig.add_trace(go.Scatter(
                     x=precip_times,
                     y=precip_prob,
+                    mode='lines+markers',
                     text=[f'{p}%' if p is not None else '--' for p in precip_prob],
-                    textposition='outside',
-                    marker_color=['#ff4444' if p and p >= 70 else '#ff8844' if p and p >= 50 else '#4488ff' if p else '#cccccc' for p in precip_prob]
+                    textposition='top center',
+                    line=dict(color='#4488ff', width=3),
+                    marker=dict(
+                        size=8,
+                        color=['#ff4444' if p and p >= 70 else '#ff8844' if p and p >= 50 else '#4488ff' if p else '#cccccc' for p in precip_prob],
+                        line=dict(width=2, color='white')
+                    )
                 ))
                 fig.update_layout(
                     height=200,
@@ -372,8 +384,9 @@ class KotogawaMonitor:
         
         st.markdown("---")
         
-        # 週間予報の表示
-        self.create_weekly_forecast_display(data)
+        # 週間予報の表示（条件付き）
+        if show_weekly:
+            self.create_weekly_forecast_display(data)
     
     def create_weekly_forecast_display(self, data: Dict[str, Any]) -> None:
         """週間予報情報を表示する"""
@@ -544,11 +557,11 @@ class KotogawaMonitor:
             cumulative_rain = data.get('rainfall', {}).get('cumulative')
             if cumulative_rain is not None:
                 st.metric(
-                    label="累積雨量 (mm)",
+                    label="累加雨量 (mm)",
                     value=f"{cumulative_rain}"
                 )
             else:
-                st.metric(label="累積雨量 (mm)", value="--")
+                st.metric(label="累加雨量 (mm)", value="--")
         
         with rain_col3:
             # 空のカラム（観測日時はタイトルに表示済み）
@@ -1070,7 +1083,7 @@ def main():
     st.sidebar.header("設定")
     
     # 手動更新ボタン
-    if st.sidebar.button("更新", type="primary", key="sidebar_refresh"):
+    if st.sidebar.button("手動更新", type="primary", key="sidebar_refresh"):
         monitor.load_history_data.clear()
         st.cache_data.clear()
         st.rerun()
@@ -1106,14 +1119,21 @@ def main():
     
     # グラフ操作設定
     enable_graph_interaction = st.sidebar.checkbox(
-        "グラフのズーム・パンを有効化",
+        "グラフの編集の有効化",
         value=False,
         help="チェックを入れるとグラフの拡大・縮小・移動が可能になります"
     )
     
+    # 週間天気表示設定
+    show_weekly_weather = st.sidebar.checkbox(
+        "週間天気を表示",
+        value=True,
+        help="チェックを外すと週間天気予報を非表示にします"
+    )
+    
     # アラート閾値設定
     st.sidebar.subheader("アラート設定")
-    river_warning = st.sidebar.number_input("河川警戒水位 (m)", value=3.0, step=0.1)
+    river_warning = st.sidebar.number_input("河川警戒水位 (m)", value=3.8, step=0.1)
     river_danger = st.sidebar.number_input("河川危険水位 (m)", value=5.0, step=0.1)
     dam_warning = st.sidebar.number_input("ダム警戒水位 (m)", value=39.2, step=0.1, help="洪水時最高水位")
     dam_danger = st.sidebar.number_input("ダム危険水位 (m)", value=40.0, step=0.1, help="設計最高水位")
@@ -1219,7 +1239,7 @@ def main():
     monitor.create_metrics_display(latest_data)
     
     # 天気予報表示
-    monitor.create_weather_forecast_display(latest_data)
+    monitor.create_weather_forecast_display(latest_data, show_weekly_weather)
     
     # データ分析表示
     monitor.create_data_analysis_display(history_data, enable_graph_interaction)
@@ -1228,10 +1248,8 @@ def main():
     st.sidebar.subheader("システム情報")
     
     # データ統計
-    st.sidebar.info(
-        f"■ データ件数: {len(history_data)}件\n"
-        f"■ 表示期間: {display_hours}時間"
-    )
+    st.sidebar.info(f"■ データ件数: {len(history_data)}件")
+    st.sidebar.info(f"■ 表示期間: {display_hours}時間")
     
     # 警戒レベル説明
     with st.sidebar.expander("■ 警戒レベル説明"):
