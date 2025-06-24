@@ -1171,41 +1171,6 @@ def main():
         else:
             st.info(alert_status)
     
-    
-    # アラート表示
-    if latest_data:
-        alerts = monitor.check_alert_status(latest_data, thresholds)
-        
-        # アラート詳細情報
-        alert_details = []
-        if alerts['river'] != '正常':
-            river_status = latest_data.get('river', {}).get('status', '不明')
-            alert_details.append(f"河川: {river_status}")
-        if alerts['dam'] != '正常':
-            dam_level = latest_data.get('dam', {}).get('water_level')
-            if dam_level is not None:
-                alert_details.append(f"ダム: {alerts['dam']} ({dam_level:.2f}m)")
-            else:
-                alert_details.append(f"ダム: {alerts['dam']}")
-        if alerts['rainfall'] != '正常':
-            hourly_rain = latest_data.get('rainfall', {}).get('hourly', 0)
-            alert_details.append(f"雨量: {hourly_rain}mm/h")
-        
-        # 総合アラート表示
-        if alerts['overall'] == '危険':
-            detail_text = " | ".join(alert_details) if alert_details else ""
-            st.error(f"🚨 **危険レベル**: 緊急対応が必要です {detail_text}")
-        elif alerts['overall'] == '警戒':
-            detail_text = " | ".join(alert_details) if alert_details else ""
-            st.warning(f"⚠️ **警戒レベル**: 注意が必要です {detail_text}")
-        elif alerts['overall'] == '注意':
-            detail_text = " | ".join(alert_details) if alert_details else ""
-            st.info(f"ℹ️ **注意レベル**: 状況を監視中 {detail_text}")
-        elif alerts['overall'] == '正常':
-            st.success("✅ **正常レベル**: 安全な状態です")
-        else:
-            st.info("ℹ️ データ確認中...")
-    
     # 現在の状況表示
     monitor.create_metrics_display(latest_data)
     
