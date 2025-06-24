@@ -1171,40 +1171,6 @@ def main():
         else:
             st.info(alert_status)
     
-    # 固定ヘッダーのスタイルを適用
-    st.markdown("""
-    <style>
-    /* 最初のコンテナを固定ヘッダーとして設定 */
-    div[data-testid="stVerticalBlock"] > div:first-child {
-        position: fixed !important;
-        top: 0;
-        left: 0;
-        right: 0;
-        background-color: white;
-        z-index: 999;
-        padding: 10px 15px;
-        border-bottom: 1px solid #e6e6e6;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        max-height: 180px;
-        overflow: visible;
-    }
-    
-    /* メインコンテンツエリアのトップパディングを調整 */
-    .main .block-container {
-        padding-top: 200px !important;
-    }
-    
-    /* サイドバーもオフセット */
-    .css-1d391kg, section[data-testid="stSidebar"] {
-        padding-top: 200px !important;
-    }
-    
-    /* Streamlitのデフォルトトップパディングを無効化 */
-    .block-container {
-        padding-top: 200px !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
     
     # アラート表示
     if latest_data:
