@@ -339,7 +339,7 @@ class KotogawaMonitor:
                     mode='lines+markers+text',
                     text=[f'{p}%' if p is not None else '--' for p in precip_prob],
                     textposition='top center',
-                    textfont=dict(size=9, color='black'),
+                    textfont=dict(size=12, color='black'),
                     line=dict(color='#4488ff', width=3),
                     marker=dict(
                         size=12,
@@ -396,7 +396,7 @@ class KotogawaMonitor:
                     mode='lines+markers+text',
                     text=[f'{p}%' if p is not None else '--' for p in precip_prob],
                     textposition='top center',
-                    textfont=dict(size=9, color='black'),
+                    textfont=dict(size=12, color='black'),
                     line=dict(color='#4488ff', width=3),
                     marker=dict(
                         size=12,
@@ -1509,7 +1509,7 @@ def main():
             if alert_details:
                 alert_status += f" ({' | '.join(alert_details)})"
         elif alerts['overall'] == '正常':
-            alert_status = "正常 **監視状況**: 安全な状態です"
+            alert_status = "**監視状況**: 正常 - 安全な状態です"
         else:
             alert_status = "情報 データ確認中..."
         
@@ -1526,16 +1526,16 @@ def main():
                     if data_time.tzinfo is None:
                         data_time = data_time.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
                     now = datetime.now(ZoneInfo('Asia/Tokyo'))
-                    update_info = f"■ 観測時刻: {data_time.strftime('%Y年%m月%d日 %H:%M')} | 取得時刻: {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}"
+                    update_info = f"観測時刻: {data_time.strftime('%Y年%m月%d日 %H:%M')} | 取得時刻: {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}"
                     if refresh_interval[1] > 0:
                         update_info += f" | 最終確認: {now.strftime('%H:%M:%S')}"
                 else:
-                    update_info = f"■ 最終更新: {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}"
+                    update_info = f"最終更新: {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}"
             except Exception as e:
                 update_info = f"最終更新: {latest_data.get('timestamp', '不明')} (時刻解析エラー)"
     else:
         alert_status = "注意 データが取得できていません"
-        update_info = "■ データ取得中..."
+        update_info = "データ取得中..."
     
     # 固定ヘッダーの内容を設定
     with header_placeholder.container():
