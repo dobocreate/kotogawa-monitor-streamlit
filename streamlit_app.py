@@ -310,11 +310,13 @@ class KotogawaMonitor:
                 ))
                 fig.update_layout(
                     height=200,
-                    margin=dict(l=0, r=0, t=10, b=0),
+                    margin=dict(l=20, r=20, t=10, b=30),
                     xaxis_title="",
                     yaxis_title="降水確率 (%)",
                     yaxis=dict(range=[0, 100]),
-                    showlegend=False
+                    showlegend=False,
+                    autosize=True,
+                    font=dict(size=9)
                 )
                 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
         
@@ -360,11 +362,13 @@ class KotogawaMonitor:
                 ))
                 fig.update_layout(
                     height=200,
-                    margin=dict(l=0, r=0, t=10, b=0),
+                    margin=dict(l=20, r=20, t=10, b=30),
                     xaxis_title="",
                     yaxis_title="降水確率 (%)",
                     yaxis=dict(range=[0, 100]),
-                    showlegend=False
+                    showlegend=False,
+                    autosize=True,
+                    font=dict(size=9)
                 )
                 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
         
@@ -387,6 +391,96 @@ class KotogawaMonitor:
         # 週間予報の表示（条件付き）
         if show_weekly:
             self.create_weekly_forecast_display(data)
+    
+    def get_weather_icon(self, weather_code: str, weather_text: str = "") -> str:
+        """天気コードまたは天気テキストから適切な絵文字を返す"""
+        if not weather_code and not weather_text:
+            return "❓"
+        
+        # 天気コードベースの判定
+        if weather_code:
+            code = str(weather_code)
+            # 晴れ系
+            if code.startswith('1'):
+                if code in ['100']:
+                    return "☀️"  # 晴れ
+                elif code in ['101', '110', '111']:
+                    return "🌤️"  # 晴れ時々くもり
+                elif code in ['102', '112', '113']:
+                    return "🌦️"  # 晴れ一時雨
+                else:
+                    return "☀️"
+            # くもり系
+            elif code.startswith('2'):
+                if code in ['200']:
+                    return "☁️"  # くもり
+                elif code in ['201', '210', '211']:
+                    return "⛅"  # くもり時々晴れ
+                elif code in ['202', '212', '213']:
+                    return "🌦️"  # くもり一時雨
+                elif code in ['203']:
+                    return "🌧️"  # くもり時々雨
+                elif code in ['204']:
+                    return "🌨️"  # くもり一時雪
+                else:
+                    return "☁️"
+            # 雨系
+            elif code.startswith('3'):
+                if code in ['300', '313']:
+                    return "🌧️"  # 雨
+                elif code in ['301']:
+                    return "🌦️"  # 雨時々晴れ
+                elif code in ['302']:
+                    return "🌧️"  # 雨時々くもり
+                elif code in ['303', '314']:
+                    return "🌨️"  # 雨時々雪、雨のち雪
+                elif code in ['308']:
+                    return "⛈️"  # 大雨
+                elif code in ['311']:
+                    return "🌦️"  # 雨のち晴れ
+                else:
+                    return "🌧️"
+            # 雪系
+            elif code.startswith('4'):
+                if code in ['400', '413']:
+                    return "❄️"  # 雪
+                elif code in ['401', '411']:
+                    return "🌨️"  # 雪時々晴れ、雪のち晴れ
+                elif code in ['402']:
+                    return "🌨️"  # 雪時々くもり
+                elif code in ['403', '414']:
+                    return "🌨️"  # 雪時々雨、雪のち雨
+                elif code in ['406']:
+                    return "❄️"  # 大雪
+                else:
+                    return "❄️"
+        
+        # 天気テキストベースの判定（フォールバック）
+        if weather_text:
+            text = weather_text.lower()
+            if "晴" in text:
+                if "雨" in text:
+                    return "🌦️"
+                elif "くもり" in text or "曇" in text:
+                    return "🌤️"
+                else:
+                    return "☀️"
+            elif "くもり" in text or "曇" in text:
+                if "雨" in text:
+                    return "🌧️"
+                elif "晴" in text:
+                    return "⛅"
+                else:
+                    return "☁️"
+            elif "雨" in text:
+                if "大雨" in text or "雷" in text:
+                    return "⛈️"
+                else:
+                    return "🌧️"
+            elif "雪" in text:
+                return "❄️"
+        
+        return "❓"
     
     def create_weekly_forecast_display(self, data: Dict[str, Any]) -> None:
         """週間予報情報を表示する"""
@@ -430,14 +524,19 @@ class KotogawaMonitor:
                     except:
                         st.markdown(f"**{day_data.get('date', '')}**")
                     
-                    # 天気
+                    # 天気アイコン
+                    weather_code = day_data.get('weather_code', '')
                     weather_text = day_data.get('weather_text', 'データなし')
-                    # 長い天気予報文を短縮
-                    if len(weather_text) > 8:
-                        weather_short = weather_text.replace('時々', '時々').replace('一時', '一時')[:8] + "..."
+                    weather_icon = self.get_weather_icon(weather_code, weather_text)
+                    
+                    # アイコンとテキストを表示
+                    st.markdown(f"<div style='text-align: center; font-size: 24px;'>{weather_icon}</div>", unsafe_allow_html=True)
+                    # 短縮版のテキストも小さく表示
+                    if len(weather_text) > 6:
+                        weather_short = weather_text[:6] + "..."
                     else:
                         weather_short = weather_text
-                    st.markdown(f"{weather_short}")
+                    st.markdown(f"<div style='text-align: center; font-size: 10px; color: #666;'>{weather_short}</div>", unsafe_allow_html=True)
                     
                     # 降水確率
                     precip_prob = day_data.get('precipitation_probability')
@@ -465,12 +564,13 @@ class KotogawaMonitor:
         tab1, tab2 = st.tabs(["グラフ", "データテーブル"])
         
         with tab1:
-            # Plotlyの設定
+            # Plotlyの設定（小画面対応を強化）
             plotly_config = {
                 'scrollZoom': enable_graph_interaction,
                 'doubleClick': 'reset' if enable_graph_interaction else False,
                 'displayModeBar': True,
                 'displaylogo': False,
+                'responsive': True,
                 'modeBarButtonsToRemove': ['lasso2d', 'select2d'] if enable_graph_interaction else ['pan2d', 'zoom2d', 'lasso2d', 'select2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d']
             }
             
@@ -530,9 +630,9 @@ class KotogawaMonitor:
         # 3つのセクションに分けて表示
         st.markdown("## 現在の観測状況")
         
-        # 降雨情報
+        # 降雨情報（小画面対応：列数を動的調整）
         st.markdown(f"### 降雨情報｜{obs_time_str} 更新")
-        rain_col1, rain_col2, rain_col3 = st.columns(3)
+        rain_col1, rain_col2, rain_col3 = st.columns([1, 1, 0.3])
         
         with rain_col1:
             hourly_rain = data.get('rainfall', {}).get('hourly')
@@ -567,9 +667,9 @@ class KotogawaMonitor:
             # 空のカラム（観測日時はタイトルに表示済み）
             pass
         
-        # 河川情報
+        # 河川情報（小画面対応：列数を動的調整）
         st.markdown(f"### 河川情報（持世寺）｜{obs_time_str} 更新")
-        river_col1, river_col2, river_col3 = st.columns(3)
+        river_col1, river_col2, river_col3 = st.columns([1, 1, 0.3])
         
         with river_col1:
             river_level = data.get('river', {}).get('water_level')
@@ -610,9 +710,9 @@ class KotogawaMonitor:
             # 空のカラム（観測日時はタイトルに表示済み）
             pass
         
-        # ダム情報
+        # ダム情報（小画面対応：列数を動的調整）
         st.markdown(f"### ダム情報（厚東川ダム）｜{obs_time_str} 更新")
-        dam_col1, dam_col2, dam_col3, dam_col4, dam_col5 = st.columns(5)
+        dam_col1, dam_col2, dam_col3, dam_col4, dam_col5 = st.columns([1, 1, 1, 1, 0.3])
         
         with dam_col1:
             dam_level = data.get('dam', {}).get('water_level')
@@ -739,21 +839,29 @@ class KotogawaMonitor:
                 secondary_y=True
             )
         
-        # 軸の設定
+        # 軸の設定（小画面対応）
         fig.update_yaxes(
             title_text="河川水位 (m)",
             range=[0, 6],
             dtick=1,
-            secondary_y=False
+            secondary_y=False,
+            title_font_size=10,
+            tickfont_size=9
         )
         fig.update_yaxes(
             title_text="全放流量 (m³/s)",
             range=[0, 900],
             dtick=150,
-            secondary_y=True
+            secondary_y=True,
+            title_font_size=10,
+            tickfont_size=9
         )
         
-        fig.update_xaxes(title_text="時刻")
+        fig.update_xaxes(
+            title_text="時刻",
+            title_font_size=10,
+            tickfont_size=9
+        )
         
         fig.update_layout(
             height=400,
@@ -768,7 +876,9 @@ class KotogawaMonitor:
                 bordercolor="rgba(0, 0, 0, 0.2)",
                 borderwidth=1
             ),
-            margin=dict(t=30)
+            margin=dict(t=30, l=40, r=40, b=40),
+            autosize=True,
+            font=dict(size=10)
         )
         
         # インタラクションが無効の場合は軸を固定
@@ -859,21 +969,29 @@ class KotogawaMonitor:
                 secondary_y=True
             )
         
-        # 軸の設定
+        # 軸の設定（小画面対応）
         fig.update_yaxes(
             title_text="ダム貯水位 (m)",
             range=[0, 50],
             dtick=5,
-            secondary_y=False
+            secondary_y=False,
+            title_font_size=10,
+            tickfont_size=9
         )
         fig.update_yaxes(
             title_text="時間雨量 (mm/h)",
             range=[0, 50],
             dtick=5,
-            secondary_y=True
+            secondary_y=True,
+            title_font_size=10,
+            tickfont_size=9
         )
         
-        fig.update_xaxes(title_text="時刻")
+        fig.update_xaxes(
+            title_text="時刻",
+            title_font_size=10,
+            tickfont_size=9
+        )
         
         fig.update_layout(
             height=400,
@@ -888,7 +1006,9 @@ class KotogawaMonitor:
                 bordercolor="rgba(0, 0, 0, 0.2)",
                 borderwidth=1
             ),
-            margin=dict(t=30)
+            margin=dict(t=30, l=40, r=40, b=40),
+            autosize=True,
+            font=dict(size=10)
         )
         
         # インタラクションが無効の場合は軸を固定
@@ -998,21 +1118,29 @@ class KotogawaMonitor:
                 secondary_y=True
             )
         
-        # 軸の設定
+        # 軸の設定（小画面対応）
         fig.update_yaxes(
             title_text="流量 (m³/s)",
             range=[0, 900],
             dtick=100,
-            secondary_y=False
+            secondary_y=False,
+            title_font_size=10,
+            tickfont_size=9
         )
         fig.update_yaxes(
             title_text="累加雨量 (mm)",
             range=[0, 180],
             dtick=20,
-            secondary_y=True
+            secondary_y=True,
+            title_font_size=10,
+            tickfont_size=9
         )
         
-        fig.update_xaxes(title_text="時刻")
+        fig.update_xaxes(
+            title_text="時刻",
+            title_font_size=10,
+            tickfont_size=9
+        )
         
         fig.update_layout(
             height=400,
@@ -1027,7 +1155,9 @@ class KotogawaMonitor:
                 bordercolor="rgba(0, 0, 0, 0.2)",
                 borderwidth=1
             ),
-            margin=dict(t=30)
+            margin=dict(t=30, l=40, r=40, b=40),
+            autosize=True,
+            font=dict(size=10)
         )
         
         # インタラクションが無効の場合は軸を固定
