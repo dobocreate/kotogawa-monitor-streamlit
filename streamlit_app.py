@@ -1016,12 +1016,11 @@ def main():
     """メイン関数"""
     monitor = KotogawaMonitor()
     
-    # 固定ヘッダー用のコンテナ
-    header_container = st.container()
+    # 固定ヘッダー用のプレースホルダー
+    header_placeholder = st.empty()
     
-    with header_container:
-        # ヘッダー
-        st.markdown("<h1 style='text-align: center;'>🌊 厚東川氾濫監視システム</h1>", unsafe_allow_html=True)
+    # メインコンテンツ用のコンテナ
+    main_content = st.container()
     
     # サイドバー設定
     st.sidebar.header("設定")
@@ -1091,70 +1090,118 @@ def main():
         st.warning(f"履歴データの読み込みに失敗しました: {e}")
         history_data = []
     
-        # 最終更新時刻と観測時刻表示（ヘッダーと一緒に固定）
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            if latest_data and latest_data.get('timestamp'):
-                try:
-                    # データ取得時刻（timestamp）
-                    timestamp = datetime.fromisoformat(latest_data['timestamp'].replace('Z', '+00:00'))
-                    # タイムゾーンがない場合は日本時間として扱う（変換なし）
-                    if timestamp.tzinfo is None:
-                        timestamp = timestamp.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-                    
-                    # 観測時刻（data_time）
-                    data_time_str = latest_data.get('data_time', '')
-                    if data_time_str:
-                        data_time = datetime.fromisoformat(data_time_str.replace('Z', '+00:00'))
-                        if data_time.tzinfo is None:
-                            data_time = data_time.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-                        # 現在時刻
-                        now = datetime.now(ZoneInfo('Asia/Tokyo'))
-                        update_info = f"📅 観測時刻: {data_time.strftime('%Y年%m月%d日 %H:%M')} | 取得時刻: {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}"
-                        
-                        # 自動更新が有効な場合は次回更新時刻も表示
-                        if refresh_interval[1] > 0:
-                            update_info += f" | 最終確認: {now.strftime('%H:%M:%S')}"
-                        
-                        st.info(update_info)
-                    else:
-                        st.info(f"📅 最終更新: {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}")
-                except Exception as e:
-                    st.info(f"最終更新: {latest_data.get('timestamp', '不明')} (時刻解析エラー)")
-            else:
-                st.warning("⚠️ データが取得できていません")
+    # アラート表示とステータス情報の準備
+    alert_status = ""
+    update_info = ""
+    
+    if latest_data:
+        alerts = monitor.check_alert_status(latest_data, thresholds)
         
+        # アラート詳細情報
+        alert_details = []
+        if alerts['river'] != '正常':
+            alert_details.append(f"河川: {alerts['river']}")
+        if alerts['dam'] != '正常':
+            alert_details.append(f"ダム: {alerts['dam']}")
+        
+        # ステータス表示文の作成
+        if alerts['overall'] == '危険':
+            alert_status = f"🚨 **危険レベル**: 緊急対応が必要です"
+            if alert_details:
+                alert_status += f" ({' | '.join(alert_details)})"
+        elif alerts['overall'] == '警戒':
+            alert_status = f"⚠️ **警戒レベル**: 注意が必要です"
+            if alert_details:
+                alert_status += f" ({' | '.join(alert_details)})"
+        elif alerts['overall'] == '注意':
+            alert_status = f"ℹ️ **注意レベル**: 状況を監視中"
+            if alert_details:
+                alert_status += f" ({' | '.join(alert_details)})"
+        elif alerts['overall'] == '正常':
+            alert_status = "✅ **正常レベル**: 安全な状態です"
+        else:
+            alert_status = "ℹ️ データ確認中..."
+        
+        # 更新時刻情報の作成
+        if latest_data.get('timestamp'):
+            try:
+                timestamp = datetime.fromisoformat(latest_data['timestamp'].replace('Z', '+00:00'))
+                if timestamp.tzinfo is None:
+                    timestamp = timestamp.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                
+                data_time_str = latest_data.get('data_time', '')
+                if data_time_str:
+                    data_time = datetime.fromisoformat(data_time_str.replace('Z', '+00:00'))
+                    if data_time.tzinfo is None:
+                        data_time = data_time.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                    now = datetime.now(ZoneInfo('Asia/Tokyo'))
+                    update_info = f"📅 観測時刻: {data_time.strftime('%Y年%m月%d日 %H:%M')} | 取得時刻: {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}"
+                    if refresh_interval[1] > 0:
+                        update_info += f" | 最終確認: {now.strftime('%H:%M:%S')}"
+                else:
+                    update_info = f"📅 最終更新: {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}"
+            except Exception as e:
+                update_info = f"最終更新: {latest_data.get('timestamp', '不明')} (時刻解析エラー)"
+    else:
+        alert_status = "⚠️ データが取得できていません"
+        update_info = "📅 データ取得中..."
+    
+    # 固定ヘッダーの内容を設定
+    with header_placeholder.container():
+        st.markdown("<h1 style='text-align: center; margin: 0;'>🌊 厚東川氾濫監視システム</h1>", unsafe_allow_html=True)
+        
+        col1, col2 = st.columns([4, 1])
+        with col1:
+            st.info(update_info)
         with col2:
-            if st.button("🔄 手動更新", type="primary"):
-                # 特定のキャッシュ関数をクリア
+            if st.button("🔄 手動更新", type="primary", key="header_refresh"):
                 monitor.load_history_data.clear()
                 st.cache_data.clear()
                 st.rerun()
+        
+        # アラート状態表示
+        if "危険" in alert_status:
+            st.error(alert_status)
+        elif "警戒" in alert_status:
+            st.warning(alert_status)
+        elif "注意" in alert_status:
+            st.info(alert_status)
+        elif "正常" in alert_status:
+            st.success(alert_status)
+        else:
+            st.info(alert_status)
     
-    # 固定位置にスタイルを適用
+    # 固定ヘッダーのスタイルを適用
     st.markdown("""
     <style>
-    /* ヘッダーコンテナを固定 */
+    /* 最初のコンテナを固定ヘッダーとして設定 */
     div[data-testid="stVerticalBlock"] > div:first-child {
-        position: fixed;
+        position: fixed !important;
         top: 0;
         left: 0;
         right: 0;
         background-color: white;
-        z-index: 1000;
+        z-index: 999;
         padding: 10px 15px;
         border-bottom: 1px solid #e6e6e6;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        max-height: 180px;
+        overflow: visible;
     }
     
-    /* コンテンツ全体を下にオフセット */
+    /* メインコンテンツエリアのトップパディングを調整 */
     .main .block-container {
-        padding-top: 140px !important;
+        padding-top: 200px !important;
     }
     
-    /* サイドバーが開いている時の調整 */
-    .css-1d391kg {
-        padding-top: 140px !important;
+    /* サイドバーもオフセット */
+    .css-1d391kg, section[data-testid="stSidebar"] {
+        padding-top: 200px !important;
+    }
+    
+    /* Streamlitのデフォルトトップパディングを無効化 */
+    .block-container {
+        padding-top: 200px !important;
     }
     </style>
     """, unsafe_allow_html=True)
