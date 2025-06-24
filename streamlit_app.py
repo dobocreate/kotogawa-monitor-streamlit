@@ -801,8 +801,8 @@ class KotogawaMonitor:
         # 軸の設定
         fig.update_yaxes(
             title_text="ダム貯水位 (m)",
-            range=[30, 40],
-            dtick=2,
+            range=[0, 50],
+            dtick=5,
             secondary_y=False
         )
         fig.update_yaxes(
