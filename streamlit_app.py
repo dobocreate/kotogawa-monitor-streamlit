@@ -295,7 +295,7 @@ class KotogawaMonitor:
         if weather_data.get('update_time'):
             try:
                 update_time = datetime.fromisoformat(weather_data['update_time'])
-                st.caption(f"予報更新時刻: {update_time.strftime('%Y-%m-%d %H:%M')} JST")
+                st.caption(f"予報更新時刻 : {update_time.strftime('%Y-%m-%d %H:%M')} JST")
             except:
                 pass
         
@@ -658,7 +658,7 @@ class KotogawaMonitor:
                             if update_dt.tzinfo is None:
                                 update_dt = update_dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
                             update_str = update_dt.strftime('%H:%M:%S')
-                            st.caption(f"更新日時: {update_str}")
+                            st.caption(f"更新日時 : {update_str}")
                         except:
                             pass
                     
@@ -709,91 +709,88 @@ class KotogawaMonitor:
         # 3つのセクションに分けて表示
         st.markdown("## 現在の観測状況")
         
-        # 降雨情報（小画面対応：列数を動的調整）
-        st.markdown("### 降雨情報")
-        st.caption(f"更新時刻: {obs_time_str}")
-        rain_col1, rain_col2, rain_col3 = st.columns([1, 1, 0.3])
+        # 河川情報と降雨情報を横並びで表示
+        river_rain_col1, river_rain_col2 = st.columns(2)
         
-        with rain_col1:
-            hourly_rain = data.get('rainfall', {}).get('hourly')
-            if hourly_rain is not None:
-                rain_color = "normal"
-                if hourly_rain > 20:
-                    rain_color = "inverse"
-                st.metric(
-                    label="60分雨量 (mm)",
-                    value=f"{hourly_rain}",
-                    delta=data.get('rainfall', {}).get('change'),
-                    delta_color=rain_color
-                )
-                if hourly_rain > 30:
-                    st.error("雨 大雨注意")
-                elif hourly_rain > 10:
-                    st.warning("雨 雨量多め")
-            else:
-                st.metric(label="60分雨量 (mm)", value="--")
-        
-        with rain_col2:
-            cumulative_rain = data.get('rainfall', {}).get('cumulative')
-            if cumulative_rain is not None:
-                st.metric(
-                    label="累加雨量 (mm)",
-                    value=f"{cumulative_rain}"
-                )
-            else:
-                st.metric(label="累加雨量 (mm)", value="--")
-        
-        with rain_col3:
-            # 空のカラム（観測日時はタイトルに表示済み）
-            pass
-        
-        # 河川情報（小画面対応：列数を動的調整）
-        st.markdown("### 河川情報")
-        st.caption(f"更新時刻: {obs_time_str}")
-        river_col1, river_col2, river_col3 = st.columns([1, 1, 0.3])
-        
-        with river_col1:
-            river_level = data.get('river', {}).get('water_level')
-            river_status = data.get('river', {}).get('status', '正常')
-            if river_level is not None:
-                delta_color = "normal"
-                level_change = data.get('river', {}).get('level_change')
-                if level_change and level_change > 0:
-                    delta_color = "inverse"
-                elif level_change and level_change < 0:
+        # 河川情報（左側）
+        with river_rain_col1:
+            st.markdown("### 河川情報")
+            st.caption(f"更新時刻 : {obs_time_str}")
+            river_subcol1, river_subcol2 = st.columns(2)
+            
+            with river_subcol1:
+                river_level = data.get('river', {}).get('water_level')
+                river_status = data.get('river', {}).get('status', '正常')
+                if river_level is not None:
                     delta_color = "normal"
-                
-                st.metric(
-                    label="水位 (m)",
-                    value=f"{river_level:.2f}",
-                    delta=f"{level_change:.2f}" if level_change is not None else None,
-                    delta_color=delta_color
-                )
-                
-                # ステータス表示
-                if river_status != '正常':
-                    if river_status in ['氾濫危険', '避難判断']:
-                        st.error(f"危険 {river_status}")
-                    elif river_status in ['氾濫注意', '水防団待機']:
-                        st.warning(f"注意 {river_status}")
+                    level_change = data.get('river', {}).get('level_change')
+                    if level_change and level_change > 0:
+                        delta_color = "inverse"
+                    elif level_change and level_change < 0:
+                        delta_color = "normal"
+                    
+                    st.metric(
+                        label="水位 (m)",
+                        value=f"{river_level:.2f}",
+                        delta=f"{level_change:.2f}" if level_change is not None else None,
+                        delta_color=delta_color
+                    )
+                    
+                    # ステータス表示
+                    if river_status != '正常':
+                        if river_status in ['氾濫危険', '避難判断']:
+                            st.error(f"危険 {river_status}")
+                        elif river_status in ['氾濫注意', '水防団待機']:
+                            st.warning(f"注意 {river_status}")
+                    else:
+                        st.success(f"正常 {river_status}")
                 else:
-                    st.success(f"正常 {river_status}")
-            else:
-                st.metric(label="水位 (m)", value="--")
+                    st.metric(label="水位 (m)", value="--")
+            
+            with river_subcol2:
+                st.metric(
+                    label="観測地点",
+                    value="持世寺"
+                )
         
-        with river_col2:
-            st.metric(
-                label="観測地点",
-                value="持世寺"
-            )
-        
-        with river_col3:
-            # 空のカラム（観測日時はタイトルに表示済み）
-            pass
+        # 降雨情報（右側）
+        with river_rain_col2:
+            st.markdown("### 降雨情報")
+            st.caption(f"更新時刻 : {obs_time_str}")
+            rain_subcol1, rain_subcol2 = st.columns(2)
+            
+            with rain_subcol1:
+                hourly_rain = data.get('rainfall', {}).get('hourly')
+                if hourly_rain is not None:
+                    rain_color = "normal"
+                    if hourly_rain > 20:
+                        rain_color = "inverse"
+                    st.metric(
+                        label="60分雨量 (mm)",
+                        value=f"{hourly_rain}",
+                        delta=data.get('rainfall', {}).get('change'),
+                        delta_color=rain_color
+                    )
+                    if hourly_rain > 30:
+                        st.error("雨 大雨注意")
+                    elif hourly_rain > 10:
+                        st.warning("雨 雨量多め")
+                else:
+                    st.metric(label="60分雨量 (mm)", value="--")
+            
+            with rain_subcol2:
+                cumulative_rain = data.get('rainfall', {}).get('cumulative')
+                if cumulative_rain is not None:
+                    st.metric(
+                        label="累加雨量 (mm)",
+                        value=f"{cumulative_rain}"
+                    )
+                else:
+                    st.metric(label="累加雨量 (mm)", value="--")
         
         # ダム情報（小画面対応：列数を動的調整）
         st.markdown("### ダム情報")
-        st.caption(f"更新時刻: {obs_time_str}")
+        st.caption(f"更新時刻 : {obs_time_str}")
         dam_col1, dam_col2, dam_col3, dam_col4, dam_col5, dam_col6 = st.columns([1, 1, 1, 1, 1, 0.2])
         
         with dam_col1:
@@ -1514,19 +1511,19 @@ def main():
         
         # ステータス表示文の作成
         if alerts['overall'] == '危険':
-            alert_status = f"危険 **危険レベル**: 緊急対応が必要です"
+            alert_status = f"危険 **危険レベル** : 緊急対応が必要です"
             if alert_details:
-                alert_status += f" ({' | '.join(alert_details)})"
+                alert_status += f" ({' ｜ '.join(alert_details)})"
         elif alerts['overall'] == '警戒':
-            alert_status = f"注意 **警戒レベル**: 注意が必要です"
+            alert_status = f"注意 **警戒レベル** : 注意が必要です"
             if alert_details:
-                alert_status += f" ({' | '.join(alert_details)})"
+                alert_status += f" ({' ｜ '.join(alert_details)})"
         elif alerts['overall'] == '注意':
-            alert_status = f"情報 **注意レベル**: 状況を監視中"
+            alert_status = f"情報 **注意レベル** : 状況を監視中"
             if alert_details:
-                alert_status += f" ({' | '.join(alert_details)})"
+                alert_status += f" ({' ｜ '.join(alert_details)})"
         elif alerts['overall'] == '正常':
-            alert_status = "**監視状況**: 正常 - 安全な状態です"
+            alert_status = "**監視状況** : 正常 - 安全な状態です"
         else:
             alert_status = "情報 データ確認中..."
         
@@ -1543,13 +1540,13 @@ def main():
                     if data_time.tzinfo is None:
                         data_time = data_time.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
                     now = datetime.now(ZoneInfo('Asia/Tokyo'))
-                    update_info = f"観測時刻: {data_time.strftime('%Y年%m月%d日 %H:%M')} | 取得時刻: {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}"
+                    update_info = f"観測時刻 : {data_time.strftime('%Y年%m月%d日 %H:%M')} ｜ 取得時刻 : {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}"
                     if refresh_interval[1] > 0:
-                        update_info += f" | 最終確認: {now.strftime('%H:%M:%S')}"
+                        update_info += f" ｜ 最終確認 : {now.strftime('%H:%M:%S')}"
                 else:
-                    update_info = f"最終更新: {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}"
+                    update_info = f"最終更新 : {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}"
             except Exception as e:
-                update_info = f"最終更新: {latest_data.get('timestamp', '不明')} (時刻解析エラー)"
+                update_info = f"最終更新 : {latest_data.get('timestamp', '不明')} (時刻解析エラー)"
     else:
         alert_status = "注意 データが取得できていません"
         update_info = "データ取得中..."
