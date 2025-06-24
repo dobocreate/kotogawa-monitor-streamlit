@@ -309,7 +309,11 @@ class KotogawaMonitor:
             
             # 天気
             weather_text = today.get('weather_text', 'データなし')
-            st.markdown(f"**天気:** {weather_text}")
+            # スペースを削除して2行分確保
+            weather_text_cleaned = weather_text.replace('　', '').replace(' ', '')
+            st.markdown(f"**天気:**<br>{weather_text_cleaned}", unsafe_allow_html=True)
+            # 2行分の高さを確保するための空白行
+            st.markdown("<br>", unsafe_allow_html=True)
             
             # 気温
             temp_max = today.get('temp_max')
@@ -335,12 +339,12 @@ class KotogawaMonitor:
                     mode='lines+markers+text',
                     text=[f'{p}%' if p is not None else '--' for p in precip_prob],
                     textposition='top center',
-                    textfont=dict(size=12, color='black'),
+                    textfont=dict(size=9, color='black'),
                     line=dict(color='#4488ff', width=3),
                     marker=dict(
                         size=12,
-                        color=['#ff4444' if p and p >= 70 else '#ff8844' if p and p >= 50 else '#4488ff' if p else '#cccccc' for p in precip_prob],
-                        line=dict(width=2, color='white')
+                        color='white',
+                        line=dict(width=2, color='#4488ff')
                     )
                 ))
                 fig.update_layout(
@@ -362,7 +366,11 @@ class KotogawaMonitor:
             
             # 天気
             weather_text = tomorrow.get('weather_text', 'データなし')
-            st.markdown(f"**天気:** {weather_text}")
+            # スペースを削除して2行分確保
+            weather_text_cleaned = weather_text.replace('　', '').replace(' ', '')
+            st.markdown(f"**天気:**<br>{weather_text_cleaned}", unsafe_allow_html=True)
+            # 2行分の高さを確保するための空白行
+            st.markdown("<br>", unsafe_allow_html=True)
             
             # 気温
             temp_max = tomorrow.get('temp_max')
@@ -388,12 +396,12 @@ class KotogawaMonitor:
                     mode='lines+markers+text',
                     text=[f'{p}%' if p is not None else '--' for p in precip_prob],
                     textposition='top center',
-                    textfont=dict(size=12, color='black'),
+                    textfont=dict(size=9, color='black'),
                     line=dict(color='#4488ff', width=3),
                     marker=dict(
                         size=12,
-                        color=['#ff4444' if p and p >= 70 else '#ff8844' if p and p >= 50 else '#4488ff' if p else '#cccccc' for p in precip_prob],
-                        line=dict(width=2, color='white')
+                        color='white',
+                        line=dict(width=2, color='#4488ff')
                     )
                 ))
                 fig.update_layout(
@@ -924,8 +932,8 @@ class KotogawaMonitor:
             showlegend=True,
             legend=dict(
                 orientation="v",
-                yanchor="bottom",
-                y=0.02,
+                yanchor="top",
+                y=0.98,
                 xanchor="left",
                 x=0.02,
                 bgcolor="rgba(255, 255, 255, 0.8)",
@@ -1054,8 +1062,8 @@ class KotogawaMonitor:
             showlegend=True,
             legend=dict(
                 orientation="v",
-                yanchor="bottom",
-                y=0.02,
+                yanchor="top",
+                y=0.98,
                 xanchor="left",
                 x=0.02,
                 bgcolor="rgba(255, 255, 255, 0.8)",
@@ -1203,8 +1211,8 @@ class KotogawaMonitor:
             showlegend=True,
             legend=dict(
                 orientation="v",
-                yanchor="bottom",
-                y=0.02,
+                yanchor="top",
+                y=0.98,
                 xanchor="left",
                 x=0.02,
                 bgcolor="rgba(255, 255, 255, 0.8)",
@@ -1374,7 +1382,7 @@ def main():
             if alert_details:
                 alert_status += f" ({' | '.join(alert_details)})"
         elif alerts['overall'] == '正常':
-            alert_status = "正常 **正常レベル**: 安全な状態です"
+            alert_status = "正常 **監視状況**: 安全な状態です"
         else:
             alert_status = "情報 データ確認中..."
         
