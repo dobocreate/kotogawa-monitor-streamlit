@@ -494,11 +494,21 @@ class KotogawaMonitor:
         
         # 週間予報を表形式で表示
         if len(weekly_forecast) >= 7:
-            # 7列に分けて表示
+            # 7列に分けて表示（縦線区切り付き）
             cols = st.columns(7)
+            
+            # 曜日の日本語マッピング
+            weekday_jp = {
+                'Mon': '月', 'Tue': '火', 'Wed': '水', 'Thu': '木', 
+                'Fri': '金', 'Sat': '土', 'Sun': '日'
+            }
             
             for i, day_data in enumerate(weekly_forecast[:7]):
                 with cols[i]:
+                    # 列の境界線を追加（最初の列以外）
+                    if i > 0:
+                        st.markdown('<div style="border-left: 1px solid #e0e0e0; height: 100%; margin-left: -10px; padding-left: 10px;">', unsafe_allow_html=True)
+                    
                     # 日付と曜日
                     try:
                         date_obj = datetime.strptime(day_data['date'], '%Y-%m-%d')
@@ -517,12 +527,13 @@ class KotogawaMonitor:
                         elif target_date == today + timedelta(days=2):
                             day_label = "明後日"
                         else:
-                            day_label = day_of_week
+                            # 英語の曜日を日本語に変換
+                            day_label = weekday_jp.get(day_of_week, day_of_week)
                         
-                        st.markdown(f"**{month_day}**")
-                        st.markdown(f"**{day_label}**")
+                        st.markdown(f"<div style='text-align: center; font-weight: bold;'>{month_day}</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='text-align: center; font-weight: bold;'>{day_label}</div>", unsafe_allow_html=True)
                     except:
-                        st.markdown(f"**{day_data.get('date', '')}**")
+                        st.markdown(f"<div style='text-align: center; font-weight: bold;'>{day_data.get('date', '')}</div>", unsafe_allow_html=True)
                     
                     # 天気アイコン
                     weather_code = day_data.get('weather_code', '')
@@ -543,15 +554,19 @@ class KotogawaMonitor:
                     if precip_prob is not None:
                         # 高い降水確率は色を変える
                         if precip_prob >= 70:
-                            st.markdown(f"雨 **{precip_prob}%**")
+                            st.markdown(f"<div style='text-align: center;'>雨 **{precip_prob}%**</div>", unsafe_allow_html=True)
                         elif precip_prob >= 50:
-                            st.markdown(f"雨 **{precip_prob}%**")
+                            st.markdown(f"<div style='text-align: center;'>雨 **{precip_prob}%**</div>", unsafe_allow_html=True)
                         elif precip_prob >= 30:
-                            st.markdown(f"曇 {precip_prob}%")
+                            st.markdown(f"<div style='text-align: center;'>曇 {precip_prob}%</div>", unsafe_allow_html=True)
                         else:
-                            st.markdown(f"晴 {precip_prob}%")
+                            st.markdown(f"<div style='text-align: center;'>晴 {precip_prob}%</div>", unsafe_allow_html=True)
                     else:
-                        st.markdown("--")
+                        st.markdown("<div style='text-align: center;'>--</div>", unsafe_allow_html=True)
+                    
+                    # 境界線の終了
+                    if i > 0:
+                        st.markdown('</div>', unsafe_allow_html=True)
         
         st.markdown("---")
     
@@ -631,7 +646,8 @@ class KotogawaMonitor:
         st.markdown("## 現在の観測状況")
         
         # 降雨情報（小画面対応：列数を動的調整）
-        st.markdown(f"### 降雨情報｜{obs_time_str} 更新")
+        st.markdown("### 降雨情報")
+        st.caption(f"更新時刻: {obs_time_str}")
         rain_col1, rain_col2, rain_col3 = st.columns([1, 1, 0.3])
         
         with rain_col1:
@@ -668,7 +684,8 @@ class KotogawaMonitor:
             pass
         
         # 河川情報（小画面対応：列数を動的調整）
-        st.markdown(f"### 河川情報（持世寺）｜{obs_time_str} 更新")
+        st.markdown("### 河川情報")
+        st.caption(f"更新時刻: {obs_time_str}")
         river_col1, river_col2, river_col3 = st.columns([1, 1, 0.3])
         
         with river_col1:
@@ -711,8 +728,9 @@ class KotogawaMonitor:
             pass
         
         # ダム情報（小画面対応：列数を動的調整）
-        st.markdown(f"### ダム情報（厚東川ダム）｜{obs_time_str} 更新")
-        dam_col1, dam_col2, dam_col3, dam_col4, dam_col5 = st.columns([1, 1, 1, 1, 0.3])
+        st.markdown("### ダム情報")
+        st.caption(f"更新時刻: {obs_time_str}")
+        dam_col1, dam_col2, dam_col3, dam_col4, dam_col5, dam_col6 = st.columns([1, 1, 1, 1, 1, 0.2])
         
         with dam_col1:
             dam_level = data.get('dam', {}).get('water_level')
@@ -756,7 +774,13 @@ class KotogawaMonitor:
                 st.metric(label="全放流量 (m³/s)", value="--")
         
         with dam_col5:
-            # 空のカラム（観測日時はタイトルに表示済み）
+            st.metric(
+                label="ダム名",
+                value="厚東川ダム"
+            )
+        
+        with dam_col6:
+            # 空のカラム
             pass
     
     def create_river_water_level_graph(self, history_data: List[Dict[str, Any]], enable_interaction: bool = False) -> go.Figure:
