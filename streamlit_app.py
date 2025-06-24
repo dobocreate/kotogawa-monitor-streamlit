@@ -26,7 +26,7 @@ from streamlit_autorefresh import st_autorefresh
 # ページ設定
 st.set_page_config(
     page_title="厚東川監視システム",
-    page_icon="🌊",
+    page_icon="■",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -50,7 +50,7 @@ class KotogawaMonitor:
         latest_file = _self.data_dir / "latest.json"
         
         if not latest_file.exists():
-            st.warning("⚠️ データファイルが見つかりません。データ収集スクリプトを実行してください。")
+            st.warning("■ データファイルが見つかりません。データ収集スクリプトを実行してください。")
             return None
         
         try:
@@ -58,7 +58,7 @@ class KotogawaMonitor:
             file_mtime = latest_file.stat().st_mtime
             return _self._load_latest_data_cached(str(latest_file), file_mtime)
         except Exception as e:
-            st.error(f"❌ データ読み込みエラー: {e}")
+            st.error(f"× データ読み込みエラー: {e}")
             return None
     
     @st.cache_data(ttl=300)  # ファイル更新時刻が変わるまでキャッシュ
@@ -70,18 +70,18 @@ class KotogawaMonitor:
                 
                 # データの整合性チェック
                 if not data or 'timestamp' not in data:
-                    st.error("❌ データファイルの形式が正しくありません")
+                    st.error("× データファイルの形式が正しくありません")
                     return None
                 
                 return data
         except json.JSONDecodeError as e:
-            st.error(f"❌ JSONファイルの形式エラー: {e}")
+            st.error(f"× JSONファイルの形式エラー: {e}")
             return None
         except FileNotFoundError:
-            st.warning("⚠️ データファイルが見つかりません")
+            st.warning("■ データファイルが見つかりません")
             return None
         except Exception as e:
-            st.error(f"❌ データ読み込みエラー: {e}")
+            st.error(f"× データ読み込みエラー: {e}")
             return None
     
     def get_cache_key(self) -> str:
@@ -104,7 +104,7 @@ class KotogawaMonitor:
         start_time = end_time - timedelta(hours=hours)
         
         if not _self.history_dir.exists():
-            st.info("📁 履歴データディレクトリがありません。データが蓄積されるまでお待ちください。")
+            st.info("■ 履歴データディレクトリがありません。データが蓄積されるまでお待ちください。")
             return history_data
         
         error_count = 0
@@ -155,23 +155,23 @@ class KotogawaMonitor:
                     except json.JSONDecodeError:
                         error_count += 1
                         if error_count <= 3:  # 最初の3回だけ警告表示
-                            st.warning(f"⚠️ 破損した履歴ファイル: {file_path.name}")
+                            st.warning(f"■ 破損した履歴ファイル: {file_path.name}")
                     except Exception as e:
                         error_count += 1
                         if error_count <= 3:
-                            st.warning(f"⚠️ 履歴データエラー: {file_path.name}")
+                            st.warning(f"■ 履歴データエラー: {file_path.name}")
             
             current_time -= timedelta(days=1)
         
         # エラーサマリー表示
         if error_count > 3:
-            st.warning(f"⚠️ 履歴データの読み込みで {error_count} 件のエラーがありました")
+            st.warning(f"■ 履歴データの読み込みで {error_count} 件のエラーがありました")
         
         # 時系列順にソート
         try:
             history_data.sort(key=lambda x: x.get('timestamp', ''))
         except Exception as e:
-            st.error(f"❌ 履歴データソートエラー: {e}")
+            st.error(f"× 履歴データソートエラー: {e}")
             
         return history_data
     
@@ -249,12 +249,12 @@ class KotogawaMonitor:
     
     def create_weather_forecast_display(self, data: Dict[str, Any]) -> None:
         """天気予報情報を表示する"""
-        st.markdown("## 🌤️ 天気予報（宇部市）")
+        st.markdown("## 天気予報（宇部市）")
         
         weather_data = data.get('weather', {})
         
         if not weather_data or not weather_data.get('today', {}).get('weather_text'):
-            st.info("⚠️ 天気予報データが利用できません")
+            st.info("天気予報データが利用できません")
             return
         
         # 更新時刻の表示
@@ -369,9 +369,9 @@ class KotogawaMonitor:
         max_day_after = max([p for p in day_after_precip if p is not None], default=0)
         
         if max_today >= 70 or max_tomorrow >= 70 or max_day_after >= 70:
-            st.warning("⚠️ 降水確率が高くなっています。水位の変化にご注意ください。")
+            st.warning("■ 降水確率が高くなっています。水位の変化にご注意ください。")
         elif max_today >= 50 or max_tomorrow >= 50 or max_day_after >= 50:
-            st.info("💧 降水の可能性があります。河川・ダムの状況を定期的にご確認ください。")
+            st.info("● 降水の可能性があります。河川・ダムの状況を定期的にご確認ください。")
         
         st.markdown("---")
         
@@ -386,7 +386,7 @@ class KotogawaMonitor:
         if not weekly_forecast:
             return
         
-        st.markdown("## 📅 週間天気予報（山口県）")
+        st.markdown("## 週間天気予報（山口県）")
         
         # 週間予報を表形式で表示
         if len(weekly_forecast) >= 7:
@@ -434,17 +434,64 @@ class KotogawaMonitor:
                     if precip_prob is not None:
                         # 高い降水確率は色を変える
                         if precip_prob >= 70:
-                            st.markdown(f"🌧️ **{precip_prob}%**")
+                            st.markdown(f"雨 **{precip_prob}%**")
                         elif precip_prob >= 50:
-                            st.markdown(f"☔ **{precip_prob}%**")
+                            st.markdown(f"雨 **{precip_prob}%**")
                         elif precip_prob >= 30:
-                            st.markdown(f"🌤️ {precip_prob}%")
+                            st.markdown(f"曇 {precip_prob}%")
                         else:
-                            st.markdown(f"☀️ {precip_prob}%")
+                            st.markdown(f"晴 {precip_prob}%")
                     else:
                         st.markdown("--")
         
         st.markdown("---")
+    
+    def create_data_analysis_display(self, history_data: List[Dict[str, Any]], enable_graph_interaction: bool) -> None:
+        """データ分析セクションを表示する"""
+        # データ分析セクション
+        st.markdown("## データ分析")
+        
+        # タブによる表示切り替え
+        tab1, tab2 = st.tabs(["グラフ", "データテーブル"])
+        
+        with tab1:
+            # Plotlyの設定
+            plotly_config = {
+                'scrollZoom': enable_graph_interaction,
+                'doubleClick': 'reset' if enable_graph_interaction else False,
+                'displayModeBar': True,
+                'displaylogo': False,
+                'modeBarButtonsToRemove': ['lasso2d', 'select2d'] if enable_graph_interaction else ['pan2d', 'zoom2d', 'lasso2d', 'select2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d']
+            }
+            
+            st.subheader("河川水位・全放流量")
+            fig1 = self.create_river_water_level_graph(history_data, enable_graph_interaction)
+            st.plotly_chart(fig1, use_container_width=True, config=plotly_config)
+            
+            st.subheader("ダム流入出量・累加雨量")
+            fig2 = self.create_dam_flow_graph(history_data, enable_graph_interaction)
+            st.plotly_chart(fig2, use_container_width=True, config=plotly_config)
+            
+            st.subheader("ダム貯水位・時間雨量")
+            fig3 = self.create_dam_water_level_graph(history_data, enable_graph_interaction)
+            st.plotly_chart(fig3, use_container_width=True, config=plotly_config)
+        
+        with tab2:
+            st.subheader("データテーブル")
+            df_table = self.create_data_table(history_data)
+            if not df_table.empty:
+                st.dataframe(df_table, use_container_width=True)
+                
+                # CSVダウンロード
+                csv = df_table.to_csv(index=False, encoding='utf-8-sig')
+                st.download_button(
+                    label="CSVダウンロード",
+                    data=csv,
+                    file_name=f"kotogawa_data_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+                    mime="text/csv"
+                )
+            else:
+                st.info("表示するデータがありません")
     
     def create_metrics_display(self, data: Dict[str, Any]) -> None:
         """現在の状況表示を作成"""
@@ -471,10 +518,10 @@ class KotogawaMonitor:
             obs_time_str = "不明"
         
         # 3つのセクションに分けて表示
-        st.subheader("📊 現在の観測状況")
+        st.markdown("## 現在の観測状況")
         
         # 降雨情報
-        st.markdown(f"### 🌧️ 降雨情報｜{obs_time_str} 更新")
+        st.markdown(f"### 降雨情報｜{obs_time_str} 更新")
         rain_col1, rain_col2, rain_col3 = st.columns(3)
         
         with rain_col1:
@@ -490,9 +537,9 @@ class KotogawaMonitor:
                     delta_color=rain_color
                 )
                 if hourly_rain > 30:
-                    st.error("🌧️ 大雨注意")
+                    st.error("雨 大雨注意")
                 elif hourly_rain > 10:
-                    st.warning("🌦️ 雨量多め")
+                    st.warning("雨 雨量多め")
             else:
                 st.metric(label="60分雨量 (mm)", value="--")
         
@@ -511,7 +558,7 @@ class KotogawaMonitor:
             pass
         
         # 河川情報
-        st.markdown(f"### 🌊 河川情報（持世寺）｜{obs_time_str} 更新")
+        st.markdown(f"### 河川情報（持世寺）｜{obs_time_str} 更新")
         river_col1, river_col2, river_col3 = st.columns(3)
         
         with river_col1:
@@ -535,11 +582,11 @@ class KotogawaMonitor:
                 # ステータス表示
                 if river_status != '正常':
                     if river_status in ['氾濫危険', '避難判断']:
-                        st.error(f"🚨 {river_status}")
+                        st.error(f"危険 {river_status}")
                     elif river_status in ['氾濫注意', '水防団待機']:
-                        st.warning(f"⚠️ {river_status}")
+                        st.warning(f"注意 {river_status}")
                 else:
-                    st.success(f"✅ {river_status}")
+                    st.success(f"正常 {river_status}")
             else:
                 st.metric(label="水位 (m)", value="--")
         
@@ -554,7 +601,7 @@ class KotogawaMonitor:
             pass
         
         # ダム情報
-        st.markdown(f"### 🏔️ ダム情報（厚東川ダム）｜{obs_time_str} 更新")
+        st.markdown(f"### ダム情報（厚東川ダム）｜{obs_time_str} 更新")
         dam_col1, dam_col2, dam_col3, dam_col4, dam_col5 = st.columns(5)
         
         with dam_col1:
@@ -1026,7 +1073,7 @@ def main():
     st.sidebar.header("設定")
     
     # 手動更新ボタン
-    if st.sidebar.button("🔄 手動更新", type="primary", key="sidebar_refresh"):
+    if st.sidebar.button("更新", type="primary", key="sidebar_refresh"):
         monitor.load_history_data.clear()
         st.cache_data.clear()
         st.rerun()
@@ -1112,21 +1159,21 @@ def main():
         
         # ステータス表示文の作成
         if alerts['overall'] == '危険':
-            alert_status = f"🚨 **危険レベル**: 緊急対応が必要です"
+            alert_status = f"危険 **危険レベル**: 緊急対応が必要です"
             if alert_details:
                 alert_status += f" ({' | '.join(alert_details)})"
         elif alerts['overall'] == '警戒':
-            alert_status = f"⚠️ **警戒レベル**: 注意が必要です"
+            alert_status = f"注意 **警戒レベル**: 注意が必要です"
             if alert_details:
                 alert_status += f" ({' | '.join(alert_details)})"
         elif alerts['overall'] == '注意':
-            alert_status = f"ℹ️ **注意レベル**: 状況を監視中"
+            alert_status = f"情報 **注意レベル**: 状況を監視中"
             if alert_details:
                 alert_status += f" ({' | '.join(alert_details)})"
         elif alerts['overall'] == '正常':
-            alert_status = "✅ **正常レベル**: 安全な状態です"
+            alert_status = "正常 **正常レベル**: 安全な状態です"
         else:
-            alert_status = "ℹ️ データ確認中..."
+            alert_status = "情報 データ確認中..."
         
         # 更新時刻情報の作成
         if latest_data.get('timestamp'):
@@ -1141,27 +1188,23 @@ def main():
                     if data_time.tzinfo is None:
                         data_time = data_time.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
                     now = datetime.now(ZoneInfo('Asia/Tokyo'))
-                    update_info = f"📅 観測時刻: {data_time.strftime('%Y年%m月%d日 %H:%M')} | 取得時刻: {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}"
+                    update_info = f"■ 観測時刻: {data_time.strftime('%Y年%m月%d日 %H:%M')} | 取得時刻: {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}"
                     if refresh_interval[1] > 0:
                         update_info += f" | 最終確認: {now.strftime('%H:%M:%S')}"
                 else:
-                    update_info = f"📅 最終更新: {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}"
+                    update_info = f"■ 最終更新: {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}"
             except Exception as e:
                 update_info = f"最終更新: {latest_data.get('timestamp', '不明')} (時刻解析エラー)"
     else:
-        alert_status = "⚠️ データが取得できていません"
-        update_info = "📅 データ取得中..."
+        alert_status = "注意 データが取得できていません"
+        update_info = "■ データ取得中..."
     
     # 固定ヘッダーの内容を設定
     with header_placeholder.container():
-        st.markdown("<h1 style='text-align: center; margin: 0;'>🌊 厚東川氾濫監視システム</h1>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center; margin: 0;'>厚東川氾濫監視システム</h1>", unsafe_allow_html=True)
         
-        col1, col2 = st.columns([4, 1])
-        with col1:
-            st.info(update_info)
-        with col2:
-            # 空のカラム（手動更新ボタンはサイドバーに移動）
-            pass
+        # 観測時刻と状態表示を同じカラム構成にする
+        st.info(update_info)
         
         # アラート状態表示
         if "危険" in alert_status:
@@ -1181,59 +1224,20 @@ def main():
     # 天気予報表示
     monitor.create_weather_forecast_display(latest_data)
     
-    # タブによる表示切り替え
-    tab1, tab2 = st.tabs(["📊 グラフ", "📋 データテーブル"])
-    
-    with tab1:
-        # Plotlyの設定
-        plotly_config = {
-            'scrollZoom': enable_graph_interaction,
-            'doubleClick': 'reset' if enable_graph_interaction else False,
-            'displayModeBar': True,
-            'displaylogo': False,
-            'modeBarButtonsToRemove': ['lasso2d', 'select2d'] if enable_graph_interaction else ['pan2d', 'zoom2d', 'lasso2d', 'select2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d']
-        }
-        
-        st.subheader("河川水位・全放流量")
-        fig1 = monitor.create_river_water_level_graph(history_data, enable_graph_interaction)
-        st.plotly_chart(fig1, use_container_width=True, config=plotly_config)
-        
-        st.subheader("ダム流入出量・累加雨量")
-        fig2 = monitor.create_dam_flow_graph(history_data, enable_graph_interaction)
-        st.plotly_chart(fig2, use_container_width=True, config=plotly_config)
-        
-        st.subheader("ダム貯水位・時間雨量")
-        fig3 = monitor.create_dam_water_level_graph(history_data, enable_graph_interaction)
-        st.plotly_chart(fig3, use_container_width=True, config=plotly_config)
-    
-    with tab2:
-        st.subheader("データテーブル")
-        df_table = monitor.create_data_table(history_data)
-        if not df_table.empty:
-            st.dataframe(df_table, use_container_width=True)
-            
-            # CSVダウンロード
-            csv = df_table.to_csv(index=False, encoding='utf-8-sig')
-            st.download_button(
-                label="📥 CSVダウンロード",
-                data=csv,
-                file_name=f"kotogawa_data_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
-                mime="text/csv"
-            )
-        else:
-            st.info("表示するデータがありません")
+    # データ分析表示
+    monitor.create_data_analysis_display(history_data, enable_graph_interaction)
     
     # システム情報（サイドバー）
     st.sidebar.subheader("システム情報")
     
     # データ統計
     st.sidebar.info(
-        f"📊 データ件数: {len(history_data)}件\n"
-        f"⏱️ 表示期間: {display_hours}時間"
+        f"■ データ件数: {len(history_data)}件\n"
+        f"■ 表示期間: {display_hours}時間"
     )
     
     # 警戒レベル説明
-    with st.sidebar.expander("🚨 警戒レベル説明"):
+    with st.sidebar.expander("■ 警戒レベル説明"):
         st.write(f"""
         **河川水位基準**
         - 正常: 3.80m未満
@@ -1253,7 +1257,7 @@ def main():
         """)
     
     # データソース情報
-    with st.sidebar.expander("📡 データソース"):
+    with st.sidebar.expander("■ データソース"):
         st.write("""
         **厚東川ダム**
         - 観測地点: 宇部市
@@ -1280,13 +1284,13 @@ def main():
             minutes_ago = int(time_diff.total_seconds() / 60)
             
             if minutes_ago < 60:
-                st.sidebar.success(f"🟢 最新 ({minutes_ago}分前)")
+                st.sidebar.success(f"● 最新 ({minutes_ago}分前)")
             elif minutes_ago < 120:
-                st.sidebar.warning(f"🟡 やや古い ({minutes_ago}分前)")
+                st.sidebar.warning(f"● やや古い ({minutes_ago}分前)")
             else:
-                st.sidebar.error(f"🔴 古いデータ ({minutes_ago}分前)")
+                st.sidebar.error(f"● 古いデータ ({minutes_ago}分前)")
         except:
-            st.sidebar.info("🔵 更新時刻確認中")
+            st.sidebar.info("● 更新時刻確認中")
     
     # アプリ情報
     st.sidebar.markdown("---")
