@@ -539,21 +539,9 @@ class KotogawaMonitor:
             
             for i, day_data in enumerate(weekly_forecast[:7]):
                 with cols[i]:
-                    # 各列を統一されたコンテナで包む
-                    border_style = "border-left: 2px solid #ddd;" if i > 0 else ""
-                    
-                    container_html = f"""
-                    <div style="
-                        {border_style}
-                        padding: 10px 5px;
-                        min-height: 200px;
-                        display: flex;
-                        flex-direction: column;
-                        justify-content: space-between;
-                        align-items: center;
-                        text-align: center;
-                    ">
-                    """
+                    # 境界線のスタイル
+                    if i > 0:
+                        st.markdown('<div style="border-left: 2px solid #ddd; padding-left: 10px; min-height: 180px;">', unsafe_allow_html=True)
                     
                     # 日付と曜日
                     try:
@@ -576,53 +564,45 @@ class KotogawaMonitor:
                             # 英語の曜日を日本語に変換
                             day_label = weekday_jp.get(day_of_week, day_of_week)
                         
-                        date_html = f"""
-                        <div style="font-weight: bold; margin-bottom: 5px;">{month_day}</div>
-                        <div style="font-weight: bold; margin-bottom: 10px; min-height: 20px;">{day_label}</div>
-                        """
+                        # 日付を表示
+                        st.markdown(f"<div style='text-align: center; font-weight: bold; margin-bottom: 5px;'>{month_day}</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='text-align: center; font-weight: bold; margin-bottom: 10px;'>{day_label}</div>", unsafe_allow_html=True)
                     except:
-                        date_html = f"""
-                        <div style="font-weight: bold; margin-bottom: 5px;">{day_data.get('date', '')}</div>
-                        <div style="font-weight: bold; margin-bottom: 10px; min-height: 20px;">--</div>
-                        """
+                        st.markdown(f"<div style='text-align: center; font-weight: bold; margin-bottom: 5px;'>{day_data.get('date', '')}</div>", unsafe_allow_html=True)
+                        st.markdown("<div style='text-align: center; font-weight: bold; margin-bottom: 10px;'>--</div>", unsafe_allow_html=True)
                     
                     # 天気アイコン
                     weather_code = day_data.get('weather_code', '')
                     weather_text = day_data.get('weather_text', 'データなし')
                     weather_icon = self.get_weather_icon(weather_code, weather_text)
                     
+                    # アイコンと天気テキストを表示
+                    st.markdown(f"<div style='text-align: center; font-size: 24px; margin: 10px 0;'>{weather_icon}</div>", unsafe_allow_html=True)
+                    
                     # 短縮版のテキスト
                     if len(weather_text) > 6:
                         weather_short = weather_text[:6] + "..."
                     else:
                         weather_short = weather_text
-                    
-                    weather_html = f"""
-                    <div style="margin: 10px 0;">
-                        <div style="font-size: 24px; margin-bottom: 5px;">{weather_icon}</div>
-                        <div style="font-size: 10px; color: #666; min-height: 15px;">{weather_short}</div>
-                    </div>
-                    """
+                    st.markdown(f"<div style='text-align: center; font-size: 10px; color: #666; margin-bottom: 10px;'>{weather_short}</div>", unsafe_allow_html=True)
                     
                     # 降水確率
                     precip_prob = day_data.get('precipitation_probability')
                     if precip_prob is not None:
                         if precip_prob >= 70:
-                            precip_html = f'<div style="margin-top: 10px;">雨 <strong>{precip_prob}%</strong></div>'
+                            st.markdown(f"<div style='text-align: center;'>雨 <strong>{precip_prob}%</strong></div>", unsafe_allow_html=True)
                         elif precip_prob >= 50:
-                            precip_html = f'<div style="margin-top: 10px;">雨 <strong>{precip_prob}%</strong></div>'
+                            st.markdown(f"<div style='text-align: center;'>雨 <strong>{precip_prob}%</strong></div>", unsafe_allow_html=True)
                         elif precip_prob >= 30:
-                            precip_html = f'<div style="margin-top: 10px;">曇 {precip_prob}%</div>'
+                            st.markdown(f"<div style='text-align: center;'>曇 {precip_prob}%</div>", unsafe_allow_html=True)
                         else:
-                            precip_html = f'<div style="margin-top: 10px;">晴 {precip_prob}%</div>'
+                            st.markdown(f"<div style='text-align: center;'>晴 {precip_prob}%</div>", unsafe_allow_html=True)
                     else:
-                        precip_html = '<div style="margin-top: 10px;">--</div>'
+                        st.markdown("<div style='text-align: center;'>--</div>", unsafe_allow_html=True)
                     
-                    # 完全なHTMLを構築
-                    complete_html = container_html + date_html + weather_html + precip_html + "</div>"
-                    
-                    # HTMLを表示
-                    st.markdown(complete_html, unsafe_allow_html=True)
+                    # 境界線の終了
+                    if i > 0:
+                        st.markdown('</div>', unsafe_allow_html=True)
         
         st.markdown("---")
     
