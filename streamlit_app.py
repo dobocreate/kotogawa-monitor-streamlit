@@ -1167,7 +1167,8 @@ class KotogawaMonitor:
                     y=df['rainfall'],
                     name='時間雨量（宇部市）',
                     marker_color='#87CEEB',
-                    opacity=0.7
+                    opacity=0.7,
+                    width=600000
                 ),
                 secondary_y=True
             )
@@ -1180,7 +1181,8 @@ class KotogawaMonitor:
                     y=df['precipitation_intensity_obs'],
                     name='降水強度・観測値（厚東川ダム）',
                     marker_color='#66CDAA',
-                    opacity=0.8
+                    opacity=0.8,
+                    width=600000
                 ),
                 secondary_y=True
             )
@@ -1193,7 +1195,8 @@ class KotogawaMonitor:
                     y=df['precipitation_intensity_forecast'],
                     name='降水強度・予測値（厚東川ダム）',
                     marker_color='#98FB98',
-                    opacity=0.6
+                    opacity=0.6,
+                    width=600000
                 ),
                 secondary_y=True
             )
@@ -1458,7 +1461,8 @@ class KotogawaMonitor:
                 y=obs_intensities,
                 name='降水強度・観測値（厚東川ダム）',
                 marker=dict(color='#66CDAA'),
-                hovertemplate='<b>観測値</b><br>%{x|%H:%M}<br>降水強度: %{y:.1f} mm/h<extra></extra>'
+                hovertemplate='<b>観測値</b><br>%{x|%H:%M}<br>降水強度: %{y:.1f} mm/h<extra></extra>',
+                width=600000
             ), secondary_y=False)
         
         # 予測データのプロット（棒グラフ、左軸）
@@ -1468,7 +1472,8 @@ class KotogawaMonitor:
                 y=forecast_intensities,
                 name='降水強度・予測値（厚東川ダム）',
                 marker=dict(color='#98FB98', opacity=0.7),
-                hovertemplate='<b>予測値</b><br>%{x|%H:%M}<br>降水強度: %{y:.1f} mm/h<extra></extra>'
+                hovertemplate='<b>予測値</b><br>%{x|%H:%M}<br>降水強度: %{y:.1f} mm/h<extra></extra>',
+                width=600000
             ), secondary_y=False)
         
         # 時間雨量データの追加（右軸）
@@ -1499,7 +1504,8 @@ class KotogawaMonitor:
                     y=rainfall_values,
                     name='時間雨量（宇部市）',
                     marker=dict(color='#87CEEB', opacity=0.7),
-                    hovertemplate='<b>時間雨量</b><br>%{x|%H:%M}<br>雨量: %{y:.1f} mm/h<extra></extra>'
+                    hovertemplate='<b>時間雨量</b><br>%{x|%H:%M}<br>雨量: %{y:.1f} mm/h<extra></extra>',
+                    width=600000
                 ), secondary_y=True)
         
         # レイアウト設定
