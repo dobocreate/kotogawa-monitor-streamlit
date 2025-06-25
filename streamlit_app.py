@@ -64,7 +64,6 @@ st.markdown("""
         min-width: 0;
     }
     
-    
     /* サイドバーの上部余白調整 */
     section[data-testid="stSidebar"] > div {
         padding-top: 0rem;
@@ -1876,8 +1875,8 @@ def main():
     st.markdown('<h1 style="text-align: center; margin-top: 0; margin-bottom: 1rem;">厚東川氾濫監視システムv2.0</h1>', unsafe_allow_html=True)
     
     if latest_data:
-        # 状態と更新時間を横並びで表示
-        col1, col2 = st.columns(2)
+        # 状態、更新時間、API取得時間を3列で表示
+        col1, col2, col3 = st.columns(3)
         
         with col1:
             if alerts['overall'] == '正常':
@@ -1904,6 +1903,22 @@ def main():
                     st.info("🕐 最終更新: --:--")
             else:
                 st.info("🕐 最終更新: --:--")
+        
+        with col3:
+            # API取得時間
+            precipitation_data = latest_data.get('precipitation_intensity', {})
+            api_update_time = precipitation_data.get('update_time')
+            if api_update_time:
+                try:
+                    dt = datetime.fromisoformat(api_update_time.replace('Z', '+00:00'))
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                    api_time = dt.strftime('%H:%M')
+                    st.info(f"📡 API取得: {api_time}")
+                except:
+                    st.info("📡 API取得: 取得失敗")
+            else:
+                st.info("📡 API取得: データなし")
     else:
         st.warning("⚠️ データの読み込み中...")
     
