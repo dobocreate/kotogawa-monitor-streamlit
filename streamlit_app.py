@@ -1090,6 +1090,9 @@ class KotogawaMonitor:
     
     def create_river_water_level_graph(self, history_data: List[Dict[str, Any]], enable_interaction: bool = False, display_hours: int = 24) -> go.Figure:
         """河川水位グラフを作成（河川水位 + ダム全放流量の二軸表示）"""
+        # 現在時刻を取得
+        now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
+        
         # 表示期間に基づいてデータをフィルタリング
         time_min, time_max = self.get_common_time_range(history_data, display_hours)
         if time_min and time_max:
@@ -1235,6 +1238,9 @@ class KotogawaMonitor:
     
     def create_dam_water_level_graph(self, history_data: List[Dict[str, Any]], enable_interaction: bool = False, latest_precipitation_data: Dict[str, Any] = None, display_hours: int = 24) -> go.Figure:
         """ダム水位グラフを作成（ダム水位 + 時間雨量の二軸表示）"""
+        # 現在時刻を取得（予測データ処理で使用）
+        now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
+        
         # 表示期間に基づいてデータをフィルタリング
         time_min, time_max = self.get_common_time_range(history_data, display_hours)
         if time_min and time_max:
@@ -1323,9 +1329,6 @@ class KotogawaMonitor:
             )
         
         # Yahoo! Weather API降水強度データを追加
-        # 現在時刻を取得
-        now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
-        
         # 表示期間の計算
         end_time = now_jst
         start_time = end_time - timedelta(hours=display_hours)
@@ -1501,6 +1504,9 @@ class KotogawaMonitor:
     
     def create_dam_flow_graph(self, history_data: List[Dict[str, Any]], enable_interaction: bool = False, display_hours: int = 24) -> go.Figure:
         """ダム流入出量グラフを作成（流入量・全放流量 + 累加雨量の二軸表示）"""
+        # 現在時刻を取得
+        now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
+        
         # 表示期間に基づいてデータをフィルタリング
         time_min, time_max = self.get_common_time_range(history_data, display_hours)
         if time_min and time_max:
