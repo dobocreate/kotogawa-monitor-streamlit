@@ -65,25 +65,25 @@ st.markdown("""
     
     /* 固定ヘッダーのスタイル */
     .fixed-header {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        background-color: white;
-        z-index: 999;
-        padding: 1rem 1rem 0.5rem 1rem;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        position: sticky !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        background-color: white !important;
+        z-index: 9999 !important;
+        padding: 1rem 1rem 0.5rem 1rem !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
     }
     
     /* サイドバーが開いている時の固定ヘッダー調整 */
     [data-testid="stSidebar"][aria-expanded="true"] ~ .main .fixed-header {
-        left: 21rem;
-        right: 0;
+        left: 21rem !important;
+        right: 0 !important;
     }
     
     /* 固定ヘッダー分のメインコンテンツ上部マージン */
     .main-content {
-        margin-top: 140px;
+        margin-top: 0px;
     }
     
     /* サイドバーの上部余白調整 */
