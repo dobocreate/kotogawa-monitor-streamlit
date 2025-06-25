@@ -59,6 +59,39 @@ st.markdown("""
         padding-top: 0 !important;
     }
     
+    /* 自動更新コンポーネントの上部マージンを除去 */
+    [data-testid="stVerticalBlock"] > div:first-child {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+    
+    /* Streamlitの全体的な上部スペースを強制除去 */
+    .stApp {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+    }
+    
+    /* 最初の要素の上部マージンを完全除去 */
+    .main .block-container > div > div:first-child {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+    
+    /* 自動更新コンポーネントを完全に非表示 */
+    iframe[title="st_autorefresh.autorefresh"] {
+        display: none !important;
+        height: 0 !important;
+        width: 0 !important;
+    }
+    
+    /* 自動更新コンポーネントのコンテナも非表示 */
+    [data-testid="stIFrame"]:has(iframe[title*="autorefresh"]) {
+        display: none !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
     /* サイドバーが開いている時のグラフコンテナ */
     [data-testid="stSidebar"][aria-expanded="true"] ~ .main .block-container {
         max-width: calc(100vw - 21rem);
