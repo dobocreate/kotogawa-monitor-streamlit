@@ -63,28 +63,6 @@ st.markdown("""
         min-width: 0;
     }
     
-    /* 固定ヘッダーのスタイル */
-    .fixed-header {
-        position: sticky !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        background-color: white !important;
-        z-index: 9999 !important;
-        padding: 1rem 1rem 0.5rem 1rem !important;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-    }
-    
-    /* サイドバーが開いている時の固定ヘッダー調整 */
-    [data-testid="stSidebar"][aria-expanded="true"] ~ .main .fixed-header {
-        left: 21rem !important;
-        right: 0 !important;
-    }
-    
-    /* 固定ヘッダー分のメインコンテンツ上部マージン */
-    .main-content {
-        margin-top: 0px;
-    }
     
     /* サイドバーの上部余白調整 */
     section[data-testid="stSidebar"] > div {
@@ -1633,12 +1611,6 @@ def main():
     """メイン関数"""
     monitor = KotogawaMonitor()
     
-    # 固定ヘッダー用のプレースホルダー
-    header_placeholder = st.empty()
-    
-    # メインコンテンツ用のコンテナ
-    main_content = st.container()
-    
     # サイドバー設定
     st.sidebar.header("設定")
     
@@ -1720,10 +1692,10 @@ def main():
         st.warning(f"履歴データの読み込みに失敗しました: {e}")
         history_data = []
     
-    # アラート表示とステータス情報の準備
-    alert_status = ""
-    update_info = ""
+    # システム名の表示（毎回最上部に表示）
+    st.markdown("# 厚東川氾濫監視システムv2.0")
     
+    # 監視状況の表示
     if latest_data:
         alerts = monitor.check_alert_status(latest_data, thresholds)
         
@@ -1734,68 +1706,31 @@ def main():
         if alerts['dam'] != '正常':
             alert_details.append(f"ダム: {alerts['dam']}")
         
-        # ステータス表示文の作成
+        # ステータス表示文の作成と表示
         if alerts['overall'] == '危険':
-            alert_status = f"危険 **危険レベル** : 緊急対応が必要です"
+            alert_status = f"**危険レベル** : 緊急対応が必要です"
             if alert_details:
                 alert_status += f" ({' ｜ '.join(alert_details)})"
+            st.error(f"監視状況 : {alert_status}")
         elif alerts['overall'] == '警戒':
-            alert_status = f"注意 **警戒レベル** : 注意が必要です"
+            alert_status = f"**警戒レベル** : 注意が必要です"
             if alert_details:
                 alert_status += f" ({' ｜ '.join(alert_details)})"
+            st.warning(f"監視状況 : {alert_status}")
         elif alerts['overall'] == '注意':
-            alert_status = f"情報 **注意レベル** : 状況を監視中"
+            alert_status = f"**注意レベル** : 状況を監視中"
             if alert_details:
                 alert_status += f" ({' ｜ '.join(alert_details)})"
+            st.info(f"監視状況 : {alert_status}")
         elif alerts['overall'] == '正常':
-            alert_status = "**監視状況** : 正常 - 安全な状態です"
+            st.success("監視状況 : 正常 - 安全な状態です")
         else:
-            alert_status = "情報 データ確認中..."
-        
-        # 更新時刻情報の作成
-        if latest_data.get('timestamp'):
-            try:
-                timestamp = datetime.fromisoformat(latest_data['timestamp'].replace('Z', '+00:00'))
-                if timestamp.tzinfo is None:
-                    timestamp = timestamp.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-                
-                data_time_str = latest_data.get('data_time', '')
-                if data_time_str:
-                    data_time = datetime.fromisoformat(data_time_str.replace('Z', '+00:00'))
-                    if data_time.tzinfo is None:
-                        data_time = data_time.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-                    now = datetime.now(ZoneInfo('Asia/Tokyo'))
-                    update_info = f"観測時刻 : {data_time.strftime('%Y年%m月%d日 %H:%M')} ｜ 取得時刻 : {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}"
-                    if refresh_interval[1] > 0:
-                        update_info += f" ｜ 最終確認 : {now.strftime('%H:%M:%S')}"
-                else:
-                    update_info = f"最終更新 : {timestamp.strftime('%Y年%m月%d日 %H:%M:%S')}"
-            except Exception as e:
-                update_info = f"最終更新 : {latest_data.get('timestamp', '不明')} (時刻解析エラー)"
+            st.info("監視状況 : データ確認中...")
     else:
-        alert_status = "注意 データが取得できていません"
-        update_info = "データ取得中..."
+        st.warning("監視状況 : データが取得できていません")
     
-    # 固定ヘッダーの内容を設定
-    with header_placeholder.container():
-        st.markdown('<div class="fixed-header">', unsafe_allow_html=True)
-        st.markdown("<h1 style='text-align: center; margin: 0;'>厚東川氾濫監視システムv2.0</h1>", unsafe_allow_html=True)
-        
-        # アラート状態表示
-        if "危険" in alert_status:
-            st.error(alert_status)
-        elif "警戒" in alert_status:
-            st.warning(alert_status)
-        elif "注意" in alert_status:
-            st.info(alert_status)
-        elif "正常" in alert_status:
-            st.success(alert_status)
-        else:
-            st.info(alert_status)
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    # メインコンテンツ
-    st.markdown('<div class="main-content">', unsafe_allow_html=True)
+    # 区切り線
+    st.markdown("---")
     
     # 現在の状況表示
     monitor.create_metrics_display(latest_data)
@@ -1873,8 +1808,6 @@ def main():
     st.sidebar.caption("厚東川リアルタイム監視システム v2.0")
     st.sidebar.caption("Powered by Streamlit")
     
-    # メインコンテンツのdivを閉じる
-    st.markdown('</div>', unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
