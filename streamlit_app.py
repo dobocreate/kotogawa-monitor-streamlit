@@ -1265,7 +1265,7 @@ class KotogawaMonitor:
                     x=obs_times,
                     y=obs_intensities,
                     name='降水強度・観測値（厚東川ダム）',
-                    marker_color='#66CDAA',
+                    marker_color='#DC143C',
                     opacity=0.8,
                     width=600000,
                     hovertemplate='<b>観測値</b><br>%{x|%H:%M}<br>降水強度: %{y:.1f} mm/h<extra></extra>'
@@ -1298,7 +1298,7 @@ class KotogawaMonitor:
                             x=forecast_times,
                             y=forecast_intensities,
                             name='降水強度・予測値（厚東川ダム）',
-                            marker_color='#98FB98',
+                            marker_color='#FF1493',
                             opacity=0.6,
                             width=600000,
                             hovertemplate='<b>予測値</b><br>%{x|%H:%M}<br>降水強度: %{y:.1f} mm/h<extra></extra>'
@@ -1571,7 +1571,7 @@ class KotogawaMonitor:
                 x=obs_times,
                 y=obs_intensities,
                 name='降水強度・観測値（厚東川ダム）',
-                marker=dict(color='#66CDAA'),
+                marker=dict(color='#DC143C'),
                 hovertemplate='<b>観測値</b><br>%{x|%H:%M}<br>降水強度: %{y:.1f} mm/h<extra></extra>',
                 width=600000
             ), secondary_y=False)
@@ -1582,7 +1582,7 @@ class KotogawaMonitor:
                 x=forecast_times,
                 y=forecast_intensities,
                 name='降水強度・予測値（厚東川ダム）',
-                marker=dict(color='#98FB98', opacity=0.7),
+                marker=dict(color='#FF1493', opacity=0.7),
                 hovertemplate='<b>予測値</b><br>%{x|%H:%M}<br>降水強度: %{y:.1f} mm/h<extra></extra>',
                 width=600000
             ), secondary_y=False)
