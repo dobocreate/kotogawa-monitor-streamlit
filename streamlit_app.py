@@ -993,7 +993,8 @@ class KotogawaMonitor:
                     y=df['river_level'],
                     mode='lines+markers',
                     name='河川水位（持世寺）',
-                    line=dict(color='#1f77b4')
+                    line=dict(color='#1f77b4', width=3),
+                    marker=dict(size=12, color='white', line=dict(width=2, color='#1f77b4'))
                 ),
                 secondary_y=False
             )
@@ -1006,7 +1007,8 @@ class KotogawaMonitor:
                     y=df['outflow'],
                     mode='lines+markers',
                     name='全放流量（厚東川ダム）',
-                    line=dict(color='#d62728')
+                    line=dict(color='#d62728', width=3),
+                    marker=dict(size=12, color='white', line=dict(width=2, color='#d62728'))
                 ),
                 secondary_y=True
             )
@@ -1017,7 +1019,7 @@ class KotogawaMonitor:
             range=[0, 6],
             dtick=1,
             secondary_y=False,
-            title_font_size=10,
+            title_font_size=12,
             tickfont_size=9
         )
         fig.update_yaxes(
@@ -1025,7 +1027,7 @@ class KotogawaMonitor:
             range=[0, 900],
             dtick=150,
             secondary_y=True,
-            title_font_size=10,
+            title_font_size=12,
             tickfont_size=9
         )
         
@@ -1033,7 +1035,7 @@ class KotogawaMonitor:
         time_min, time_max = self.get_common_time_range(history_data)
         xaxis_config = dict(
             title_text="時刻",
-            title_font_size=10,
+            title_font_size=12,
             tickfont_size=9
         )
         if time_min and time_max:
@@ -1056,7 +1058,7 @@ class KotogawaMonitor:
             ),
             margin=dict(t=30, l=40, r=40, b=100),
             autosize=True,
-            font=dict(size=10)
+            font=dict(size=9)
         )
         
         # インタラクションが無効の場合は軸を固定
@@ -1143,7 +1145,8 @@ class KotogawaMonitor:
                     y=df['dam_level'],
                     mode='lines+markers',
                     name='ダム貯水位（厚東川ダム）',
-                    line=dict(color='#ff7f0e')
+                    line=dict(color='#ff7f0e', width=3),
+                    marker=dict(size=12, color='white', line=dict(width=2, color='#ff7f0e'))
                 ),
                 secondary_y=False
             )
@@ -1193,7 +1196,7 @@ class KotogawaMonitor:
             range=[0, 50],
             dtick=5,
             secondary_y=False,
-            title_font_size=10,
+            title_font_size=12,
             tickfont_size=9
         )
         fig.update_yaxes(
@@ -1201,7 +1204,7 @@ class KotogawaMonitor:
             range=[0, 50],
             dtick=5,
             secondary_y=True,
-            title_font_size=10,
+            title_font_size=12,
             tickfont_size=9
         )
         
@@ -1209,7 +1212,7 @@ class KotogawaMonitor:
         time_min, time_max = self.get_common_time_range(history_data)
         xaxis_config = dict(
             title_text="時刻",
-            title_font_size=10,
+            title_font_size=12,
             tickfont_size=9
         )
         if time_min and time_max:
@@ -1232,7 +1235,7 @@ class KotogawaMonitor:
             ),
             margin=dict(t=30, l=40, r=40, b=100),
             autosize=True,
-            font=dict(size=10)
+            font=dict(size=9)
         )
         
         # インタラクションが無効の場合は軸を固定
@@ -1310,7 +1313,8 @@ class KotogawaMonitor:
                     y=df['inflow'],
                     mode='lines+markers',
                     name='流入量（厚東川ダム）',
-                    line=dict(color='#2ca02c')
+                    line=dict(color='#2ca02c', width=3),
+                    marker=dict(size=12, color='white', line=dict(width=2, color='#2ca02c'))
                 ),
                 secondary_y=False
             )
@@ -1323,7 +1327,8 @@ class KotogawaMonitor:
                     y=df['outflow'],
                     mode='lines+markers',
                     name='全放流量（厚東川ダム）',
-                    line=dict(color='#d62728')
+                    line=dict(color='#d62728', width=3),
+                    marker=dict(size=12, color='white', line=dict(width=2, color='#d62728'))
                 ),
                 secondary_y=False
             )
@@ -1336,7 +1341,8 @@ class KotogawaMonitor:
                     y=df['cumulative_rainfall'],
                     mode='lines+markers',
                     name='累加雨量（宇部市）',
-                    line=dict(color='#87CEEB'),
+                    line=dict(color='#87CEEB', width=3),
+                    marker=dict(size=12, color='white', line=dict(width=2, color='#87CEEB')),
                     fill='tonexty'
                 ),
                 secondary_y=True
@@ -1759,6 +1765,28 @@ def main():
     # システム情報（サイドバー）
     st.sidebar.subheader("システム情報")
     
+    # 最終更新からの経過時間
+    if latest_data and latest_data.get('timestamp'):
+        try:
+            last_update = datetime.fromisoformat(latest_data['timestamp'].replace('Z', '+00:00'))
+            # タイムゾーンがない場合は日本時間として扱う（変換なし）
+            if last_update.tzinfo is None:
+                last_update = last_update.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+            
+            # 現在時刻（日本時間）
+            now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
+            time_diff = now_jst - last_update
+            minutes_ago = int(time_diff.total_seconds() / 60)
+            
+            if minutes_ago < 60:
+                st.sidebar.success(f"● 最新 ({minutes_ago}分前)")
+            elif minutes_ago < 120:
+                st.sidebar.warning(f"● やや古い ({minutes_ago}分前)")
+            else:
+                st.sidebar.error(f"● 古いデータ ({minutes_ago}分前)")
+        except:
+            st.sidebar.info("● 更新時刻確認中")
+    
     # データ統計
     st.sidebar.info(f"■ データ件数: {len(history_data)}件")
     
@@ -1795,28 +1823,6 @@ def main():
         
         データ提供: 山口県土木防災情報システム
         """)
-    
-    # 最終更新からの経過時間
-    if latest_data and latest_data.get('timestamp'):
-        try:
-            last_update = datetime.fromisoformat(latest_data['timestamp'].replace('Z', '+00:00'))
-            # タイムゾーンがない場合は日本時間として扱う（変換なし）
-            if last_update.tzinfo is None:
-                last_update = last_update.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-            
-            # 現在時刻（日本時間）
-            now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
-            time_diff = now_jst - last_update
-            minutes_ago = int(time_diff.total_seconds() / 60)
-            
-            if minutes_ago < 60:
-                st.sidebar.success(f"● 最新 ({minutes_ago}分前)")
-            elif minutes_ago < 120:
-                st.sidebar.warning(f"● やや古い ({minutes_ago}分前)")
-            else:
-                st.sidebar.error(f"● 古いデータ ({minutes_ago}分前)")
-        except:
-            st.sidebar.info("● 更新時刻確認中")
     
     # アプリ情報
     st.sidebar.markdown("---")
