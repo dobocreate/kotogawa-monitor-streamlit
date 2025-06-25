@@ -834,23 +834,30 @@ class KotogawaDataCollector:
             if len(forecast_data) > 1:
                 week_forecast = forecast_data[1]
                 if 'timeSeries' in week_forecast and len(week_forecast['timeSeries']) > 0:
+                    # 天気コードと降水確率はtimeSeries[0]から取得
                     ts = week_forecast['timeSeries'][0]
                     time_defines = ts.get('timeDefines', [])
                     
                     # 山口県のデータを取得
                     weather_codes = []
                     pops = []
-                    temps_max = []
-                    temps_min = []
                     
                     for area in ts.get('areas', []):
                         if area.get('area', {}).get('code') in ['350000', '81428']:
                             weather_codes = area.get('weatherCodes', [])
                             pops = area.get('pops', [])
-                            # 週間予報の気温データを取得
-                            temps_max = area.get('tempsMax', [])
-                            temps_min = area.get('tempsMin', [])
                             break
+                    
+                    # 気温データはtimeSeries[1]から取得（存在する場合）
+                    temps_max = []
+                    temps_min = []
+                    if len(week_forecast['timeSeries']) > 1:
+                        ts_temp = week_forecast['timeSeries'][1]
+                        for area in ts_temp.get('areas', []):
+                            if area.get('area', {}).get('code') in ['350000', '81428']:
+                                temps_max = area.get('tempsMax', [])
+                                temps_min = area.get('tempsMin', [])
+                                break
                     
                     weekly_data = []
                     for i, time_str in enumerate(time_defines):
