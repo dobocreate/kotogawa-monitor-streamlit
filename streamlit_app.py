@@ -68,6 +68,11 @@ st.markdown("""
     section[data-testid="stSidebar"] > div {
         padding-top: 0rem;
     }
+    
+    /* システム名を中央配置 */
+    .main h1 {
+        text-align: center;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -194,17 +199,15 @@ class KotogawaMonitor:
                                 
                     except json.JSONDecodeError:
                         error_count += 1
-                        if error_count <= 3:  # 最初の3回だけ警告表示
-                            st.warning(f"■ 破損した履歴ファイル: {file_path.name}")
+                        # 個別のファイルエラーは表示しない（サマリーのみ）
                     except Exception as e:
                         error_count += 1
-                        if error_count <= 3:
-                            st.warning(f"■ 履歴データエラー: {file_path.name}")
+                        # 個別のファイルエラーは表示しない（サマリーのみ）
             
             current_time -= timedelta(days=1)
         
-        # エラーサマリー表示
-        if error_count > 3:
+        # エラーサマリー表示（エラーが多い場合のみ表示）
+        if error_count > 10:
             st.warning(f"■ 履歴データの読み込みで {error_count} 件のエラーがありました")
         
         # 時系列順にソート
