@@ -39,7 +39,24 @@ st.markdown("""
         padding-left: 1rem;
         padding-right: 1rem;
         padding-top: 0rem !important;
+        margin-top: 0rem !important;
         max-width: 100%;
+    }
+    
+    /* Streamlitのデフォルト上部マージンを完全に除去 */
+    .main .block-container > div:first-child {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+    
+    /* ページ全体の上部マージンを除去 */
+    .stApp > header {
+        display: none !important;
+    }
+    
+    /* Streamlitのメインコンテナの上部スペースを除去 */
+    .main {
+        padding-top: 0 !important;
     }
     
     /* サイドバーが開いている時のグラフコンテナ */
@@ -1850,6 +1867,9 @@ def main():
         'dam_danger': dam_danger
     }
     
+    # システムヘッダーの表示
+    st.markdown('<h1 style="text-align: center; margin-top: 0; margin-bottom: 1rem;">厚東川氾濫監視システムv2.0</h1>', unsafe_allow_html=True)
+    
     # データ読み込み
     with st.spinner('データを更新中...'):
         latest_data = monitor.load_latest_data()
@@ -1870,9 +1890,6 @@ def main():
         alerts = monitor.check_alert_status(latest_data, thresholds)
     else:
         alerts = {'overall': 'データなし', 'river': 'データなし', 'dam': 'データなし', 'rainfall': 'データなし'}
-    
-    # システムヘッダーの表示
-    st.markdown('<h1 style="text-align: center; margin-top: 0; margin-bottom: 1rem;">厚東川氾濫監視システムv2.0</h1>', unsafe_allow_html=True)
     
     if latest_data:
         # 状態、更新時間、API取得時間を3列で表示
@@ -1898,11 +1915,11 @@ def main():
                     if dt.tzinfo is None:
                         dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
                     update_time = dt.strftime('%H:%M')
-                    st.info(f"🕐 最終更新: {update_time}")
+                    st.success(f"🕐 最終更新: {update_time}")
                 except:
-                    st.info("🕐 最終更新: --:--")
+                    st.error("🕐 最終更新: 取得失敗")
             else:
-                st.info("🕐 最終更新: --:--")
+                st.warning("🕐 最終更新: データなし")
         
         with col3:
             # API取得時間
@@ -1914,11 +1931,11 @@ def main():
                     if dt.tzinfo is None:
                         dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
                     api_time = dt.strftime('%H:%M')
-                    st.info(f"📡 API取得: {api_time}")
+                    st.success(f"📡 API取得: {api_time}")
                 except:
-                    st.info("📡 API取得: 取得失敗")
+                    st.error("📡 API取得: 取得失敗")
             else:
-                st.info("📡 API取得: データなし")
+                st.warning("📡 API取得: データなし")
     else:
         st.warning("⚠️ データの読み込み中...")
     
