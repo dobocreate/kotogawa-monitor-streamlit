@@ -352,7 +352,8 @@ class KotogawaMonitor:
                     margin=dict(l=20, r=20, t=30, b=30),
                     xaxis_title="",
                     yaxis_title="降水確率 (%)",
-                    yaxis=dict(range=[0, 100]),
+                    yaxis=dict(range=[0, 100], fixedrange=True),
+                    xaxis=dict(fixedrange=True),
                     showlegend=False,
                     autosize=True,
                     font=dict(size=9)
@@ -409,7 +410,8 @@ class KotogawaMonitor:
                     margin=dict(l=20, r=20, t=30, b=30),
                     xaxis_title="",
                     yaxis_title="降水確率 (%)",
-                    yaxis=dict(range=[0, 100]),
+                    yaxis=dict(range=[0, 100], fixedrange=True),
+                    xaxis=dict(fixedrange=True),
                     showlegend=False,
                     autosize=True,
                     font=dict(size=9)
@@ -536,10 +538,69 @@ class KotogawaMonitor:
         
         st.markdown("## 週間天気予報（山口県）")
         
+        # レスポンシブ用のCSS
+        st.markdown("""
+        <style>
+            /* デフォルト（デスクトップ）: 7列表示 */
+            .weekly-forecast-container {
+                display: grid;
+                grid-template-columns: repeat(7, 1fr);
+                gap: 10px;
+            }
+            
+            /* タブレット: 4列表示 */
+            @media (max-width: 768px) {
+                .weekly-forecast-container {
+                    grid-template-columns: repeat(4, 1fr);
+                }
+            }
+            
+            /* スマートフォン: 2列表示 */
+            @media (max-width: 480px) {
+                .weekly-forecast-container {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+            }
+            
+            .weather-day-item {
+                text-align: center;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                background-color: #f9f9f9;
+            }
+            
+            .weather-date {
+                font-weight: bold;
+                margin-bottom: 5px;
+            }
+            
+            .weather-label {
+                font-weight: bold;
+                margin-bottom: 10px;
+            }
+            
+            .weather-icon {
+                font-size: 24px;
+                margin: 10px 0 5px 0;
+            }
+            
+            .weather-text {
+                font-size: 10px;
+                color: #666;
+                margin-bottom: 10px;
+            }
+            
+            .weather-precip {
+                margin-bottom: 0;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+        
         # 週間予報を表形式で表示
         if len(weekly_forecast) >= 7:
-            # 7列に分けて表示（縦線区切り付き）
-            cols = st.columns(7)
+            # HTMLコンテナで週間予報を表示
+            html_content = '<div class="weekly-forecast-container">'
             
             # 曜日の日本語マッピング
             weekday_jp = {
@@ -547,66 +608,69 @@ class KotogawaMonitor:
                 'Fri': '金', 'Sat': '土', 'Sun': '日'
             }
             
-            for i, day_data in enumerate(weekly_forecast[:7]):
-                with cols[i]:
-                    # 日付と曜日
-                    try:
-                        date_obj = datetime.strptime(day_data['date'], '%Y-%m-%d')
-                        month_day = date_obj.strftime('%m/%d')
-                        day_of_week = day_data.get('day_of_week', date_obj.strftime('%a'))
-                        
-                        # 今日・明日・明後日のラベル
-                        jst = ZoneInfo('Asia/Tokyo')
-                        today = datetime.now(jst).date()
-                        target_date = date_obj.date()
-                        
-                        if target_date == today:
-                            day_label = "今日"
-                        elif target_date == today + timedelta(days=1):
-                            day_label = "明日"
-                        elif target_date == today + timedelta(days=2):
-                            day_label = "明後日"
-                        else:
-                            # 英語の曜日を日本語に変換
-                            day_label = weekday_jp.get(day_of_week, day_of_week)
-                        
-                        # 日付と曜日を中央揃えで表示
-                        st.markdown(f'<p style="text-align: center; font-weight: bold; margin-bottom: 5px;">{month_day}</p>', unsafe_allow_html=True)
-                        st.markdown(f'<p style="text-align: center; font-weight: bold; margin-bottom: 10px;">{day_label}</p>', unsafe_allow_html=True)
-                    except:
-                        st.markdown(f'<p style="text-align: center; font-weight: bold; margin-bottom: 5px;">{day_data.get("date", "")}</p>', unsafe_allow_html=True)
-                        st.markdown('<p style="text-align: center; font-weight: bold; margin-bottom: 10px;">--</p>', unsafe_allow_html=True)
+            for day_data in weekly_forecast[:7]:
+                html_content += '<div class="weather-day-item">'
+                
+                # 日付と曜日
+                try:
+                    date_obj = datetime.strptime(day_data['date'], '%Y-%m-%d')
+                    month_day = date_obj.strftime('%m/%d')
+                    day_of_week = day_data.get('day_of_week', date_obj.strftime('%a'))
                     
-                    # 天気アイコン
-                    weather_code = day_data.get('weather_code', '')
-                    weather_text = day_data.get('weather_text', 'データなし')
-                    weather_icon = self.get_weather_icon(weather_code, weather_text)
+                    # 今日・明日・明後日のラベル
+                    jst = ZoneInfo('Asia/Tokyo')
+                    today = datetime.now(jst).date()
+                    target_date = date_obj.date()
                     
-                    # アイコンを中央揃えで表示
-                    st.markdown(f'<p style="text-align: center; font-size: 24px; margin: 10px 0 5px 0;">{weather_icon}</p>', unsafe_allow_html=True)
-                    
-                    # 短縮版のテキスト
-                    if len(weather_text) > 6:
-                        weather_short = weather_text[:6] + "..."
+                    if target_date == today:
+                        day_label = "今日"
+                    elif target_date == today + timedelta(days=1):
+                        day_label = "明日"
+                    elif target_date == today + timedelta(days=2):
+                        day_label = "明後日"
                     else:
-                        weather_short = weather_text
-                    st.markdown(f'<p style="text-align: center; font-size: 10px; color: #666; margin-bottom: 10px;">{weather_short}</p>', unsafe_allow_html=True)
+                        # 英語の曜日を日本語に変換
+                        day_label = weekday_jp.get(day_of_week, day_of_week)
                     
-                    # 降水確率
-                    precip_prob = day_data.get('precipitation_probability')
-                    if precip_prob is not None:
-                        if precip_prob >= 70:
-                            precip_text = f'雨 <strong>{precip_prob}%</strong>'
-                        elif precip_prob >= 50:
-                            precip_text = f'雨 <strong>{precip_prob}%</strong>'
-                        elif precip_prob >= 30:
-                            precip_text = f'曇 {precip_prob}%'
-                        else:
-                            precip_text = f'晴 {precip_prob}%'
+                    html_content += f'<div class="weather-date">{month_day}</div>'
+                    html_content += f'<div class="weather-label">{day_label}</div>'
+                except:
+                    html_content += f'<div class="weather-date">{day_data.get("date", "")}</div>'
+                    html_content += '<div class="weather-label">--</div>'
+                
+                # 天気アイコン
+                weather_code = day_data.get('weather_code', '')
+                weather_text = day_data.get('weather_text', 'データなし')
+                weather_icon = self.get_weather_icon(weather_code, weather_text)
+                
+                html_content += f'<div class="weather-icon">{weather_icon}</div>'
+                
+                # 短縮版のテキスト
+                if len(weather_text) > 6:
+                    weather_short = weather_text[:6] + "..."
+                else:
+                    weather_short = weather_text
+                html_content += f'<div class="weather-text">{weather_short}</div>'
+                
+                # 降水確率
+                precip_prob = day_data.get('precipitation_probability')
+                if precip_prob is not None:
+                    if precip_prob >= 70:
+                        precip_text = f'雨 <strong>{precip_prob}%</strong>'
+                    elif precip_prob >= 50:
+                        precip_text = f'雨 <strong>{precip_prob}%</strong>'
+                    elif precip_prob >= 30:
+                        precip_text = f'曇 {precip_prob}%'
                     else:
-                        precip_text = '--'
-                    
-                    st.markdown(f'<p style="text-align: center; margin-bottom: 0;">{precip_text}</p>', unsafe_allow_html=True)
+                        precip_text = f'晴 {precip_prob}%'
+                else:
+                    precip_text = '--'
+                
+                html_content += f'<div class="weather-precip">{precip_text}</div>'
+                html_content += '</div>'
+            
+            html_content += '</div>'
+            st.markdown(html_content, unsafe_allow_html=True)
         
         st.markdown("---")
     
@@ -952,16 +1016,16 @@ class KotogawaMonitor:
             height=400,
             showlegend=True,
             legend=dict(
-                orientation="v",
+                orientation="h",
                 yanchor="top",
-                y=0.98,
-                xanchor="left",
-                x=0.02,
+                y=-0.15,
+                xanchor="center",
+                x=0.5,
                 bgcolor="rgba(255, 255, 255, 0.8)",
                 bordercolor="rgba(0, 0, 0, 0.2)",
                 borderwidth=1
             ),
-            margin=dict(t=30, l=40, r=40, b=40),
+            margin=dict(t=30, l=40, r=40, b=80),
             autosize=True,
             font=dict(size=10)
         )
@@ -1103,16 +1167,16 @@ class KotogawaMonitor:
             height=400,
             showlegend=True,
             legend=dict(
-                orientation="v",
+                orientation="h",
                 yanchor="top",
-                y=0.98,
-                xanchor="left",
-                x=0.02,
+                y=-0.15,
+                xanchor="center",
+                x=0.5,
                 bgcolor="rgba(255, 255, 255, 0.8)",
                 bordercolor="rgba(0, 0, 0, 0.2)",
                 borderwidth=1
             ),
-            margin=dict(t=30, l=40, r=40, b=40),
+            margin=dict(t=30, l=40, r=40, b=80),
             autosize=True,
             font=dict(size=10)
         )
@@ -1252,16 +1316,16 @@ class KotogawaMonitor:
             height=400,
             showlegend=True,
             legend=dict(
-                orientation="v",
+                orientation="h",
                 yanchor="top",
-                y=0.98,
-                xanchor="left",
-                x=0.02,
+                y=-0.15,
+                xanchor="center",
+                x=0.5,
                 bgcolor="rgba(255, 255, 255, 0.8)",
                 bordercolor="rgba(0, 0, 0, 0.2)",
                 borderwidth=1
             ),
-            margin=dict(t=30, l=40, r=40, b=40),
+            margin=dict(t=30, l=40, r=40, b=80),
             autosize=True,
             font=dict(size=10)
         )
@@ -1338,16 +1402,16 @@ class KotogawaMonitor:
             height=400,
             showlegend=True,
             legend=dict(
-                orientation="v",
+                orientation="h",
                 yanchor="top",
-                y=0.98,
-                xanchor="left",
-                x=0.02,
+                y=-0.15,
+                xanchor="center",
+                x=0.5,
                 bgcolor="rgba(255, 255, 255, 0.8)",
                 bordercolor="rgba(0, 0, 0, 0.2)",
                 borderwidth=1
             ),
-            margin=dict(t=30, l=40, r=40, b=40),
+            margin=dict(t=30, l=40, r=40, b=80),
             autosize=True,
             font=dict(size=10)
         )
