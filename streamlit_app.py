@@ -68,6 +68,34 @@ st.markdown("""
     section[data-testid="stSidebar"] > div {
         padding-top: 0rem;
     }
+    
+    /* 固定ヘッダー用CSS */
+    .fixed-header {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        background-color: #ffffff !important;
+        z-index: 999999 !important;
+        border-bottom: 1px solid #e0e0e0 !important;
+        padding: 1rem !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+    }
+    
+    .main-content {
+        margin-top: 120px !important;
+        padding-top: 1rem !important;
+    }
+    
+    /* Streamlitの標準ヘッダーを隠す */
+    .stApp > header {
+        background-color: transparent !important;
+    }
+    
+    /* メインコンテナの調整 */
+    .main .block-container {
+        padding-top: 0rem !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -1607,50 +1635,6 @@ class KotogawaMonitor:
         
         return pd.DataFrame(table_data).iloc[::-1]  # 新しい順に並び替え
     
-    def render_compact_header(self, latest_data: Optional[Dict[str, Any]], alerts: Dict[str, str]) -> None:
-        """コンパクトヘッダーを表示する"""
-        # システム名と状況を1行で表示
-        header_col1, header_col2, header_col3, header_col4 = st.columns([3, 1, 1, 1])
-        
-        with header_col1:
-            st.markdown("## 厚東川氾濫監視システムv2.0")
-        
-        with header_col2:
-            if alerts['overall'] == '正常':
-                st.success("🟢 正常")
-            elif alerts['overall'] == '危険':
-                st.error("🔴 危険")
-            elif alerts['overall'] == '警戒':
-                st.error("🟠 警戒")
-            elif alerts['overall'] == '注意':
-                st.warning("🟡 注意")
-            else:
-                st.info("⚪ 確認中")
-        
-        with header_col3:
-            if latest_data:
-                river_level = latest_data.get('river', {}).get('water_level')
-                if river_level is not None:
-                    st.metric("水位", f"{river_level:.2f}m", label_visibility="visible")
-                else:
-                    st.metric("水位", "--m", label_visibility="visible")
-            else:
-                st.metric("水位", "--m", label_visibility="visible")
-        
-        with header_col4:
-            if latest_data and latest_data.get('data_time'):
-                try:
-                    dt = datetime.fromisoformat(latest_data['data_time'].replace('Z', '+00:00'))
-                    if dt.tzinfo is None:
-                        dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-                    time_str = dt.strftime('%H:%M')
-                    st.metric("更新", time_str, label_visibility="visible")
-                except:
-                    st.metric("更新", "--:--", label_visibility="visible")
-            else:
-                st.metric("更新", "--:--", label_visibility="visible")
-        
-        st.markdown("---")
 
 def main():
     """メイン関数"""
@@ -1743,14 +1727,72 @@ def main():
     else:
         alerts = {'overall': 'データなし', 'river': 'データなし', 'dam': 'データなし', 'rainfall': 'データなし'}
     
-    # コンパクトヘッダーの表示
-    monitor.render_compact_header(latest_data, alerts)
+    # 固定ヘッダーのHTML
+    header_html = f"""
+    <div class="fixed-header">
+        <h1>厚東川氾濫監視システムv2.0</h1>
+        <div style="display: flex; gap: 20px; align-items: center; margin-top: 10px;">
+    """
+    
+    if latest_data:
+        if alerts['overall'] == '正常':
+            status_color = "#28a745"
+            status_text = "🟢 正常"
+        elif alerts['overall'] == '危険':
+            status_color = "#dc3545"
+            status_text = "🔴 危険"
+        elif alerts['overall'] == '警戒':
+            status_color = "#fd7e14"
+            status_text = "🟠 警戒"
+        elif alerts['overall'] == '注意':
+            status_color = "#ffc107"
+            status_text = "🟡 注意"
+        else:
+            status_color = "#6c757d"
+            status_text = "⚪ 確認中"
+        
+        # 更新時間
+        update_time = "--:--"
+        if latest_data.get('data_time'):
+            try:
+                dt = datetime.fromisoformat(latest_data['data_time'].replace('Z', '+00:00'))
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                update_time = dt.strftime('%H:%M')
+            except:
+                pass
+        
+        header_html += f"""
+            <div style="background-color: {status_color}; color: white; padding: 5px 10px; border-radius: 5px; font-weight: bold;">
+                {status_text}
+            </div>
+            <div style="background-color: #17a2b8; color: white; padding: 5px 10px; border-radius: 5px;">
+                🕐 最終更新: {update_time}
+            </div>
+        """
+    else:
+        header_html += """
+            <div style="background-color: #ffc107; color: black; padding: 5px 10px; border-radius: 5px;">
+                ⚠️ データの読み込み中...
+            </div>
+        """
+    
+    header_html += """
+        </div>
+    </div>
+    """
+    
+    st.markdown(header_html, unsafe_allow_html=True)
+    
+    # メインコンテンツのスペーサー
+    st.markdown('<div class="main-content"></div>', unsafe_allow_html=True)
     
     # 現在の状況表示
-    monitor.create_metrics_display(latest_data)
-    
-    # 天気予報表示
-    monitor.create_weather_forecast_display(latest_data, show_weekly_weather)
+    if latest_data:
+        monitor.create_metrics_display(latest_data)
+        
+        # 天気予報表示
+        monitor.create_weather_forecast_display(latest_data, show_weekly_weather)
     
     # データ分析表示
     monitor.create_data_analysis_display(history_data, enable_graph_interaction)
