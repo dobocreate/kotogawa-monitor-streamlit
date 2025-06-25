@@ -726,7 +726,7 @@ class KotogawaMonitor:
                         except:
                             pass
                     
-                    fig4 = self.create_precipitation_intensity_graph(precipitation_intensity_data, enable_graph_interaction)
+                    fig4 = self.create_precipitation_intensity_graph(precipitation_intensity_data, enable_graph_interaction, history_data)
                     st.plotly_chart(fig4, use_container_width=True, config=plotly_config)
         
         with tab2:
@@ -1082,7 +1082,13 @@ class KotogawaMonitor:
                 # 最新の観測値を取得
                 latest_obs = precipitation_intensity['observation'][-1] if precipitation_intensity['observation'] else None
                 if latest_obs:
-                    row['precipitation_intensity'] = latest_obs.get('intensity', 0)
+                    row['precipitation_intensity_obs'] = latest_obs.get('intensity', 0)
+            
+            if precipitation_intensity.get('forecast'):
+                # 最新の予測値を取得
+                latest_forecast = precipitation_intensity['forecast'][-1] if precipitation_intensity['forecast'] else None
+                if latest_forecast:
+                    row['precipitation_intensity_forecast'] = latest_forecast.get('intensity', 0)
             
             df_data.append(row)
         
@@ -1126,15 +1132,28 @@ class KotogawaMonitor:
                 secondary_y=True
             )
         
-        # Yahoo! Weather API降水強度（右軸）
-        if 'precipitation_intensity' in df.columns:
+        # Yahoo! Weather API降水強度観測値（右軸）
+        if 'precipitation_intensity_obs' in df.columns:
             fig.add_trace(
                 go.Bar(
                     x=df['timestamp'],
-                    y=df['precipitation_intensity'],
+                    y=df['precipitation_intensity_obs'],
                     name='降水強度（厚東川ダム）',
                     marker_color='#FF6B6B',
                     opacity=0.8
+                ),
+                secondary_y=True
+            )
+        
+        # Yahoo! Weather API降水強度予測値（右軸）
+        if 'precipitation_intensity_forecast' in df.columns:
+            fig.add_trace(
+                go.Bar(
+                    x=df['timestamp'],
+                    y=df['precipitation_intensity_forecast'],
+                    name='降水強度予測（厚東川ダム）',
+                    marker_color='#FFA07A',
+                    opacity=0.6
                 ),
                 secondary_y=True
             )
@@ -1338,9 +1357,10 @@ class KotogawaMonitor:
         
         return fig
     
-    def create_precipitation_intensity_graph(self, precipitation_data: Dict[str, Any], enable_interaction: bool = True) -> go.Figure:
+    def create_precipitation_intensity_graph(self, precipitation_data: Dict[str, Any], enable_interaction: bool = True, history_data: List[Dict[str, Any]] = None) -> go.Figure:
         """降水強度グラフを作成"""
-        fig = go.Figure()
+        from plotly.subplots import make_subplots
+        fig = make_subplots(specs=[[{"secondary_y": True}]])
         
         # 観測データの処理
         obs_times = []
@@ -1376,25 +1396,56 @@ class KotogawaMonitor:
                 except (ValueError, KeyError):
                     continue
         
-        # 観測データのプロット（棒グラフ）
+        # 観測データのプロット（棒グラフ、左軸）
         if obs_times and obs_intensities:
             fig.add_trace(go.Bar(
                 x=obs_times,
                 y=obs_intensities,
-                name='観測値',
+                name='降水強度観測値',
                 marker=dict(color='#2E86AB'),
                 hovertemplate='<b>観測値</b><br>%{x|%H:%M}<br>降水強度: %{y:.1f} mm/h<extra></extra>'
-            ))
+            ), secondary_y=False)
         
-        # 予測データのプロット（棒グラフ）
+        # 予測データのプロット（棒グラフ、左軸）
         if forecast_times and forecast_intensities:
             fig.add_trace(go.Bar(
                 x=forecast_times,
                 y=forecast_intensities,
-                name='予測値',
+                name='降水強度予測値',
                 marker=dict(color='#A23B72', opacity=0.7),
                 hovertemplate='<b>予測値</b><br>%{x|%H:%M}<br>降水強度: %{y:.1f} mm/h<extra></extra>'
-            ))
+            ), secondary_y=False)
+        
+        # 時間雨量データの追加（右軸）
+        if history_data:
+            rainfall_times = []
+            rainfall_values = []
+            
+            for item in history_data:
+                # 観測時刻（data_time）を使用、なければtimestampを使用
+                data_time = item.get('data_time') or item.get('timestamp', '')
+                try:
+                    dt = datetime.fromisoformat(data_time.replace('Z', '+00:00'))
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                    else:
+                        dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
+                    
+                    rainfall = item.get('rainfall', {}).get('hourly')
+                    if rainfall is not None:
+                        rainfall_times.append(dt)
+                        rainfall_values.append(rainfall)
+                except:
+                    continue
+            
+            if rainfall_times and rainfall_values:
+                fig.add_trace(go.Bar(
+                    x=rainfall_times,
+                    y=rainfall_values,
+                    name='時間雨量（宇部市）',
+                    marker=dict(color='#87CEEB', opacity=0.7),
+                    hovertemplate='<b>時間雨量</b><br>%{x|%H:%M}<br>雨量: %{y:.1f} mm/h<extra></extra>'
+                ), secondary_y=True)
         
         # レイアウト設定
         fig.update_layout(
@@ -1422,17 +1473,31 @@ class KotogawaMonitor:
             tickfont_size=9
         )
         
+        # 左軸（降水強度）の設定
         fig.update_yaxes(
             title_text="降水強度 (mm/h)",
+            range=[0, 50],
+            dtick=5,
+            secondary_y=False,
             title_font_size=10,
-            tickfont_size=9,
-            range=[0, max(max(obs_intensities, default=0), max(forecast_intensities, default=0), 5) * 1.1]
+            tickfont_size=9
+        )
+        
+        # 右軸（時間雨量）の設定
+        fig.update_yaxes(
+            title_text="時間雨量 (mm/h)",
+            range=[0, 50],
+            dtick=5,
+            secondary_y=True,
+            title_font_size=10,
+            tickfont_size=9
         )
         
         # インタラクションが無効の場合は軸を固定
         if not enable_interaction:
             fig.update_xaxes(fixedrange=True)
-            fig.update_yaxes(fixedrange=True)
+            fig.update_yaxes(fixedrange=True, secondary_y=False)
+            fig.update_yaxes(fixedrange=True, secondary_y=True)
         
         return fig
     
