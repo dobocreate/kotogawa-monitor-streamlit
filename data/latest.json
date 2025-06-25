@@ -1,11 +1,11 @@
 {
-  "timestamp": "2025-06-25T13:48:18.662303+09:00",
-  "data_time": "2025-06-25T13:40:00+09:00",
+  "timestamp": "2025-06-25T13:27:59.512316+09:00",
+  "data_time": "2025-06-25T13:20:00+09:00",
   "dam": {
     "water_level": 36.75,
     "storage_rate": 97.1,
     "inflow": 68.26,
-    "outflow": 65.32,
+    "outflow": 65.24,
     "storage_change": null
   },
   "river": {
@@ -119,36 +119,36 @@
   "precipitation_intensity": {
     "observation": [
       {
-        "datetime": "2025-06-25T13:04:00+09:00",
-        "intensity": 0.75
+        "datetime": "2025-06-25T13:02:00+09:00",
+        "intensity": 0.0
       }
     ],
     "forecast": [
       {
+        "datetime": "2025-06-25T13:03:00+09:00",
+        "intensity": 0.0
+      },
+      {
+        "datetime": "2025-06-25T13:04:00+09:00",
+        "intensity": 0.0
+      },
+      {
         "datetime": "2025-06-25T13:05:00+09:00",
-        "intensity": 2.63
+        "intensity": 0.45
       },
       {
         "datetime": "2025-06-25T14:00:00+09:00",
-        "intensity": 0.25
+        "intensity": 0.35
       },
       {
         "datetime": "2025-06-25T14:01:00+09:00",
-        "intensity": 0.0
+        "intensity": 11.5
       },
       {
         "datetime": "2025-06-25T14:02:00+09:00",
         "intensity": 0.0
-      },
-      {
-        "datetime": "2025-06-25T14:03:00+09:00",
-        "intensity": 0.0
-      },
-      {
-        "datetime": "2025-06-25T14:04:00+09:00",
-        "intensity": 0.0
       }
     ],
-    "update_time": "2025-06-25T13:48:18.662090+09:00"
+    "update_time": "2025-06-25T13:27:59.512161+09:00"
   }
 }

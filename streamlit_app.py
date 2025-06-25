@@ -1779,7 +1779,7 @@ def main():
     # 固定ヘッダーの内容を設定
     with header_placeholder.container():
         st.markdown('<div class="fixed-header">', unsafe_allow_html=True)
-        st.markdown("<h1 style='text-align: center; margin: 0;'>厚東川氾濫監視システム</h1>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center; margin: 0;'>厚東川氾濫監視システムv2.0</h1>", unsafe_allow_html=True)
         
         # アラート状態表示
         if "危険" in alert_status:
@@ -1870,7 +1870,7 @@ def main():
     
     # アプリ情報
     st.sidebar.markdown("---")
-    st.sidebar.caption("厚東川リアルタイム監視システム v1.0")
+    st.sidebar.caption("厚東川リアルタイム監視システム v2.0")
     st.sidebar.caption("Powered by Streamlit")
     
     # メインコンテンツのdivを閉じる
