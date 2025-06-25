@@ -908,7 +908,7 @@ class KotogawaDataCollector:
         """Yahoo! Weather APIから降水強度データを取得する"""
         precipitation_data = {
             'observation': [],
-            'forecast': [],
+            'forecast': [],  # 予測値は最新データのみに保存（履歴には保存しない）
             'update_time': None
         }
         
@@ -1012,7 +1012,15 @@ class KotogawaDataCollector:
             else:
                 # data_timeがない場合は現在時刻を使用（フォールバック）
                 history_file = date_dir / f"{current_time.strftime('%H%M')}.json"
-            save_data = data
+            
+            # 履歴データから予測値を除外
+            save_data = data.copy()
+            if 'precipitation_intensity' in save_data:
+                # 予測値を削除（観測値のみ保存）
+                save_data['precipitation_intensity'] = {
+                    'observation': save_data['precipitation_intensity'].get('observation', []),
+                    'update_time': save_data['precipitation_intensity'].get('update_time')
+                }
         
         with open(history_file, 'w', encoding='utf-8') as f:
             json.dump(save_data, f, ensure_ascii=False, indent=2, default=str)
