@@ -1002,7 +1002,7 @@ class KotogawaMonitor:
                     mode='lines+markers',
                     name='河川水位（持世寺）',
                     line=dict(color='#1f77b4', width=3),
-                    marker=dict(size=12, color='white', line=dict(width=2, color='#1f77b4'))
+                    marker=dict(size=8, color='white', line=dict(width=2, color='#1f77b4'))
                 ),
                 secondary_y=False
             )
@@ -1016,7 +1016,7 @@ class KotogawaMonitor:
                     mode='lines+markers',
                     name='全放流量（厚東川ダム）',
                     line=dict(color='#d62728', width=3),
-                    marker=dict(size=12, color='white', line=dict(width=2, color='#d62728'))
+                    marker=dict(size=8, color='white', line=dict(width=2, color='#d62728'))
                 ),
                 secondary_y=True
             )
@@ -1028,7 +1028,7 @@ class KotogawaMonitor:
             dtick=1,
             secondary_y=False,
             title_font_size=12,
-            tickfont_size=9
+            tickfont_size=12
         )
         fig.update_yaxes(
             title_text="全放流量 (m³/s)",
@@ -1036,7 +1036,7 @@ class KotogawaMonitor:
             dtick=150,
             secondary_y=True,
             title_font_size=12,
-            tickfont_size=9
+            tickfont_size=12
         )
         
         # 共通の時間範囲を取得して設定
@@ -1044,7 +1044,7 @@ class KotogawaMonitor:
         xaxis_config = dict(
             title_text="時刻",
             title_font_size=12,
-            tickfont_size=9
+            tickfont_size=12
         )
         if time_min and time_max:
             xaxis_config['range'] = [time_min, time_max]
@@ -1154,7 +1154,7 @@ class KotogawaMonitor:
                     mode='lines+markers',
                     name='ダム貯水位（厚東川ダム）',
                     line=dict(color='#ff7f0e', width=3),
-                    marker=dict(size=12, color='white', line=dict(width=2, color='#ff7f0e'))
+                    marker=dict(size=8, color='white', line=dict(width=2, color='#ff7f0e'))
                 ),
                 secondary_y=False
             )
@@ -1205,7 +1205,7 @@ class KotogawaMonitor:
             dtick=5,
             secondary_y=False,
             title_font_size=12,
-            tickfont_size=9
+            tickfont_size=12
         )
         fig.update_yaxes(
             title_text="時間雨量 (mm/h)",
@@ -1213,7 +1213,7 @@ class KotogawaMonitor:
             dtick=5,
             secondary_y=True,
             title_font_size=12,
-            tickfont_size=9
+            tickfont_size=12
         )
         
         # 共通の時間範囲を取得して設定
@@ -1221,7 +1221,7 @@ class KotogawaMonitor:
         xaxis_config = dict(
             title_text="時刻",
             title_font_size=12,
-            tickfont_size=9
+            tickfont_size=12
         )
         if time_min and time_max:
             xaxis_config['range'] = [time_min, time_max]
@@ -1322,7 +1322,7 @@ class KotogawaMonitor:
                     mode='lines+markers',
                     name='流入量（厚東川ダム）',
                     line=dict(color='#2ca02c', width=3),
-                    marker=dict(size=12, color='white', line=dict(width=2, color='#2ca02c'))
+                    marker=dict(size=8, color='white', line=dict(width=2, color='#2ca02c'))
                 ),
                 secondary_y=False
             )
@@ -1336,7 +1336,7 @@ class KotogawaMonitor:
                     mode='lines+markers',
                     name='全放流量（厚東川ダム）',
                     line=dict(color='#d62728', width=3),
-                    marker=dict(size=12, color='white', line=dict(width=2, color='#d62728'))
+                    marker=dict(size=8, color='white', line=dict(width=2, color='#d62728'))
                 ),
                 secondary_y=False
             )
@@ -1350,7 +1350,7 @@ class KotogawaMonitor:
                     mode='lines+markers',
                     name='累加雨量（宇部市）',
                     line=dict(color='#87CEEB', width=3),
-                    marker=dict(size=12, color='white', line=dict(width=2, color='#87CEEB')),
+                    marker=dict(size=8, color='white', line=dict(width=2, color='#87CEEB')),
                     fill='tonexty'
                 ),
                 secondary_y=True
@@ -1362,24 +1362,24 @@ class KotogawaMonitor:
             range=[0, 900],
             dtick=100,
             secondary_y=False,
-            title_font_size=10,
-            tickfont_size=9
+            title_font_size=12,
+            tickfont_size=12
         )
         fig.update_yaxes(
             title_text="累加雨量 (mm)",
             range=[0, 180],
             dtick=20,
             secondary_y=True,
-            title_font_size=10,
-            tickfont_size=9
+            title_font_size=12,
+            tickfont_size=12
         )
         
         # 共通の時間範囲を取得して設定
         time_min, time_max = self.get_common_time_range(history_data)
         xaxis_config = dict(
             title_text="時刻",
-            title_font_size=10,
-            tickfont_size=9
+            title_font_size=12,
+            tickfont_size=12
         )
         if time_min and time_max:
             xaxis_config['range'] = [time_min, time_max]
@@ -1401,7 +1401,7 @@ class KotogawaMonitor:
             ),
             margin=dict(t=30, l=40, r=40, b=100),
             autosize=True,
-            font=dict(size=10)
+            font=dict(size=9)
         )
         
         # インタラクションが無効の場合は軸を固定
@@ -1518,7 +1518,7 @@ class KotogawaMonitor:
             ),
             margin=dict(t=30, l=40, r=40, b=100),
             autosize=True,
-            font=dict(size=10)
+            font=dict(size=9)
         )
         
         # 軸設定 - 履歴データから共通の時間範囲を取得
@@ -1528,8 +1528,8 @@ class KotogawaMonitor:
         
         xaxis_config = dict(
             title_text="時刻",
-            title_font_size=10,
-            tickfont_size=9
+            title_font_size=12,
+            tickfont_size=12
         )
         if time_min and time_max:
             xaxis_config['range'] = [time_min, time_max]
@@ -1542,8 +1542,8 @@ class KotogawaMonitor:
             range=[0, 50],
             dtick=5,
             secondary_y=False,
-            title_font_size=10,
-            tickfont_size=9
+            title_font_size=12,
+            tickfont_size=12
         )
         
         # 右軸（時間雨量）の設定
@@ -1552,8 +1552,8 @@ class KotogawaMonitor:
             range=[0, 50],
             dtick=5,
             secondary_y=True,
-            title_font_size=10,
-            tickfont_size=9
+            title_font_size=12,
+            tickfont_size=12
         )
         
         # インタラクションが無効の場合は軸を固定
