@@ -1,21 +1,22 @@
-# 厚東川監視システム プロジェクト詳細
+# 厚東川氾濫監視システムv2.0 プロジェクト詳細
 
 ## プロジェクト概要
-山口県宇部市の厚東川ダムおよび厚東川（持世寺）の水位・雨量データをリアルタイムで監視するWebアプリケーション。
+山口県宇部市の厚東川ダムおよび厚東川（持世寺）の水位・雨量データをリアルタイムで監視するWebアプリケーション。Yahoo! Weather APIによる降水強度予測機能を搭載。
 
 ## デプロイ情報
 - **本番URL**: https://kotogawa-monitor-app-fjprveyn8fzb3mbffkwq6i.streamlit.app/
 - **GitHubリポジトリ**: https://github.com/dobocreate/kotogawa-monitor-streamlit
 - **ホスティング**: Streamlit Cloud
-- **自動更新**: GitHub Actions（60分間隔）
+- **自動更新**: GitHub Actions（10分間隔）
 
 ## 技術スタック
 - **フロントエンド**: Streamlit
 - **バックエンド**: Python 3.9+
-- **データ収集**: BeautifulSoup4 (Web scraping)
-- **可視化**: Plotly
+- **データ収集**: BeautifulSoup4 (Web scraping), Yahoo! Weather API
+- **可視化**: Plotly (双軸グラフ対応)
 - **データ処理**: pandas
 - **CI/CD**: GitHub Actions
+- **天気予報**: Yahoo! Weather API
 
 ## プロジェクト構造
 ```
@@ -29,7 +30,7 @@ kotogawa-monitor-streamlit/
 │   ├── history/             # 履歴データ (年/月/日/時刻.json)
 │   └── logs/                # 実行ログ
 ├── .github/workflows/
-│   ├── data_collection.yml  # 自動データ収集（60分間隔）
+│   ├── data_collection.yml  # 自動データ収集（10分間隔）
 │   └── cleanup.yml          # 古いデータクリーンアップ（毎日）
 ├── requirements.txt         # Python依存関係
 └── README.md               # プロジェクト説明
@@ -53,11 +54,18 @@ kotogawa-monitor-streamlit/
    - ダムページから同時取得
    - 取得データ: 60分雨量、累積雨量
 
+### Yahoo! Weather API
+4. **降水強度・天気予報**
+   - 座標: 131.289496,34.079891（厚東川ダム付近）
+   - 取得データ: 降水強度（観測値・予測値）、天気予報、降水確率
+   - 更新間隔: 10分
+
 ## 主要機能
 
 ### 1. リアルタイム監視
 - 現在の水位・雨量をメトリクスで表示
-- 3セクション構成：降雨情報、河川情報、ダム情報
+- 3セクション構成：河川情報、降雨情報、ダム情報
+- 固定ヘッダー（システム名・監視状況常時表示）
 - 観測時刻の表示
 
 ### 2. アラート機能
@@ -66,14 +74,25 @@ kotogawa-monitor-streamlit/
 - 雨量警戒（注意: 10mm/h、警戒: 30mm/h、危険: 50mm/h）
 
 ### 3. データ可視化
-- 時系列グラフ（Plotly）
+- 4つの時系列グラフ（Plotly双軸対応）
+  - 河川水位・全放流量
+  - ダム流入出量・累加雨量
+  - ダム貯水位・時間雨量（降水強度含む）
+  - Yahoo! Weather API（降水強度・時間雨量）
 - データテーブル表示
 - CSVダウンロード機能
+- レスポンシブデザイン対応
 
 ### 4. 自動データ収集
-- GitHub Actionsで60分ごとに実行（毎時0分）
-- 10分単位でデータを丸めて取得（データ公開遅延対応）
+- GitHub Actionsで10分ごとに実行（毎時3,13,23,33,43,53分）
+- データ更新遅延を考慮した3分遅れの取得
 - 自動的にGitHubリポジトリにコミット
+
+### 5. 天気予報機能
+- 今日・明日・明後日の詳細予報
+- 週間天気予報（レスポンシブ対応）
+- 降水確率のグラフ表示
+- 警戒メッセージの自動表示
 
 ## 重要な実装詳細
 
@@ -89,29 +108,75 @@ obsdt = observation_time.strftime('%Y%m%d%H%M')
 ### データ形式（latest.json）
 ```json
 {
-  "timestamp": "2025-06-23T04:09:31.717981",
-  "data_time": "2025-06-22T14:00:00",
+  "timestamp": "2025-06-25T13:27:59.512316+09:00",
+  "data_time": "2025-06-25T13:20:00+09:00",
   "dam": {
-    "water_level": 36.74,
-    "storage_rate": 97.0,
-    "inflow": 7.31,
-    "outflow": 9.41,
-    "storage_change": -0.02
+    "water_level": 36.75,
+    "storage_rate": 97.1,
+    "inflow": 68.26,
+    "outflow": 65.24,
+    "storage_change": null
   },
   "river": {
-    "water_level": 2.85,
-    "level_change": -0.03,
+    "water_level": 3.08,
+    "level_change": 0.0,
     "status": "正常"
   },
   "rainfall": {
-    "hourly": 1,
-    "cumulative": 2,
-    "change": 1
+    "hourly": 0,
+    "cumulative": 0,
+    "change": 0
+  },
+  "weather": {
+    "today": {
+      "weather_code": "214",
+      "weather_text": "くもり　昼過ぎ　から　雨　所により　雷　を伴う",
+      "temp_max": 28,
+      "temp_min": 28,
+      "precipitation_probability": [60, 70],
+      "precipitation_times": ["12時", "18時"]
+    },
+    "weekly_forecast": [...]
+  },
+  "precipitation_intensity": {
+    "observation": [{
+      "datetime": "2025-06-25T13:02:00+09:00",
+      "intensity": 0.0
+    }],
+    "forecast": [{
+      "datetime": "2025-06-25T13:03:00+09:00",
+      "intensity": 0.0
+    }],
+    "update_time": "2025-06-25T13:27:59.512161+09:00"
   }
 }
 ```
 
 ## 最近の主要変更
+
+### 2025年6月25日 v2.0リリース
+1. **Yahoo! Weather API統合**
+   - 降水強度データ（観測値・予測値）の追加
+   - 座標: 131.289496,34.079891（厚東川ダム付近）
+   - 天気予報機能の実装
+
+2. **UI/UX大幅改善**
+   - 固定ヘッダーの実装（システム名・監視状況常時表示）
+   - レスポンシブデザイン対応（週間予報）
+   - 河川情報と降雨情報の横並び配置
+   - グラフレイアウトの統一とフォントサイズ標準化
+   - サイドバー余白の最適化
+
+3. **グラフ機能強化**
+   - 4つのグラフの時間軸統一（将来予測値含む）
+   - 双軸グラフ対応（降水強度・時間雨量）
+   - マーカーサイズ・フォントサイズの統一
+   - 凡例位置の最適化（下部左側配置）
+
+4. **データ表示改善**
+   - 河川ステータス表示の修正
+   - 観測時刻表示の改善
+   - 空行・重複表示の削除
 
 ### 2025年6月23日
 1. **河川データ取得URL修正**
@@ -130,8 +195,8 @@ obsdt = observation_time.strftime('%Y%m%d%H%M')
    - 全ての時刻表示を日本時間（JST）に統一
 
 4. **GitHub Actions間隔変更**
-   - 10分間隔 → 60分間隔（毎時0分）
-   - cron設定: `0 * * * *`
+   - 10分間隔 → 10分間隔（毎時3,13,23,33,43,53分）
+   - cron設定: `3,13,23,33,43,53 * * * *`（データ遅延対応）
 
 5. **Streamlit読み込み問題の修正**
    - 履歴データ処理の最適化（最大100ファイル）
@@ -178,28 +243,33 @@ streamlit run streamlit_app_minimal.py
 - **Streamlit Cloud管理**: https://share.streamlit.io/
 - **GitHub Actions管理**: https://github.com/dobocreate/kotogawa-monitor-streamlit/actions
 
-## 現在の状態（2025年6月23日 5:15 JST）
+## 現在の状態（2025年6月25日 14:00 JST）
 
 ### システム稼働状況
-- **Streamlit App**: ✅ 稼働中
-- **最新データ**: 2025-06-23 04:50 JST
-- **GitHub Actions**: ⚠️ 次回実行は 06:00 JST予定
+- **Streamlit App**: ✅ 稼働中（v2.0）
+- **最新データ**: 2025-06-25 13:20 JST
+- **GitHub Actions**: ✅ 10分間隔で正常稼働中
+- **Yahoo! Weather API**: ✅ 正常稼働中
 
 ### 最新観測データ
-- **ダム貯水位**: 36.82m (97.9%)
-- **河川水位**: 2.91m (正常)
-- **流入量**: 17.22 m³/s
-- **全放流量**: 9.25 m³/s
+- **ダム貯水位**: 36.75m (97.1%)
+- **河川水位**: 3.08m (正常)
+- **流入量**: 68.26 m³/s
+- **全放流量**: 65.24 m³/s
+- **降水強度**: 0.0 mm/h（観測値）
+- **天気**: くもり　昼過ぎから雨　所により雷を伴う
 
-### 未解決の課題
-1. GitHub Actionsの自動実行が一時的に停止（設定変更後の初回実行待ち）
-2. 雨量データの取得が不安定
-3. Git rebaseの残骸が残っている可能性
+### 解決済み課題
+1. ✅ GitHub Actions自動実行の安定化
+2. ✅ UI/UXの大幅改善
+3. ✅ 降水強度予測機能の追加
+4. ✅ レスポンシブデザイン対応
 
 ## 今後の改善案
 1. データ取得エラー時の通知機能
 2. 過去データの統計分析機能
-3. 予測機能の追加
-4. モバイル対応の改善
-5. 雨量データ専用URLの調査と実装
-6. エラーログの可視化機能
+3. 長期予測機能の追加
+4. アラート通知機能の強化
+5. データ可視化の更なる改善
+6. パフォーマンス最適化
+7. ユーザビリティテストと改善
