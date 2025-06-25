@@ -908,6 +908,29 @@ class KotogawaMonitor:
             # 空のカラム
             pass
     
+    def get_common_time_range(self, history_data: List[Dict[str, Any]]) -> tuple:
+        """履歴データから共通の時間範囲を取得"""
+        if not history_data:
+            return None, None
+        
+        timestamps = []
+        for item in history_data:
+            data_time = item.get('data_time') or item.get('timestamp', '')
+            try:
+                dt = datetime.fromisoformat(data_time.replace('Z', '+00:00'))
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                else:
+                    dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
+                timestamps.append(dt)
+            except:
+                continue
+        
+        if not timestamps:
+            return None, None
+        
+        return min(timestamps), max(timestamps)
+    
     def create_river_water_level_graph(self, history_data: List[Dict[str, Any]], enable_interaction: bool = False) -> go.Figure:
         """河川水位グラフを作成（河川水位 + ダム全放流量の二軸表示）"""
         if not history_data:
@@ -1006,11 +1029,17 @@ class KotogawaMonitor:
             tickfont_size=9
         )
         
-        fig.update_xaxes(
+        # 共通の時間範囲を取得して設定
+        time_min, time_max = self.get_common_time_range(history_data)
+        xaxis_config = dict(
             title_text="時刻",
             title_font_size=10,
             tickfont_size=9
         )
+        if time_min and time_max:
+            xaxis_config['range'] = [time_min, time_max]
+        
+        fig.update_xaxes(**xaxis_config)
         
         fig.update_layout(
             height=400,
@@ -1176,11 +1205,17 @@ class KotogawaMonitor:
             tickfont_size=9
         )
         
-        fig.update_xaxes(
+        # 共通の時間範囲を取得して設定
+        time_min, time_max = self.get_common_time_range(history_data)
+        xaxis_config = dict(
             title_text="時刻",
             title_font_size=10,
             tickfont_size=9
         )
+        if time_min and time_max:
+            xaxis_config['range'] = [time_min, time_max]
+        
+        fig.update_xaxes(**xaxis_config)
         
         fig.update_layout(
             height=400,
@@ -1325,11 +1360,17 @@ class KotogawaMonitor:
             tickfont_size=9
         )
         
-        fig.update_xaxes(
+        # 共通の時間範囲を取得して設定
+        time_min, time_max = self.get_common_time_range(history_data)
+        xaxis_config = dict(
             title_text="時刻",
             title_font_size=10,
             tickfont_size=9
         )
+        if time_min and time_max:
+            xaxis_config['range'] = [time_min, time_max]
+        
+        fig.update_xaxes(**xaxis_config)
         
         fig.update_layout(
             height=400,
@@ -1466,12 +1507,20 @@ class KotogawaMonitor:
             font=dict(size=10)
         )
         
-        # 軸設定
-        fig.update_xaxes(
+        # 軸設定 - 履歴データから共通の時間範囲を取得
+        time_min, time_max = None, None
+        if history_data:
+            time_min, time_max = self.get_common_time_range(history_data)
+        
+        xaxis_config = dict(
             title_text="時刻",
             title_font_size=10,
             tickfont_size=9
         )
+        if time_min and time_max:
+            xaxis_config['range'] = [time_min, time_max]
+        
+        fig.update_xaxes(**xaxis_config)
         
         # 左軸（降水強度）の設定
         fig.update_yaxes(
