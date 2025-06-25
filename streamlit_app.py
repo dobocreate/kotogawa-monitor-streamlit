@@ -778,11 +778,11 @@ class KotogawaMonitor:
             }
             
             st.subheader("河川水位・全放流量")
-            fig1 = self.create_river_water_level_graph(history_data, enable_graph_interaction)
+            fig1 = self.create_river_water_level_graph(history_data, enable_graph_interaction, display_hours)
             st.plotly_chart(fig1, use_container_width=True, config=plotly_config)
             
             st.subheader("ダム流入出量・累加雨量")
-            fig2 = self.create_dam_flow_graph(history_data, enable_graph_interaction)
+            fig2 = self.create_dam_flow_graph(history_data, enable_graph_interaction, display_hours)
             st.plotly_chart(fig2, use_container_width=True, config=plotly_config)
             
             st.subheader("ダム貯水位・時間雨量")
@@ -1039,7 +1039,7 @@ class KotogawaMonitor:
             # 空のカラム
             pass
     
-    def get_common_time_range(self, history_data: List[Dict[str, Any]]) -> tuple:
+    def get_common_time_range(self, history_data: List[Dict[str, Any]], display_hours: int = 24) -> tuple:
         """履歴データから共通の時間範囲を取得（将来予測値を考慮）"""
         if not history_data:
             return None, None
@@ -1047,30 +1047,16 @@ class KotogawaMonitor:
         # 現在時刻（日本時間）
         now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
         
-        # 履歴データの時間範囲を取得
-        timestamps = []
-        for item in history_data:
-            data_time = item.get('data_time') or item.get('timestamp', '')
-            try:
-                dt = datetime.fromisoformat(data_time.replace('Z', '+00:00'))
-                if dt.tzinfo is None:
-                    dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-                else:
-                    dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
-                timestamps.append(dt)
-            except:
-                continue
+        # 表示期間に基づいた開始時刻を計算
+        start_time = now_jst - timedelta(hours=display_hours)
         
-        if not timestamps:
-            return None, None
-        
-        # 履歴データの最古時刻を開始時刻とし、現在時刻+2時間を終了時刻とする
-        time_min = min(timestamps)
+        # 終了時刻は現在時刻+2時間（予測値表示のため）
+        time_min = start_time
         time_max = now_jst + timedelta(hours=2)
         
         return time_min, time_max
     
-    def create_river_water_level_graph(self, history_data: List[Dict[str, Any]], enable_interaction: bool = False) -> go.Figure:
+    def create_river_water_level_graph(self, history_data: List[Dict[str, Any]], enable_interaction: bool = False, display_hours: int = 24) -> go.Figure:
         """河川水位グラフを作成（河川水位 + ダム全放流量の二軸表示）"""
         if not history_data:
             fig = go.Figure()
@@ -1171,7 +1157,7 @@ class KotogawaMonitor:
         )
         
         # 共通の時間範囲を取得して設定
-        time_min, time_max = self.get_common_time_range(history_data)
+        time_min, time_max = self.get_common_time_range(history_data, display_hours)
         xaxis_config = dict(
             title_text="時刻",
             title_font_size=12,
@@ -1423,7 +1409,7 @@ class KotogawaMonitor:
         )
         
         # 共通の時間範囲を取得して設定
-        time_min, time_max = self.get_common_time_range(history_data)
+        time_min, time_max = self.get_common_time_range(history_data, display_hours)
         xaxis_config = dict(
             title_text="時刻",
             title_font_size=12,
@@ -1460,7 +1446,7 @@ class KotogawaMonitor:
         
         return fig
     
-    def create_dam_flow_graph(self, history_data: List[Dict[str, Any]], enable_interaction: bool = False) -> go.Figure:
+    def create_dam_flow_graph(self, history_data: List[Dict[str, Any]], enable_interaction: bool = False, display_hours: int = 24) -> go.Figure:
         """ダム流入出量グラフを作成（流入量・全放流量 + 累加雨量の二軸表示）"""
         if not history_data:
             fig = go.Figure()
@@ -1581,7 +1567,7 @@ class KotogawaMonitor:
         )
         
         # 共通の時間範囲を取得して設定
-        time_min, time_max = self.get_common_time_range(history_data)
+        time_min, time_max = self.get_common_time_range(history_data, display_hours)
         xaxis_config = dict(
             title_text="時刻",
             title_font_size=12,
@@ -1758,7 +1744,7 @@ class KotogawaMonitor:
         # 軸設定 - 履歴データから共通の時間範囲を取得
         time_min, time_max = None, None
         if history_data:
-            time_min, time_max = self.get_common_time_range(history_data)
+            time_min, time_max = self.get_common_time_range(history_data, display_hours)
         
         xaxis_config = dict(
             title_text="時刻",
