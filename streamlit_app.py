@@ -1316,6 +1316,21 @@ class KotogawaMonitor:
         # 二軸グラフを作成
         fig = make_subplots(specs=[[{"secondary_y": True}]])
         
+        # 累加雨量（右軸）- 最背面に配置するため最初に追加
+        if 'cumulative_rainfall' in df.columns:
+            fig.add_trace(
+                go.Scatter(
+                    x=df['timestamp'],
+                    y=df['cumulative_rainfall'],
+                    mode='lines+markers',
+                    name='累加雨量（宇部市）',
+                    line=dict(color='#87CEEB', width=3),
+                    marker=dict(size=8, color='white', line=dict(width=2, color='#87CEEB')),
+                    fill='tonexty'
+                ),
+                secondary_y=True
+            )
+        
         # ダム流入量（左軸）
         if 'inflow' in df.columns:
             fig.add_trace(
@@ -1342,21 +1357,6 @@ class KotogawaMonitor:
                     marker=dict(size=8, color='white', line=dict(width=2, color='#d62728'))
                 ),
                 secondary_y=False
-            )
-        
-        # 累加雨量（右軸）
-        if 'cumulative_rainfall' in df.columns:
-            fig.add_trace(
-                go.Scatter(
-                    x=df['timestamp'],
-                    y=df['cumulative_rainfall'],
-                    mode='lines+markers',
-                    name='累加雨量（宇部市）',
-                    line=dict(color='#87CEEB', width=3),
-                    marker=dict(size=8, color='white', line=dict(width=2, color='#87CEEB')),
-                    fill='tonexty'
-                ),
-                secondary_y=True
             )
         
         # 軸の設定（小画面対応）
@@ -1752,9 +1752,6 @@ def main():
     with header_placeholder.container():
         st.markdown("<h1 style='text-align: center; margin: 0;'>厚東川氾濫監視システム</h1>", unsafe_allow_html=True)
         
-        # 観測時刻と状態表示を同じカラム構成にする
-        st.info(update_info)
-        
         # アラート状態表示
         if "危険" in alert_status:
             st.error(alert_status)
@@ -1779,27 +1776,27 @@ def main():
     # システム情報（サイドバー）
     st.sidebar.subheader("システム情報")
     
-    # 最終更新からの経過時間
-    if latest_data and latest_data.get('timestamp'):
+    # 観測時刻の表示
+    if latest_data and latest_data.get('data_time'):
         try:
-            last_update = datetime.fromisoformat(latest_data['timestamp'].replace('Z', '+00:00'))
-            # タイムゾーンがない場合は日本時間として扱う（変換なし）
-            if last_update.tzinfo is None:
-                last_update = last_update.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+            # data_timeを使用（観測時刻）
+            obs_time = datetime.fromisoformat(latest_data['data_time'].replace('Z', '+00:00'))
+            if obs_time.tzinfo is None:
+                obs_time = obs_time.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
             
             # 現在時刻（日本時間）
             now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
-            time_diff = now_jst - last_update
+            time_diff = now_jst - obs_time
             minutes_ago = int(time_diff.total_seconds() / 60)
             
             if minutes_ago < 60:
-                st.sidebar.success(f"● 最新 ({minutes_ago}分前)")
+                st.sidebar.success(f"● 観測時刻 ({minutes_ago}分前)")
             elif minutes_ago < 120:
-                st.sidebar.warning(f"● やや古い ({minutes_ago}分前)")
+                st.sidebar.warning(f"● 観測時刻 ({minutes_ago}分前)")
             else:
-                st.sidebar.error(f"● 古いデータ ({minutes_ago}分前)")
+                st.sidebar.error(f"● 観測時刻 ({minutes_ago}分前)")
         except:
-            st.sidebar.info("● 更新時刻確認中")
+            st.sidebar.info("● 観測時刻確認中")
     
     # データ統計
     st.sidebar.info(f"■ データ件数: {len(history_data)}件")
