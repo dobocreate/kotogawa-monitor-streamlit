@@ -1018,14 +1018,14 @@ class KotogawaMonitor:
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.15,
-                xanchor="center",
-                x=0.5,
+                y=-0.25,
+                xanchor="left",
+                x=0.0,
                 bgcolor="rgba(255, 255, 255, 0.8)",
                 bordercolor="rgba(0, 0, 0, 0.2)",
                 borderwidth=1
             ),
-            margin=dict(t=30, l=40, r=40, b=80),
+            margin=dict(t=30, l=40, r=40, b=100),
             autosize=True,
             font=dict(size=10)
         )
@@ -1169,14 +1169,14 @@ class KotogawaMonitor:
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.15,
-                xanchor="center",
-                x=0.5,
+                y=-0.25,
+                xanchor="left",
+                x=0.0,
                 bgcolor="rgba(255, 255, 255, 0.8)",
                 bordercolor="rgba(0, 0, 0, 0.2)",
                 borderwidth=1
             ),
-            margin=dict(t=30, l=40, r=40, b=80),
+            margin=dict(t=30, l=40, r=40, b=100),
             autosize=True,
             font=dict(size=10)
         )
@@ -1318,14 +1318,14 @@ class KotogawaMonitor:
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.15,
-                xanchor="center",
-                x=0.5,
+                y=-0.25,
+                xanchor="left",
+                x=0.0,
                 bgcolor="rgba(255, 255, 255, 0.8)",
                 bordercolor="rgba(0, 0, 0, 0.2)",
                 borderwidth=1
             ),
-            margin=dict(t=30, l=40, r=40, b=80),
+            margin=dict(t=30, l=40, r=40, b=100),
             autosize=True,
             font=dict(size=10)
         )
@@ -1398,20 +1398,19 @@ class KotogawaMonitor:
         
         # レイアウト設定
         fig.update_layout(
-            title="Yahoo! Weather API",
             height=400,
             showlegend=True,
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.15,
-                xanchor="center",
-                x=0.5,
+                y=-0.25,
+                xanchor="left",
+                x=0.0,
                 bgcolor="rgba(255, 255, 255, 0.8)",
                 bordercolor="rgba(0, 0, 0, 0.2)",
                 borderwidth=1
             ),
-            margin=dict(t=30, l=40, r=40, b=80),
+            margin=dict(t=30, l=40, r=40, b=100),
             autosize=True,
             font=dict(size=10)
         )
