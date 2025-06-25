@@ -194,8 +194,8 @@ class KotogawaMonitor:
             return "error"
     
     @st.cache_data(ttl=300)  # 5分間キャッシュ（短縮）
-    def load_history_data(_self, hours: int = 24, cache_key: str = None) -> List[Dict[str, Any]]:
-        """履歴データを読み込む"""
+    def load_history_data(_self, hours: int = 72, cache_key: str = None) -> List[Dict[str, Any]]:
+        """履歴データを読み込む（固定期間で全データを読み込み、表示はグラフ側で制御）"""
         history_data = []
         # JST（日本標準時）で現在時刻を取得
         end_time = datetime.now(ZoneInfo('Asia/Tokyo'))
@@ -239,10 +239,9 @@ class KotogawaMonitor:
                                     else:
                                         data_timestamp = data_timestamp.astimezone(ZoneInfo('Asia/Tokyo'))
                                     
-                                    # 指定期間内のデータのみ追加
-                                    if start_time <= data_timestamp <= end_time:
-                                        history_data.append(data)
-                                        processed_files += 1
+                                    # 全データを読み込み（表示範囲はグラフ側で制御）
+                                    history_data.append(data)
+                                    processed_files += 1
                                     
                                 except Exception as e:
                                     # タイムスタンプ解析エラーの場合も追加（後方互換性）
@@ -814,7 +813,14 @@ class KotogawaMonitor:
                     # 履歴データから観測値を収集
                     all_observations = []
                     update_time = None
-                    for item in history_data:
+                    # 表示期間に基づいてデータをフィルタリング
+                    time_min, time_max = self.get_common_time_range(history_data, display_hours)
+                    if time_min and time_max:
+                        filtered_history_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
+                    else:
+                        filtered_history_data = history_data
+                    
+                    for item in filtered_history_data:
                         precip_data = item.get('precipitation_intensity', {})
                         if precip_data.get('observation'):
                             all_observations.extend(precip_data.get('observation', []))
@@ -1056,9 +1062,42 @@ class KotogawaMonitor:
         
         return time_min, time_max
     
+    def filter_data_by_time_range(self, history_data: List[Dict[str, Any]], start_time: datetime, end_time: datetime) -> List[Dict[str, Any]]:
+        """指定された時間範囲でデータをフィルタリング"""
+        filtered_data = []
+        
+        for item in history_data:
+            data_time = item.get('data_time') or item.get('timestamp', '')
+            if not data_time:
+                continue
+                
+            try:
+                dt = datetime.fromisoformat(data_time.replace('Z', '+00:00'))
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                else:
+                    dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
+                
+                # 指定された時間範囲内のデータのみ追加
+                if start_time <= dt <= end_time:
+                    filtered_data.append(item)
+                    
+            except Exception:
+                # タイムスタンプ解析エラーの場合はスキップ
+                continue
+        
+        return filtered_data
+    
     def create_river_water_level_graph(self, history_data: List[Dict[str, Any]], enable_interaction: bool = False, display_hours: int = 24) -> go.Figure:
         """河川水位グラフを作成（河川水位 + ダム全放流量の二軸表示）"""
-        if not history_data:
+        # 表示期間に基づいてデータをフィルタリング
+        time_min, time_max = self.get_common_time_range(history_data, display_hours)
+        if time_min and time_max:
+            filtered_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
+        else:
+            filtered_data = history_data
+        
+        if not filtered_data:
             fig = go.Figure()
             fig.add_annotation(
                 text="表示するデータがありません",
@@ -1069,7 +1108,7 @@ class KotogawaMonitor:
         
         # データをDataFrameに変換
         df_data = []
-        for item in history_data:
+        for item in filtered_data:
             # 観測時刻（data_time）を使用、なければtimestampを使用
             data_time = item.get('data_time') or item.get('timestamp', '')
             try:
@@ -1196,7 +1235,14 @@ class KotogawaMonitor:
     
     def create_dam_water_level_graph(self, history_data: List[Dict[str, Any]], enable_interaction: bool = False, latest_precipitation_data: Dict[str, Any] = None, display_hours: int = 24) -> go.Figure:
         """ダム水位グラフを作成（ダム水位 + 時間雨量の二軸表示）"""
-        if not history_data:
+        # 表示期間に基づいてデータをフィルタリング
+        time_min, time_max = self.get_common_time_range(history_data, display_hours)
+        if time_min and time_max:
+            filtered_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
+        else:
+            filtered_data = history_data
+        
+        if not filtered_data:
             fig = go.Figure()
             fig.add_annotation(
                 text="表示するデータがありません",
@@ -1207,7 +1253,7 @@ class KotogawaMonitor:
         
         # データをDataFrameに変換
         df_data = []
-        for item in history_data:
+        for item in filtered_data:
             # 観測時刻（data_time）を使用、なければtimestampを使用
             data_time = item.get('data_time') or item.get('timestamp', '')
             try:
@@ -1314,7 +1360,14 @@ class KotogawaMonitor:
         
         # APIデータがない場合は履歴データから観測値を取得
         if not obs_times and history_data:
-            for item in history_data:
+            # 表示期間に基づいてデータをフィルタリング
+            time_min_history, time_max_history = self.get_common_time_range(history_data, display_hours)
+            if time_min_history and time_max_history:
+                filtered_history_data = self.filter_data_by_time_range(history_data, time_min_history, time_max_history - timedelta(hours=2))
+            else:
+                filtered_history_data = history_data
+            
+            for item in filtered_history_data:
                 precip_data = item.get('precipitation_intensity', {})
                 if precip_data.get('observation'):
                     for obs in precip_data['observation']:
@@ -1448,7 +1501,14 @@ class KotogawaMonitor:
     
     def create_dam_flow_graph(self, history_data: List[Dict[str, Any]], enable_interaction: bool = False, display_hours: int = 24) -> go.Figure:
         """ダム流入出量グラフを作成（流入量・全放流量 + 累加雨量の二軸表示）"""
-        if not history_data:
+        # 表示期間に基づいてデータをフィルタリング
+        time_min, time_max = self.get_common_time_range(history_data, display_hours)
+        if time_min and time_max:
+            filtered_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
+        else:
+            filtered_data = history_data
+        
+        if not filtered_data:
             fig = go.Figure()
             fig.add_annotation(
                 text="表示するデータがありません",
@@ -1459,7 +1519,7 @@ class KotogawaMonitor:
         
         # データをDataFrameに変換
         df_data = []
-        for item in history_data:
+        for item in filtered_data:
             # 観測時刻（data_time）を使用、なければtimestampを使用
             data_time = item.get('data_time') or item.get('timestamp', '')
             try:
@@ -1695,7 +1755,14 @@ class KotogawaMonitor:
             rainfall_times = []
             rainfall_values = []
             
-            for item in history_data:
+            # 表示期間に基づいてデータをフィルタリング
+            time_min, time_max = self.get_common_time_range(history_data, display_hours)
+            if time_min and time_max:
+                filtered_history_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
+            else:
+                filtered_history_data = history_data
+            
+            for item in filtered_history_data:
                 # 観測時刻（data_time）を使用、なければtimestampを使用
                 data_time = item.get('data_time') or item.get('timestamp', '')
                 try:
@@ -1899,7 +1966,7 @@ def main():
     # 履歴データの読み込み
     try:
         with st.spinner("履歴データを読み込み中..."):
-            history_data = monitor.load_history_data(display_hours, cache_key)
+            history_data = monitor.load_history_data(72, cache_key)
     except Exception as e:
         st.warning(f"履歴データの読み込みに失敗しました: {e}")
         history_data = []
