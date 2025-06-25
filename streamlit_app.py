@@ -88,7 +88,7 @@ st.markdown("""
     
     /* サイドバーの上部余白調整 */
     section[data-testid="stSidebar"] > div {
-        padding-top: 0.5rem;
+        padding-top: 0rem;
     }
 </style>
 """, unsafe_allow_html=True)
