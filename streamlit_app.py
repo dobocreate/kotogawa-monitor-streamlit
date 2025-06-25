@@ -158,7 +158,8 @@ class KotogawaMonitor:
         
         error_count = 0
         processed_files = 0
-        max_files = 100  # 最大処理ファイル数制限
+        # 時間に応じて最大処理ファイル数を動的に調整（10分間隔データを想定）
+        max_files = min(hours * 6 + 50, 500)  # 余裕を持って設定
         
         # JST時刻で日付ディレクトリを処理（新しいデータから逆順で処理）
         current_time = end_time
@@ -1260,6 +1261,11 @@ class KotogawaMonitor:
         
         # 観測値をプロット
         if obs_times and obs_intensities:
+            # デバッグ情報を表示
+            st.write(f"🔍 観測値デバッグ: {len(obs_times)}件のデータ")
+            st.write(f"観測時刻: {[t.strftime('%H:%M') for t in obs_times[:3]]}")
+            st.write(f"降水強度: {obs_intensities[:3]}")
+            
             fig.add_trace(
                 go.Bar(
                     x=obs_times,
@@ -1272,6 +1278,8 @@ class KotogawaMonitor:
                 ),
                 secondary_y=True
             )
+        else:
+            st.write("🔍 観測値データなし")
             
         # 予測値の処理（現在時刻以降のみ、APIデータから取得）
         if latest_precipitation_data and latest_precipitation_data.get('forecast'):
@@ -1567,6 +1575,11 @@ class KotogawaMonitor:
         
         # 観測データのプロット（棒グラフ、左軸）
         if obs_times and obs_intensities:
+            # デバッグ情報を表示（Yahoo! Weather APIグラフ用）
+            st.write(f"🔍 Yahoo API観測値デバッグ: {len(obs_times)}件のデータ")
+            st.write(f"観測時刻: {[t.strftime('%H:%M') for t in obs_times[:3]]}")
+            st.write(f"降水強度: {obs_intensities[:3]}")
+            
             fig.add_trace(go.Bar(
                 x=obs_times,
                 y=obs_intensities,
@@ -1575,6 +1588,8 @@ class KotogawaMonitor:
                 hovertemplate='<b>観測値</b><br>%{x|%H:%M}<br>降水強度: %{y:.1f} mm/h<extra></extra>',
                 width=600000
             ), secondary_y=False)
+        else:
+            st.write("🔍 Yahoo API観測値データなし")
         
         # 予測データのプロット（棒グラフ、左軸）
         if forecast_times and forecast_intensities:
