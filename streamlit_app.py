@@ -1606,6 +1606,51 @@ class KotogawaMonitor:
             })
         
         return pd.DataFrame(table_data).iloc[::-1]  # 新しい順に並び替え
+    
+    def render_compact_header(self, latest_data: Optional[Dict[str, Any]], alerts: Dict[str, str]) -> None:
+        """コンパクトヘッダーを表示する"""
+        # システム名と状況を1行で表示
+        header_col1, header_col2, header_col3, header_col4 = st.columns([3, 1, 1, 1])
+        
+        with header_col1:
+            st.markdown("## 厚東川氾濫監視システムv2.0")
+        
+        with header_col2:
+            if alerts['overall'] == '正常':
+                st.success("🟢 正常")
+            elif alerts['overall'] == '危険':
+                st.error("🔴 危険")
+            elif alerts['overall'] == '警戒':
+                st.error("🟠 警戒")
+            elif alerts['overall'] == '注意':
+                st.warning("🟡 注意")
+            else:
+                st.info("⚪ 確認中")
+        
+        with header_col3:
+            if latest_data:
+                river_level = latest_data.get('river', {}).get('water_level')
+                if river_level is not None:
+                    st.metric("水位", f"{river_level:.2f}m", label_visibility="visible")
+                else:
+                    st.metric("水位", "--m", label_visibility="visible")
+            else:
+                st.metric("水位", "--m", label_visibility="visible")
+        
+        with header_col4:
+            if latest_data and latest_data.get('data_time'):
+                try:
+                    dt = datetime.fromisoformat(latest_data['data_time'].replace('Z', '+00:00'))
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                    time_str = dt.strftime('%H:%M')
+                    st.metric("更新", time_str, label_visibility="visible")
+                except:
+                    st.metric("更新", "--:--", label_visibility="visible")
+            else:
+                st.metric("更新", "--:--", label_visibility="visible")
+        
+        st.markdown("---")
 
 def main():
     """メイン関数"""
@@ -1692,45 +1737,14 @@ def main():
         st.warning(f"履歴データの読み込みに失敗しました: {e}")
         history_data = []
     
-    # システム名の表示（毎回最上部に表示）
-    st.markdown("# 厚東川氾濫監視システムv2.0")
-    
-    # 監視状況の表示
+    # アラート状態の取得
     if latest_data:
         alerts = monitor.check_alert_status(latest_data, thresholds)
-        
-        # アラート詳細情報
-        alert_details = []
-        if alerts['river'] != '正常':
-            alert_details.append(f"河川: {alerts['river']}")
-        if alerts['dam'] != '正常':
-            alert_details.append(f"ダム: {alerts['dam']}")
-        
-        # ステータス表示文の作成と表示
-        if alerts['overall'] == '危険':
-            alert_status = f"**危険レベル** : 緊急対応が必要です"
-            if alert_details:
-                alert_status += f" ({' ｜ '.join(alert_details)})"
-            st.error(f"監視状況 : {alert_status}")
-        elif alerts['overall'] == '警戒':
-            alert_status = f"**警戒レベル** : 注意が必要です"
-            if alert_details:
-                alert_status += f" ({' ｜ '.join(alert_details)})"
-            st.warning(f"監視状況 : {alert_status}")
-        elif alerts['overall'] == '注意':
-            alert_status = f"**注意レベル** : 状況を監視中"
-            if alert_details:
-                alert_status += f" ({' ｜ '.join(alert_details)})"
-            st.info(f"監視状況 : {alert_status}")
-        elif alerts['overall'] == '正常':
-            st.success("監視状況 : 正常 - 安全な状態です")
-        else:
-            st.info("監視状況 : データ確認中...")
     else:
-        st.warning("監視状況 : データが取得できていません")
+        alerts = {'overall': 'データなし', 'river': 'データなし', 'dam': 'データなし', 'rainfall': 'データなし'}
     
-    # 区切り線
-    st.markdown("---")
+    # コンパクトヘッダーの表示
+    monitor.render_compact_header(latest_data, alerts)
     
     # 現在の状況表示
     monitor.create_metrics_display(latest_data)
