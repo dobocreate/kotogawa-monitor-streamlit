@@ -606,6 +606,12 @@ class KotogawaMonitor:
             }
             
             .weather-precip {
+                margin-bottom: 5px;
+            }
+            
+            .weather-temp {
+                font-size: 11px;
+                color: #333;
                 margin-bottom: 0;
             }
         </style>
@@ -681,6 +687,21 @@ class KotogawaMonitor:
                     precip_text = '--'
                 
                 html_content += f'<div class="weather-precip">{precip_text}</div>'
+                
+                # 気温情報（最高・最低気温）
+                temp_max = day_data.get('temp_max')
+                temp_min = day_data.get('temp_min')
+                
+                if temp_max is not None and temp_min is not None:
+                    temp_text = f'{temp_max}°/{temp_min}°'
+                elif temp_max is not None:
+                    temp_text = f'{temp_max}°/--'
+                elif temp_min is not None:
+                    temp_text = f'--/{temp_min}°'
+                else:
+                    temp_text = '--/--'
+                
+                html_content += f'<div class="weather-temp">{temp_text}</div>'
                 html_content += '</div>'
             
             html_content += '</div>'
@@ -688,7 +709,7 @@ class KotogawaMonitor:
         
         st.markdown("---")
     
-    def create_data_analysis_display(self, history_data: List[Dict[str, Any]], enable_graph_interaction: bool) -> None:
+    def create_data_analysis_display(self, history_data: List[Dict[str, Any]], enable_graph_interaction: bool, display_hours: int = 24) -> None:
         """データ分析セクションを表示する"""
         # データ分析セクション
         st.markdown("## データ分析")
@@ -725,7 +746,7 @@ class KotogawaMonitor:
             except:
                 pass
             
-            fig3 = self.create_dam_water_level_graph(history_data, enable_graph_interaction, latest_precipitation_data)
+            fig3 = self.create_dam_water_level_graph(history_data, enable_graph_interaction, latest_precipitation_data, display_hours)
             st.plotly_chart(fig3, use_container_width=True, config=plotly_config)
             
             # 降水強度グラフの表示
@@ -787,7 +808,7 @@ class KotogawaMonitor:
                     except:
                         pass
                 
-                fig4 = self.create_precipitation_intensity_graph(latest_api_precipitation_data, enable_graph_interaction, history_data)
+                fig4 = self.create_precipitation_intensity_graph(latest_api_precipitation_data, enable_graph_interaction, history_data, display_hours)
                 st.plotly_chart(fig4, use_container_width=True, config=plotly_config)
         
         with tab2:
@@ -1138,7 +1159,7 @@ class KotogawaMonitor:
         
         return fig
     
-    def create_dam_water_level_graph(self, history_data: List[Dict[str, Any]], enable_interaction: bool = False, latest_precipitation_data: Dict[str, Any] = None) -> go.Figure:
+    def create_dam_water_level_graph(self, history_data: List[Dict[str, Any]], enable_interaction: bool = False, latest_precipitation_data: Dict[str, Any] = None, display_hours: int = 24) -> go.Figure:
         """ダム水位グラフを作成（ダム水位 + 時間雨量の二軸表示）"""
         if not history_data:
             fig = go.Figure()
@@ -1224,9 +1245,15 @@ class KotogawaMonitor:
         # 現在時刻を取得
         now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
         
+        # 表示期間の計算
+        end_time = now_jst
+        start_time = end_time - timedelta(hours=display_hours)
+        
         # 観測値の処理（APIデータを優先、なければ履歴から取得）
         obs_times = []
         obs_intensities = []
+        out_of_range_count = 0
+        latest_out_of_range_time = None
         
         # まず最新のAPIデータから観測値を取得
         if latest_precipitation_data and latest_precipitation_data.get('observation'):
@@ -1237,8 +1264,16 @@ class KotogawaMonitor:
                         dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
                     else:
                         dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
-                    obs_times.append(dt)
-                    obs_intensities.append(item['intensity'])
+                    
+                    # 表示期間内のデータのみを追加
+                    if start_time <= dt <= end_time:
+                        obs_times.append(dt)
+                        obs_intensities.append(item['intensity'])
+                    else:
+                        # 範囲外データをカウント
+                        out_of_range_count += 1
+                        if latest_out_of_range_time is None or dt > latest_out_of_range_time:
+                            latest_out_of_range_time = dt
                 except (ValueError, KeyError):
                     continue
         
@@ -1254,18 +1289,26 @@ class KotogawaMonitor:
                                 dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
                             else:
                                 dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
-                            obs_times.append(dt)
-                            obs_intensities.append(obs['intensity'])
+                            
+                            # 表示期間内のデータのみを追加
+                            if start_time <= dt <= end_time:
+                                obs_times.append(dt)
+                                obs_intensities.append(obs['intensity'])
+                            else:
+                                # 範囲外データをカウント
+                                out_of_range_count += 1
+                                if latest_out_of_range_time is None or dt > latest_out_of_range_time:
+                                    latest_out_of_range_time = dt
                         except (ValueError, KeyError):
                             continue
         
+        # 範囲外データのログ表示
+        if out_of_range_count > 0 and latest_out_of_range_time:
+            latest_time_str = latest_out_of_range_time.strftime('%Y-%m-%d %H:%M')
+            st.info(f"🔍 表示期間外の降水強度観測値: {out_of_range_count}件 (最新: {latest_time_str})")
+        
         # 観測値をプロット
         if obs_times and obs_intensities:
-            # デバッグ情報を表示
-            st.write(f"🔍 観測値デバッグ: {len(obs_times)}件のデータ")
-            st.write(f"観測時刻: {[t.strftime('%H:%M') for t in obs_times[:3]]}")
-            st.write(f"降水強度: {obs_intensities[:3]}")
-            
             fig.add_trace(
                 go.Bar(
                     x=obs_times,
@@ -1278,8 +1321,6 @@ class KotogawaMonitor:
                 ),
                 secondary_y=True
             )
-        else:
-            st.write("🔍 観測値データなし")
             
         # 予測値の処理（現在時刻以降のみ、APIデータから取得）
         if latest_precipitation_data and latest_precipitation_data.get('forecast'):
@@ -1528,7 +1569,7 @@ class KotogawaMonitor:
         
         return fig
     
-    def create_precipitation_intensity_graph(self, precipitation_data: Dict[str, Any], enable_interaction: bool = True, history_data: List[Dict[str, Any]] = None) -> go.Figure:
+    def create_precipitation_intensity_graph(self, precipitation_data: Dict[str, Any], enable_interaction: bool = True, history_data: List[Dict[str, Any]] = None, display_hours: int = 24) -> go.Figure:
         """降水強度グラフを作成"""
         from plotly.subplots import make_subplots
         fig = make_subplots(specs=[[{"secondary_y": True}]])
@@ -1536,9 +1577,15 @@ class KotogawaMonitor:
         # 現在時刻を取得
         now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
         
-        # 観測データの処理
+        # 表示期間の計算
+        end_time = now_jst
+        start_time = end_time - timedelta(hours=display_hours)
+        
+        # 観測データの処理（時間範囲フィルタリングあり）
         obs_times = []
         obs_intensities = []
+        out_of_range_count = 0
+        latest_out_of_range_time = None
         
         if precipitation_data.get('observation'):
             for item in precipitation_data['observation']:
@@ -1548,12 +1595,25 @@ class KotogawaMonitor:
                         dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
                     else:
                         dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
-                    obs_times.append(dt)
-                    obs_intensities.append(item['intensity'])
+                    
+                    # 表示期間内のデータのみを追加
+                    if start_time <= dt <= end_time:
+                        obs_times.append(dt)
+                        obs_intensities.append(item['intensity'])
+                    else:
+                        # 範囲外データをカウント
+                        out_of_range_count += 1
+                        if latest_out_of_range_time is None or dt > latest_out_of_range_time:
+                            latest_out_of_range_time = dt
                 except (ValueError, KeyError):
                     continue
         
-        # 予測データの処理（現在時刻以降のみ）
+        # 範囲外データのログ表示
+        if out_of_range_count > 0 and latest_out_of_range_time:
+            latest_time_str = latest_out_of_range_time.strftime('%Y-%m-%d %H:%M')
+            st.info(f"🔍 表示期間外の降水強度観測値: {out_of_range_count}件 (最新: {latest_time_str})")
+        
+        # 予測データの処理（現在時刻以降のみ、時間範囲フィルタリングなし）
         forecast_times = []
         forecast_intensities = []
         
@@ -1566,7 +1626,7 @@ class KotogawaMonitor:
                     else:
                         dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
                     
-                    # 現在時刻以降のデータのみ使用
+                    # 現在時刻以降のデータのみ使用（予測値は時間範囲フィルタリングなし）
                     if dt >= now_jst:
                         forecast_times.append(dt)
                         forecast_intensities.append(item['intensity'])
@@ -1575,11 +1635,6 @@ class KotogawaMonitor:
         
         # 観測データのプロット（棒グラフ、左軸）
         if obs_times and obs_intensities:
-            # デバッグ情報を表示（Yahoo! Weather APIグラフ用）
-            st.write(f"🔍 Yahoo API観測値デバッグ: {len(obs_times)}件のデータ")
-            st.write(f"観測時刻: {[t.strftime('%H:%M') for t in obs_times[:3]]}")
-            st.write(f"降水強度: {obs_intensities[:3]}")
-            
             fig.add_trace(go.Bar(
                 x=obs_times,
                 y=obs_intensities,
@@ -1588,8 +1643,6 @@ class KotogawaMonitor:
                 hovertemplate='<b>観測値</b><br>%{x|%H:%M}<br>降水強度: %{y:.1f} mm/h<extra></extra>',
                 width=600000
             ), secondary_y=False)
-        else:
-            st.write("🔍 Yahoo API観測値データなし")
         
         # 予測データのプロット（棒グラフ、左軸）
         if forecast_times and forecast_intensities:
@@ -1864,7 +1917,7 @@ def main():
         monitor.create_weather_forecast_display(latest_data, show_weekly_weather)
     
     # データ分析表示
-    monitor.create_data_analysis_display(history_data, enable_graph_interaction)
+    monitor.create_data_analysis_display(history_data, enable_graph_interaction, display_hours)
     
     # システム情報（サイドバー）
     st.sidebar.subheader("システム情報")
