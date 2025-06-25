@@ -909,10 +909,14 @@ class KotogawaMonitor:
             pass
     
     def get_common_time_range(self, history_data: List[Dict[str, Any]]) -> tuple:
-        """履歴データから共通の時間範囲を取得"""
+        """履歴データから共通の時間範囲を取得（将来予測値を考慮）"""
         if not history_data:
             return None, None
         
+        # 現在時刻（日本時間）
+        now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
+        
+        # 履歴データの時間範囲を取得
         timestamps = []
         for item in history_data:
             data_time = item.get('data_time') or item.get('timestamp', '')
@@ -929,7 +933,11 @@ class KotogawaMonitor:
         if not timestamps:
             return None, None
         
-        return min(timestamps), max(timestamps)
+        # 履歴データの最古時刻を開始時刻とし、現在時刻+2時間を終了時刻とする
+        time_min = min(timestamps)
+        time_max = now_jst + timedelta(hours=2)
+        
+        return time_min, time_max
     
     def create_river_water_level_graph(self, history_data: List[Dict[str, Any]], enable_interaction: bool = False) -> go.Figure:
         """河川水位グラフを作成（河川水位 + ダム全放流量の二軸表示）"""
