@@ -745,7 +745,7 @@ class KotogawaDataCollector:
                         if day_after_tomorrow_str in time_str:
                             # 山口県全体のデータを探す（週間予報は県単位）
                             for area in week_forecast['timeSeries'][0].get('areas', []):
-                                if area.get('area', {}).get('code') == '350000':  # 山口県
+                                if area.get('area', {}).get('code') in ['350000', '81428']:  # 山口県または下関
                                     if 'weatherCodes' in area and i < len(area['weatherCodes']):
                                         weather_data['day_after_tomorrow']['weather_code'] = area['weatherCodes'][i]
                                     
@@ -806,7 +806,7 @@ class KotogawaDataCollector:
                 for series in forecast_data[1]['timeSeries']:
                     if 'areas' in series:
                         for area in series['areas']:
-                            if area.get('area', {}).get('code') == '350000':  # 山口県
+                            if area.get('area', {}).get('code') in ['350000', '81428']:  # 山口県または下関
                                 # 気温データの探索
                                 time_defines = series.get('timeDefines', [])
                                 temps_max = area.get('tempsMax', [])
@@ -844,7 +844,7 @@ class KotogawaDataCollector:
                     temps_min = []
                     
                     for area in ts.get('areas', []):
-                        if area.get('area', {}).get('code') == '350000':
+                        if area.get('area', {}).get('code') in ['350000', '81428']:
                             weather_codes = area.get('weatherCodes', [])
                             pops = area.get('pops', [])
                             # 週間予報の気温データを取得
