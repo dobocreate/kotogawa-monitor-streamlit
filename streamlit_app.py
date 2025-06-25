@@ -70,8 +70,15 @@ st.markdown("""
     }
     
     /* システム名を中央配置 */
-    .main h1 {
-        text-align: center;
+    .main .block-container h1,
+    .main h1,
+    h1[data-testid="stMarkdown"] {
+        text-align: center !important;
+    }
+    
+    /* メインコンテナの上部余白を削除 */
+    .main .block-container {
+        padding-top: 1rem !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -1703,7 +1710,7 @@ def main():
         alerts = {'overall': 'データなし', 'river': 'データなし', 'dam': 'データなし', 'rainfall': 'データなし'}
     
     # システムヘッダーの表示
-    st.markdown("# 厚東川氾濫監視システムv2.0")
+    st.markdown('<h1 style="text-align: center; margin-top: 0;">厚東川氾濫監視システムv2.0</h1>', unsafe_allow_html=True)
     
     if latest_data:
         # 状態と更新時間を横並びで表示
