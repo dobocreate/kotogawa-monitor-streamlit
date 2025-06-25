@@ -38,6 +38,7 @@ st.markdown("""
     .main .block-container {
         padding-left: 1rem;
         padding-right: 1rem;
+        padding-top: 0rem !important;
         max-width: 100%;
     }
     
@@ -76,10 +77,6 @@ st.markdown("""
         text-align: center !important;
     }
     
-    /* メインコンテナの上部余白を削除 */
-    .main .block-container {
-        padding-top: 1rem !important;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -1710,7 +1707,7 @@ def main():
         alerts = {'overall': 'データなし', 'river': 'データなし', 'dam': 'データなし', 'rainfall': 'データなし'}
     
     # システムヘッダーの表示
-    st.markdown('<h1 style="text-align: center; margin-top: 0;">厚東川氾濫監視システムv2.0</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 style="text-align: center; margin-top: 0; margin-bottom: 1rem;">厚東川氾濫監視システムv2.0</h1>', unsafe_allow_html=True)
     
     if latest_data:
         # 状態と更新時間を横並びで表示
