@@ -28,7 +28,7 @@ st.set_page_config(
     page_title="厚東川監視システム",
     page_icon="■",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
 # サイドバー表示時のレスポンシブ対応CSS
@@ -82,8 +82,14 @@ st.markdown("""
         box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
     }
     
+    /* サイドバーが開いている時のヘッダー調整 */
+    [data-testid="stSidebar"][aria-expanded="true"] ~ .main .fixed-header {
+        left: 21rem !important;
+        width: calc(100vw - 21rem) !important;
+    }
+    
     .main-content {
-        margin-top: 120px !important;
+        margin-top: 150px !important;
         padding-top: 1rem !important;
     }
     
@@ -95,6 +101,16 @@ st.markdown("""
     /* メインコンテナの調整 */
     .main .block-container {
         padding-top: 0rem !important;
+    }
+    
+    /* ヘッダー内のStreamlitコンポーネントのスタイル調整 */
+    .fixed-header .element-container {
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .fixed-header h1 {
+        margin-bottom: 0.5rem !important;
+        font-size: 1.8rem !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -1727,62 +1743,49 @@ def main():
     else:
         alerts = {'overall': 'データなし', 'river': 'データなし', 'dam': 'データなし', 'rainfall': 'データなし'}
     
-    # 固定ヘッダーのHTML
-    header_html = f"""
-    <div class="fixed-header">
-        <h1>厚東川氾濫監視システムv2.0</h1>
-        <div style="display: flex; gap: 20px; align-items: center; margin-top: 10px;">
-    """
-    
-    if latest_data:
-        if alerts['overall'] == '正常':
-            status_color = "#28a745"
-            status_text = "🟢 正常"
-        elif alerts['overall'] == '危険':
-            status_color = "#dc3545"
-            status_text = "🔴 危険"
-        elif alerts['overall'] == '警戒':
-            status_color = "#fd7e14"
-            status_text = "🟠 警戒"
-        elif alerts['overall'] == '注意':
-            status_color = "#ffc107"
-            status_text = "🟡 注意"
-        else:
-            status_color = "#6c757d"
-            status_text = "⚪ 確認中"
+    # システムヘッダーの表示
+    header_container = st.container()
+    with header_container:
+        st.markdown('<div class="fixed-header">', unsafe_allow_html=True)
+        st.markdown("# 厚東川氾濫監視システムv2.0")
         
-        # 更新時間
-        update_time = "--:--"
-        if latest_data.get('data_time'):
-            try:
-                dt = datetime.fromisoformat(latest_data['data_time'].replace('Z', '+00:00'))
-                if dt.tzinfo is None:
-                    dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-                update_time = dt.strftime('%H:%M')
-            except:
+        if latest_data:
+            # 状態と更新時間を横並びで表示
+            col1, col2, col3 = st.columns([2, 2, 4])
+            
+            with col1:
+                if alerts['overall'] == '正常':
+                    st.success("🟢 正常")
+                elif alerts['overall'] == '危険':
+                    st.error("🔴 危険")
+                elif alerts['overall'] == '警戒':
+                    st.warning("🟠 警戒")
+                elif alerts['overall'] == '注意':
+                    st.warning("🟡 注意")
+                else:
+                    st.info("⚪ 確認中")
+            
+            with col2:
+                # 更新時間
+                if latest_data.get('data_time'):
+                    try:
+                        dt = datetime.fromisoformat(latest_data['data_time'].replace('Z', '+00:00'))
+                        if dt.tzinfo is None:
+                            dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                        update_time = dt.strftime('%H:%M')
+                        st.info(f"🕐 {update_time}")
+                    except:
+                        st.info("🕐 --:--")
+                else:
+                    st.info("🕐 --:--")
+            
+            with col3:
+                # 空のカラム
                 pass
+        else:
+            st.warning("⚠️ データの読み込み中...")
         
-        header_html += f"""
-            <div style="background-color: {status_color}; color: white; padding: 5px 10px; border-radius: 5px; font-weight: bold;">
-                {status_text}
-            </div>
-            <div style="background-color: #17a2b8; color: white; padding: 5px 10px; border-radius: 5px;">
-                🕐 最終更新: {update_time}
-            </div>
-        """
-    else:
-        header_html += """
-            <div style="background-color: #ffc107; color: black; padding: 5px 10px; border-radius: 5px;">
-                ⚠️ データの読み込み中...
-            </div>
-        """
-    
-    header_html += """
-        </div>
-    </div>
-    """
-    
-    st.markdown(header_html, unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
     
     # メインコンテンツのスペーサー
     st.markdown('<div class="main-content"></div>', unsafe_allow_html=True)
