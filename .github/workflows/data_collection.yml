@@ -59,6 +59,7 @@ jobs:
       run: |
         git add data/
         git commit -m "📊 Update monitoring data - $(date '+%Y-%m-%d %H:%M:%S UTC')"
+        git pull --rebase origin main
         git push
         
     - name: Cleanup on failure
