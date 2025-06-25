@@ -1138,8 +1138,8 @@ class KotogawaMonitor:
                 go.Bar(
                     x=df['timestamp'],
                     y=df['precipitation_intensity_obs'],
-                    name='降水強度（厚東川ダム）',
-                    marker_color='#FF6B6B',
+                    name='降水強度・観測値（厚東川ダム）',
+                    marker_color='#66CDAA',
                     opacity=0.8
                 ),
                 secondary_y=True
@@ -1151,8 +1151,8 @@ class KotogawaMonitor:
                 go.Bar(
                     x=df['timestamp'],
                     y=df['precipitation_intensity_forecast'],
-                    name='降水強度予測（厚東川ダム）',
-                    marker_color='#FFA07A',
+                    name='降水強度・予測値（厚東川ダム）',
+                    marker_color='#98FB98',
                     opacity=0.6
                 ),
                 secondary_y=True
@@ -1401,8 +1401,8 @@ class KotogawaMonitor:
             fig.add_trace(go.Bar(
                 x=obs_times,
                 y=obs_intensities,
-                name='降水強度観測値',
-                marker=dict(color='#2E86AB'),
+                name='降水強度・観測値（厚東川ダム）',
+                marker=dict(color='#66CDAA'),
                 hovertemplate='<b>観測値</b><br>%{x|%H:%M}<br>降水強度: %{y:.1f} mm/h<extra></extra>'
             ), secondary_y=False)
         
@@ -1411,8 +1411,8 @@ class KotogawaMonitor:
             fig.add_trace(go.Bar(
                 x=forecast_times,
                 y=forecast_intensities,
-                name='降水強度予測値',
-                marker=dict(color='#A23B72', opacity=0.7),
+                name='降水強度・予測値（厚東川ダム）',
+                marker=dict(color='#98FB98', opacity=0.7),
                 hovertemplate='<b>予測値</b><br>%{x|%H:%M}<br>降水強度: %{y:.1f} mm/h<extra></extra>'
             ), secondary_y=False)
         
