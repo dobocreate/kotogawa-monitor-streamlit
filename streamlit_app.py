@@ -807,7 +807,7 @@ class KotogawaMonitor:
                         elif river_status in ['氾濫注意', '水防団待機']:
                             st.warning(f"注意 {river_status}")
                     else:
-                        st.success(f"正常 {river_status}")
+                        st.success("正常")
                 else:
                     st.metric(label="水位 (m)", value="--")
             
@@ -1763,7 +1763,6 @@ def main():
             st.success(alert_status)
         else:
             st.info(alert_status)
-    
     # 現在の状況表示
     monitor.create_metrics_display(latest_data)
     
