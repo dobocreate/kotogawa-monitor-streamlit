@@ -715,32 +715,79 @@ class KotogawaMonitor:
             st.plotly_chart(fig2, use_container_width=True, config=plotly_config)
             
             st.subheader("ダム貯水位・時間雨量")
-            fig3 = self.create_dam_water_level_graph(history_data, enable_graph_interaction)
+            # 最新の降水強度データを取得
+            latest_precipitation_data = None
+            try:
+                latest_data = self.load_latest_data()
+                if latest_data and 'precipitation_intensity' in latest_data:
+                    latest_precipitation_data = latest_data['precipitation_intensity']
+            except:
+                pass
+            
+            fig3 = self.create_dam_water_level_graph(history_data, enable_graph_interaction, latest_precipitation_data)
             st.plotly_chart(fig3, use_container_width=True, config=plotly_config)
             
-            # 降水強度グラフの表示（最新データから取得）
-            if history_data:
-                latest_data = history_data[-1] if history_data else {}
-                precipitation_intensity_data = latest_data.get('precipitation_intensity', {})
-                
-                if precipitation_intensity_data and (
-                    precipitation_intensity_data.get('observation') or 
-                    precipitation_intensity_data.get('forecast')
-                ):
-                    st.subheader("Yahoo! Weather API")
-                    # 更新時刻を表示
-                    if precipitation_intensity_data.get('update_time'):
-                        try:
-                            update_dt = datetime.fromisoformat(precipitation_intensity_data['update_time'])
-                            if update_dt.tzinfo is None:
-                                update_dt = update_dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-                            update_str = update_dt.strftime('%H:%M:%S')
-                            st.caption(f"更新日時 : {update_str}")
-                        except:
-                            pass
+            # 降水強度グラフの表示
+            # 最新のAPIデータから取得（Yahoo! Weather APIグラフ用に再取得）
+            latest_api_precipitation_data = None
+            try:
+                # 最新データを再度取得（キャッシュから）
+                latest_data_for_api = self.load_latest_data()
+                if latest_data_for_api and 'precipitation_intensity' in latest_data_for_api:
+                    latest_api_precipitation_data = latest_data_for_api['precipitation_intensity']
+            except:
+                pass
+            
+            # APIデータがない場合は、履歴から観測値のみ取得
+            if not latest_api_precipitation_data and history_data:
+                    # 履歴データから観測値を収集
+                    all_observations = []
+                    update_time = None
+                    for item in history_data:
+                        precip_data = item.get('precipitation_intensity', {})
+                        if precip_data.get('observation'):
+                            all_observations.extend(precip_data.get('observation', []))
+                            if not update_time and precip_data.get('update_time'):
+                                update_time = precip_data.get('update_time')
                     
-                    fig4 = self.create_precipitation_intensity_graph(precipitation_intensity_data, enable_graph_interaction, history_data)
-                    st.plotly_chart(fig4, use_container_width=True, config=plotly_config)
+                    if all_observations:
+                        latest_api_precipitation_data = {
+                            'observation': all_observations,
+                            'forecast': [],  # 予測値は常に最新APIから取得
+                            'update_time': update_time
+                        }
+            
+            # 予測値を最新データから追加（観測値がある場合のみ）
+            if latest_api_precipitation_data:
+                try:
+                    if 'latest_data_for_api' not in locals():
+                        latest_data_for_api = self.load_latest_data()
+                    
+                    if latest_data_for_api and 'precipitation_intensity' in latest_data_for_api:
+                        api_forecast = latest_data_for_api['precipitation_intensity'].get('forecast', [])
+                        if api_forecast:
+                            latest_api_precipitation_data['forecast'] = api_forecast
+                except:
+                    pass
+            
+            if latest_api_precipitation_data and (
+                latest_api_precipitation_data.get('observation') or 
+                latest_api_precipitation_data.get('forecast')
+            ):
+                st.subheader("Yahoo! Weather API")
+                # 更新時刻を表示
+                if latest_api_precipitation_data.get('update_time'):
+                    try:
+                        update_dt = datetime.fromisoformat(latest_api_precipitation_data['update_time'])
+                        if update_dt.tzinfo is None:
+                            update_dt = update_dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                        update_str = update_dt.strftime('%H:%M:%S')
+                        st.caption(f"更新日時 : {update_str}")
+                    except:
+                        pass
+                
+                fig4 = self.create_precipitation_intensity_graph(latest_api_precipitation_data, enable_graph_interaction, history_data)
+                st.plotly_chart(fig4, use_container_width=True, config=plotly_config)
         
         with tab2:
             st.subheader("データテーブル")
@@ -1015,7 +1062,7 @@ class KotogawaMonitor:
                     mode='lines+markers',
                     name='河川水位（持世寺）',
                     line=dict(color='#1f77b4', width=3),
-                    marker=dict(size=8, color='white', line=dict(width=2, color='#1f77b4'))
+                    marker=dict(size=6, color='white', line=dict(width=2, color='#1f77b4'))
                 ),
                 secondary_y=False
             )
@@ -1029,7 +1076,7 @@ class KotogawaMonitor:
                     mode='lines+markers',
                     name='全放流量（厚東川ダム）',
                     line=dict(color='#d62728', width=3),
-                    marker=dict(size=8, color='white', line=dict(width=2, color='#d62728'))
+                    marker=dict(size=6, color='white', line=dict(width=2, color='#d62728'))
                 ),
                 secondary_y=True
             )
@@ -1090,7 +1137,7 @@ class KotogawaMonitor:
         
         return fig
     
-    def create_dam_water_level_graph(self, history_data: List[Dict[str, Any]], enable_interaction: bool = False) -> go.Figure:
+    def create_dam_water_level_graph(self, history_data: List[Dict[str, Any]], enable_interaction: bool = False, latest_precipitation_data: Dict[str, Any] = None) -> go.Figure:
         """ダム水位グラフを作成（ダム水位 + 時間雨量の二軸表示）"""
         if not history_data:
             fig = go.Figure()
@@ -1128,20 +1175,6 @@ class KotogawaMonitor:
             if rainfall is not None:
                 row['rainfall'] = rainfall
             
-            # Yahoo! Weather API降水強度データ
-            precipitation_intensity = item.get('precipitation_intensity', {})
-            if precipitation_intensity.get('observation'):
-                # 最新の観測値を取得
-                latest_obs = precipitation_intensity['observation'][-1] if precipitation_intensity['observation'] else None
-                if latest_obs:
-                    row['precipitation_intensity_obs'] = latest_obs.get('intensity', 0)
-            
-            if precipitation_intensity.get('forecast'):
-                # 最新の予測値を取得
-                latest_forecast = precipitation_intensity['forecast'][-1] if precipitation_intensity['forecast'] else None
-                if latest_forecast:
-                    row['precipitation_intensity_forecast'] = latest_forecast.get('intensity', 0)
-            
             df_data.append(row)
         
         if not df_data:
@@ -1167,7 +1200,7 @@ class KotogawaMonitor:
                     mode='lines+markers',
                     name='ダム貯水位（厚東川ダム）',
                     line=dict(color='#ff7f0e', width=3),
-                    marker=dict(size=8, color='white', line=dict(width=2, color='#ff7f0e'))
+                    marker=dict(size=6, color='white', line=dict(width=2, color='#ff7f0e'))
                 ),
                 secondary_y=False
             )
@@ -1186,33 +1219,92 @@ class KotogawaMonitor:
                 secondary_y=True
             )
         
-        # Yahoo! Weather API降水強度観測値（右軸）
-        if 'precipitation_intensity_obs' in df.columns:
+        # Yahoo! Weather API降水強度データを追加
+        # 現在時刻を取得
+        now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
+        
+        # 観測値の処理（APIデータを優先、なければ履歴から取得）
+        obs_times = []
+        obs_intensities = []
+        
+        # まず最新のAPIデータから観測値を取得
+        if latest_precipitation_data and latest_precipitation_data.get('observation'):
+            for item in latest_precipitation_data['observation']:
+                try:
+                    dt = datetime.fromisoformat(item['datetime'])
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                    else:
+                        dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
+                    obs_times.append(dt)
+                    obs_intensities.append(item['intensity'])
+                except (ValueError, KeyError):
+                    continue
+        
+        # APIデータがない場合は履歴データから観測値を取得
+        if not obs_times and history_data:
+            for item in history_data:
+                precip_data = item.get('precipitation_intensity', {})
+                if precip_data.get('observation'):
+                    for obs in precip_data['observation']:
+                        try:
+                            dt = datetime.fromisoformat(obs['datetime'])
+                            if dt.tzinfo is None:
+                                dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                            else:
+                                dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
+                            obs_times.append(dt)
+                            obs_intensities.append(obs['intensity'])
+                        except (ValueError, KeyError):
+                            continue
+        
+        # 観測値をプロット
+        if obs_times and obs_intensities:
             fig.add_trace(
                 go.Bar(
-                    x=df['timestamp'],
-                    y=df['precipitation_intensity_obs'],
+                    x=obs_times,
+                    y=obs_intensities,
                     name='降水強度・観測値（厚東川ダム）',
                     marker_color='#66CDAA',
                     opacity=0.8,
-                    width=600000
+                    width=600000,
+                    hovertemplate='<b>観測値</b><br>%{x|%H:%M}<br>降水強度: %{y:.1f} mm/h<extra></extra>'
                 ),
                 secondary_y=True
             )
-        
-        # Yahoo! Weather API降水強度予測値（右軸）
-        if 'precipitation_intensity_forecast' in df.columns:
-            fig.add_trace(
-                go.Bar(
-                    x=df['timestamp'],
-                    y=df['precipitation_intensity_forecast'],
-                    name='降水強度・予測値（厚東川ダム）',
-                    marker_color='#98FB98',
-                    opacity=0.6,
-                    width=600000
-                ),
-                secondary_y=True
-            )
+            
+        # 予測値の処理（現在時刻以降のみ、APIデータから取得）
+        if latest_precipitation_data and latest_precipitation_data.get('forecast'):
+                forecast_times = []
+                forecast_intensities = []
+                for item in latest_precipitation_data['forecast']:
+                    try:
+                        dt = datetime.fromisoformat(item['datetime'])
+                        if dt.tzinfo is None:
+                            dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                        else:
+                            dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
+                        
+                        # 現在時刻以降のデータのみ使用
+                        if dt >= now_jst:
+                            forecast_times.append(dt)
+                            forecast_intensities.append(item['intensity'])
+                    except (ValueError, KeyError):
+                        continue
+                
+                if forecast_times and forecast_intensities:
+                    fig.add_trace(
+                        go.Bar(
+                            x=forecast_times,
+                            y=forecast_intensities,
+                            name='降水強度・予測値（厚東川ダム）',
+                            marker_color='#98FB98',
+                            opacity=0.6,
+                            width=600000,
+                            hovertemplate='<b>予測値</b><br>%{x|%H:%M}<br>降水強度: %{y:.1f} mm/h<extra></extra>'
+                        ),
+                        secondary_y=True
+                    )
         
         # 軸の設定（小画面対応）
         fig.update_yaxes(
@@ -1329,22 +1421,22 @@ class KotogawaMonitor:
         # 二軸グラフを作成
         fig = make_subplots(specs=[[{"secondary_y": True}]])
         
-        # 累加雨量（右軸）- 最背面に配置するため最初に追加
+        # 累加雨量（右軸）- 塗りつぶし背景として最初に追加（マーカーなし）
         if 'cumulative_rainfall' in df.columns:
             fig.add_trace(
                 go.Scatter(
                     x=df['timestamp'],
                     y=df['cumulative_rainfall'],
-                    mode='lines+markers',
+                    mode='lines',
                     name='累加雨量（宇部市）',
-                    line=dict(color='#87CEEB', width=3),
-                    marker=dict(size=8, color='white', line=dict(width=2, color='#87CEEB')),
-                    fill='tonexty'
+                    line=dict(color='#87CEEB', width=1),
+                    fill='tozeroy',
+                    fillcolor='rgba(135, 206, 235, 0.3)'
                 ),
                 secondary_y=True
             )
         
-        # ダム流入量（左軸）
+        # ダム流入量（左軸）- 線グラフを累加雨量の上に表示
         if 'inflow' in df.columns:
             fig.add_trace(
                 go.Scatter(
@@ -1353,12 +1445,12 @@ class KotogawaMonitor:
                     mode='lines+markers',
                     name='流入量（厚東川ダム）',
                     line=dict(color='#2ca02c', width=3),
-                    marker=dict(size=8, color='white', line=dict(width=2, color='#2ca02c'))
+                    marker=dict(size=6, color='white', line=dict(width=2, color='#2ca02c'))
                 ),
                 secondary_y=False
             )
         
-        # ダム全放流量（左軸）
+        # ダム全放流量（左軸）- 線グラフを累加雨量の上に表示
         if 'outflow' in df.columns:
             fig.add_trace(
                 go.Scatter(
@@ -1367,7 +1459,7 @@ class KotogawaMonitor:
                     mode='lines+markers',
                     name='全放流量（厚東川ダム）',
                     line=dict(color='#d62728', width=3),
-                    marker=dict(size=8, color='white', line=dict(width=2, color='#d62728'))
+                    marker=dict(size=6, color='white', line=dict(width=2, color='#d62728'))
                 ),
                 secondary_y=False
             )
@@ -1433,6 +1525,9 @@ class KotogawaMonitor:
         from plotly.subplots import make_subplots
         fig = make_subplots(specs=[[{"secondary_y": True}]])
         
+        # 現在時刻を取得
+        now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
+        
         # 観測データの処理
         obs_times = []
         obs_intensities = []
@@ -1450,7 +1545,7 @@ class KotogawaMonitor:
                 except (ValueError, KeyError):
                     continue
         
-        # 予測データの処理
+        # 予測データの処理（現在時刻以降のみ）
         forecast_times = []
         forecast_intensities = []
         
@@ -1462,8 +1557,11 @@ class KotogawaMonitor:
                         dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
                     else:
                         dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
-                    forecast_times.append(dt)
-                    forecast_intensities.append(item['intensity'])
+                    
+                    # 現在時刻以降のデータのみ使用
+                    if dt >= now_jst:
+                        forecast_times.append(dt)
+                        forecast_intensities.append(item['intensity'])
                 except (ValueError, KeyError):
                     continue
         
