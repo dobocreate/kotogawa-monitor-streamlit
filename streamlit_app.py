@@ -62,6 +62,34 @@ st.markdown("""
         width: 100%;
         min-width: 0;
     }
+    
+    /* 固定ヘッダーのスタイル */
+    .fixed-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background-color: white;
+        z-index: 999;
+        padding: 1rem 1rem 0.5rem 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    /* サイドバーが開いている時の固定ヘッダー調整 */
+    [data-testid="stSidebar"][aria-expanded="true"] ~ .main .fixed-header {
+        left: 21rem;
+        right: 0;
+    }
+    
+    /* 固定ヘッダー分のメインコンテンツ上部マージン */
+    .main-content {
+        margin-top: 140px;
+    }
+    
+    /* サイドバーの上部余白調整 */
+    section[data-testid="stSidebar"] > div {
+        padding-top: 1rem;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -807,7 +835,7 @@ class KotogawaMonitor:
                         elif river_status in ['氾濫注意', '水防団待機']:
                             st.warning(f"注意 {river_status}")
                     else:
-                        st.success("正常")
+                        st.success(f"{river_status}")
                 else:
                     st.metric(label="水位 (m)", value="--")
             
@@ -1750,6 +1778,7 @@ def main():
     
     # 固定ヘッダーの内容を設定
     with header_placeholder.container():
+        st.markdown('<div class="fixed-header">', unsafe_allow_html=True)
         st.markdown("<h1 style='text-align: center; margin: 0;'>厚東川氾濫監視システム</h1>", unsafe_allow_html=True)
         
         # アラート状態表示
@@ -1763,6 +1792,11 @@ def main():
             st.success(alert_status)
         else:
             st.info(alert_status)
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # メインコンテンツ
+    st.markdown('<div class="main-content">', unsafe_allow_html=True)
+    
     # 現在の状況表示
     monitor.create_metrics_display(latest_data)
     
@@ -1838,6 +1872,9 @@ def main():
     st.sidebar.markdown("---")
     st.sidebar.caption("厚東川リアルタイム監視システム v1.0")
     st.sidebar.caption("Powered by Streamlit")
+    
+    # メインコンテンツのdivを閉じる
+    st.markdown('</div>', unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
