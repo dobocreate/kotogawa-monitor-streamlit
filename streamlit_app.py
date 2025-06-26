@@ -866,6 +866,11 @@ class KotogawaMonitor:
                     except:
                         pass
                 
+                # データ状況の表示
+                obs_count = len(latest_api_precipitation_data.get('observation', []))
+                forecast_count = len(latest_api_precipitation_data.get('forecast', []))
+                st.caption(f"観測データ: {obs_count}件, 予測データ: {forecast_count}件")
+                
                 fig4 = self.create_precipitation_intensity_graph(latest_api_precipitation_data, enable_graph_interaction, history_data, display_hours)
                 st.plotly_chart(fig4, use_container_width=True, config=plotly_config)
         
@@ -1428,8 +1433,9 @@ class KotogawaMonitor:
                         else:
                             dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
                         
-                        # 現在時刻以降のデータのみ使用
-                        if dt >= now_jst:
+                        # 現在時刻以降のデータまたは過去30分以内の予測データを使用
+                        time_diff = (now_jst - dt).total_seconds() / 60  # 分単位の差
+                        if dt >= now_jst or time_diff <= 30:
                             forecast_times.append(dt)
                             forecast_intensities.append(item['intensity'])
                     except (ValueError, KeyError):
@@ -1722,6 +1728,8 @@ class KotogawaMonitor:
         forecast_intensities = []
         
         if precipitation_data.get('forecast'):
+            # デバッグ情報：予測データの時刻範囲を表示
+            forecast_debug_times = []
             for item in precipitation_data['forecast']:
                 try:
                     dt = datetime.fromisoformat(item['datetime'])
@@ -1729,13 +1737,21 @@ class KotogawaMonitor:
                         dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
                     else:
                         dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
+                    forecast_debug_times.append(dt)
                     
-                    # 現在時刻以降のデータのみ使用（予測値は時間範囲フィルタリングなし）
-                    if dt >= now_jst:
+                    # 現在時刻以降のデータまたは過去30分以内の予測データを使用
+                    time_diff = (now_jst - dt).total_seconds() / 60  # 分単位の差
+                    if dt >= now_jst or time_diff <= 30:
                         forecast_times.append(dt)
                         forecast_intensities.append(item['intensity'])
                 except (ValueError, KeyError):
                     continue
+            
+            # デバッグ情報を表示
+            if forecast_debug_times:
+                earliest_forecast = min(forecast_debug_times)
+                latest_forecast = max(forecast_debug_times)
+                st.info(f"🔍 予測データ時刻範囲: {earliest_forecast.strftime('%H:%M')} - {latest_forecast.strftime('%H:%M')}, 現在時刻: {now_jst.strftime('%H:%M')}, 表示対象: {len(forecast_times)}件")
         
         # 観測データのプロット（棒グラフ、左軸）
         if obs_times and obs_intensities:
@@ -2063,16 +2079,16 @@ def main():
             minutes_ago = int(time_diff.total_seconds() / 60)
             
             if minutes_ago < 60:
-                st.sidebar.success(f"● 観測時刻 ({minutes_ago}分前)")
+                st.sidebar.success(f"観測時刻　：　{minutes_ago}分前")
             elif minutes_ago < 120:
-                st.sidebar.warning(f"● 観測時刻 ({minutes_ago}分前)")
+                st.sidebar.warning(f"観測時刻　：　{minutes_ago}分前")
             else:
-                st.sidebar.error(f"● 観測時刻 ({minutes_ago}分前)")
+                st.sidebar.error(f"観測時刻　：　{minutes_ago}分前")
         except:
             st.sidebar.info("● 観測時刻確認中")
     
     # データ統計
-    st.sidebar.info(f"■ データ件数: {len(history_data)}件")
+    st.sidebar.info(f"データ件数　：　{len(history_data)}件")
     
     # 警戒レベル説明
     with st.sidebar.expander("■ 警戒レベル説明"):
