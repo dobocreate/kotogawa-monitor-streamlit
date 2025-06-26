@@ -865,21 +865,6 @@ class KotogawaMonitor:
                     latest_api_precipitation_data.get('forecast')
                 ):
                     st.subheader("Yahoo! Weather API")
-                    # 更新時刻を表示
-                    if latest_api_precipitation_data.get('update_time'):
-                        try:
-                            update_dt = datetime.fromisoformat(latest_api_precipitation_data['update_time'])
-                            if update_dt.tzinfo is None:
-                                update_dt = update_dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-                            update_str = update_dt.strftime('%H:%M:%S')
-                            st.caption(f"更新日時 : {update_str}")
-                        except:
-                            pass
-                    
-                    # データ状況の表示
-                    obs_count = len(latest_api_precipitation_data.get('observation', []))
-                    forecast_count = len(latest_api_precipitation_data.get('forecast', []))
-                    st.caption(f"観測データ: {obs_count}件, 予測データ: {forecast_count}件")
                     
                     fig4 = self.create_precipitation_intensity_graph(latest_api_precipitation_data, enable_graph_interaction, history_data, display_hours)
                     st.plotly_chart(fig4, use_container_width=True, config=plotly_config)
