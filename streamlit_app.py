@@ -340,18 +340,20 @@ class KotogawaMonitor:
                 alert_level = max(alert_level, 2)
         
         # 雨量チェック
-        hourly_rain = data.get('rainfall', {}).get('hourly', 0)
-        cumulative_rain = data.get('rainfall', {}).get('cumulative', 0)
+        hourly_rain = data.get('rainfall', {}).get('hourly')
+        cumulative_rain = data.get('rainfall', {}).get('cumulative')
         
-        if hourly_rain >= 50 or cumulative_rain >= 200:
-            alerts['rainfall'] = '危険'
-            alert_level = max(alert_level, 3)
-        elif hourly_rain >= 30 or cumulative_rain >= 100:
-            alerts['rainfall'] = '警戒'
-            alert_level = max(alert_level, 2)
-        elif hourly_rain >= 10 or cumulative_rain >= 50:
-            alerts['rainfall'] = '注意'
-            alert_level = max(alert_level, 1)
+        # null値の場合は雨量チェックをスキップ
+        if hourly_rain is not None and cumulative_rain is not None:
+            if hourly_rain >= 50 or cumulative_rain >= 200:
+                alerts['rainfall'] = '危険'
+                alert_level = max(alert_level, 3)
+            elif hourly_rain >= 30 or cumulative_rain >= 100:
+                alerts['rainfall'] = '警戒'
+                alert_level = max(alert_level, 2)
+            elif hourly_rain >= 10 or cumulative_rain >= 50:
+                alerts['rainfall'] = '注意'
+                alert_level = max(alert_level, 1)
         
         # 総合アラートレベル設定
         if alert_level >= 3:
