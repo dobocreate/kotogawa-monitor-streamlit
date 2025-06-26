@@ -1194,8 +1194,6 @@ class KotogawaMonitor:
         )
         fig.update_yaxes(
             title_text="全放流量 (m³/s)",
-            range=[0, 900],
-            dtick=150,
             secondary_y=True,
             title_font_size=12,
             tickfont_size=12
