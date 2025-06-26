@@ -1811,14 +1811,14 @@ class KotogawaMonitor:
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.25,
+                y=-0.45,
                 xanchor="left",
                 x=0.0,
                 bgcolor="rgba(255, 255, 255, 0.8)",
                 bordercolor="rgba(0, 0, 0, 0.2)",
                 borderwidth=1
             ),
-            margin=dict(t=30, l=40, r=40, b=100),
+            margin=dict(t=30, l=40, r=40, b=140),
             autosize=True,
             font=dict(size=9)
         )
