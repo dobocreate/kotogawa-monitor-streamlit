@@ -1924,14 +1924,6 @@ def main():
         format_func=lambda x: x[0]
     )
     
-    # 自動更新の実行
-    if refresh_interval[1] > 0:
-        count = st_autorefresh(
-            interval=refresh_interval[1],
-            limit=None,
-            key="autorefresh"
-        )
-    
     # 表示期間設定
     display_hours = st.sidebar.selectbox(
         "表示期間",
@@ -1970,6 +1962,14 @@ def main():
     
     # システムヘッダーの表示
     st.markdown('<h1 style="text-align: center; margin-top: 0; margin-bottom: 1rem;">厚東川氾濫監視システムv2.0</h1>', unsafe_allow_html=True)
+    
+    # 自動更新の実行（ヘッダーの後に配置）
+    if refresh_interval[1] > 0:
+        count = st_autorefresh(
+            interval=refresh_interval[1],
+            limit=None,
+            key="autorefresh"
+        )
     
     # データ読み込み
     with st.spinner('データを更新中...'):
