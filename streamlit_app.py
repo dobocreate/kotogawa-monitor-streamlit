@@ -1219,7 +1219,7 @@ class KotogawaMonitor:
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.33,
+                y=-0.30,
                 xanchor="left",
                 x=0.0,
                 bgcolor="rgba(255, 255, 255, 0.8)",
@@ -1486,7 +1486,7 @@ class KotogawaMonitor:
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.33,
+                y=-0.30,
                 xanchor="left",
                 x=0.0,
                 bgcolor="rgba(255, 255, 255, 0.8)",
@@ -1654,7 +1654,7 @@ class KotogawaMonitor:
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.33,
+                y=-0.30,
                 xanchor="left",
                 x=0.0,
                 bgcolor="rgba(255, 255, 255, 0.8)",
@@ -1811,7 +1811,7 @@ class KotogawaMonitor:
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.33,
+                y=-0.30,
                 xanchor="left",
                 x=0.0,
                 bgcolor="rgba(255, 255, 255, 0.8)",
