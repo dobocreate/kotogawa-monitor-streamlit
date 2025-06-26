@@ -2075,32 +2075,31 @@ def main():
     # システム情報（サイドバー）
     with st.sidebar.expander("システム情報", expanded=True):
         # 観測状況
-        st.subheader("■ 観測状況")
-        
-        # 観測時刻の表示
-        if latest_data and latest_data.get('data_time'):
-            try:
-                # data_timeを使用（観測時刻）
-                obs_time = datetime.fromisoformat(latest_data['data_time'].replace('Z', '+00:00'))
-                if obs_time.tzinfo is None:
-                    obs_time = obs_time.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-                
-                # 現在時刻（日本時間）
-                now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
-                time_diff = now_jst - obs_time
-                minutes_ago = int(time_diff.total_seconds() / 60)
-                
-                if minutes_ago < 60:
-                    st.success(f"観測時刻 ： {minutes_ago}分前")
-                elif minutes_ago < 120:
-                    st.warning(f"観測時刻 ： {minutes_ago}分前")
-                else:
-                    st.error(f"観測時刻 ： {minutes_ago}分前")
-            except:
-                st.info("● 観測時刻確認中")
-        
-        # データ統計
-        st.info(f"データ件数 ： {len(history_data)}件")
+        with st.expander("■ 観測状況", expanded=True):
+            # 観測時刻の表示
+            if latest_data and latest_data.get('data_time'):
+                try:
+                    # data_timeを使用（観測時刻）
+                    obs_time = datetime.fromisoformat(latest_data['data_time'].replace('Z', '+00:00'))
+                    if obs_time.tzinfo is None:
+                        obs_time = obs_time.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                    
+                    # 現在時刻（日本時間）
+                    now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
+                    time_diff = now_jst - obs_time
+                    minutes_ago = int(time_diff.total_seconds() / 60)
+                    
+                    if minutes_ago < 60:
+                        st.success(f"観測時刻 ： {minutes_ago}分前")
+                    elif minutes_ago < 120:
+                        st.warning(f"観測時刻 ： {minutes_ago}分前")
+                    else:
+                        st.error(f"観測時刻 ： {minutes_ago}分前")
+                except:
+                    st.info("● 観測時刻確認中")
+            
+            # データ統計
+            st.info(f"データ件数 ： {len(history_data)}件")
         
         # 警戒レベル説明
         with st.expander("■ 警戒レベル説明", expanded=False):
