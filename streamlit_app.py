@@ -2073,10 +2073,10 @@ def main():
     monitor.create_data_analysis_display(history_data, enable_graph_interaction, display_hours)
     
     # システム情報（サイドバー）
-    st.sidebar.subheader("システム情報")
-    
-    # 観測時刻とデータ統計
-    with st.sidebar.expander("■ 観測状況", expanded=False):
+    with st.sidebar.expander("システム情報", expanded=True):
+        # 観測状況
+        st.subheader("■ 観測状況")
+        
         # 観測時刻の表示
         if latest_data and latest_data.get('data_time'):
             try:
@@ -2101,38 +2101,40 @@ def main():
         
         # データ統計
         st.info(f"データ件数 ： {len(history_data)}件")
-    
-    # 警戒レベル説明
-    with st.sidebar.expander("■ 警戒レベル説明", expanded=False):
-        st.write(f"""
-        **河川水位基準**
-        - 正常: 3.80m未満
-        - 水防団待機: 3.80m以上
-        - 氾濫注意: 5.00m以上
-        - 避難判断: 5.10m以上
-        - 氾濫危険: 5.50m以上
         
-        **ダム水位基準**
-        - 警戒: {dam_warning}m以上（洪水時最高水位）
-        - 危険: {dam_danger}m以上（設計最高水位）
+        # 警戒レベル説明
+        with st.expander("■ 警戒レベル説明", expanded=False):
+            st.write(f"""
+            **河川水位基準**
+            - 正常: 3.80m未満
+            - 水防団待機: 3.80m以上
+            - 氾濫注意: 5.00m以上
+            - 避難判断: 5.10m以上
+            - 氾濫危険: 5.50m以上
+            
+            **ダム水位基準**
+            - 警戒: {dam_warning}m以上（洪水時最高水位）
+            - 危険: {dam_danger}m以上（設計最高水位）
+            
+            **雨量基準**
+            - 注意: 10mm/h以上
+            - 警戒: 30mm/h以上
+            - 危険: 50mm/h以上
+            """)
         
-        **雨量基準**
-        - 注意: 10mm/h以上
-        - 警戒: 30mm/h以上
-        - 危険: 50mm/h以上
-        """)
-    
-    # データソース情報
-    with st.sidebar.expander("■ データソース", expanded=False):
-        st.write("""
-        **厚東川ダム**
-        ・ 更新間隔 ： 10分
+        # データソース情報
+        with st.expander("■ データソース", expanded=False):
+            st.write("""
+            **厚東川ダム**
+            
+            ・ 更新間隔 ： 10分
 
-        **厚東川**
-        ・ 更新間隔 ： 10分
+            **厚東川**
+            
+            ・ 更新間隔 ： 10分
 
-        データ提供:山口県土木防災情報システム
-        """)
+            データ提供:山口県土木防災情報システム
+            """)
     
     # アプリ情報
     st.sidebar.markdown("---")
