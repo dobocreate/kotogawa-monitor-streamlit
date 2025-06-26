@@ -126,6 +126,24 @@ st.markdown("""
         text-align: center !important;
     }
     
+    /* モバイル端末でサイドバーを初期状態で閉じる */
+    @media (max-width: 768px) {
+        /* ページ読み込み時にサイドバーを非表示 */
+        section[data-testid="stSidebar"][aria-expanded="true"] {
+            display: none;
+        }
+        
+        /* サイドバーが閉じている状態を維持 */
+        section[data-testid="stSidebar"] {
+            transform: translateX(-100%);
+        }
+        
+        /* ハンバーガーメニューボタンは表示 */
+        button[kind="header"] {
+            display: block !important;
+        }
+    }
+    
 </style>
 """, unsafe_allow_html=True)
 
