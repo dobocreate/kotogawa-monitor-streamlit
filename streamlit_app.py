@@ -1214,19 +1214,19 @@ class KotogawaMonitor:
         fig.update_xaxes(**xaxis_config)
         
         fig.update_layout(
-            height=400,
+            height=450,
             showlegend=True,
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.25,
+                y=-0.35,
                 xanchor="left",
                 x=0.0,
                 bgcolor="rgba(255, 255, 255, 0.8)",
                 bordercolor="rgba(0, 0, 0, 0.2)",
                 borderwidth=1
             ),
-            margin=dict(t=30, l=40, r=40, b=100),
+            margin=dict(t=30, l=40, r=40, b=140),
             autosize=True,
             font=dict(size=9)
         )
@@ -1481,12 +1481,12 @@ class KotogawaMonitor:
         fig.update_xaxes(**xaxis_config)
         
         fig.update_layout(
-            height=400,
+            height=450,
             showlegend=True,
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.45,
+                y=-0.35,
                 xanchor="left",
                 x=0.0,
                 bgcolor="rgba(255, 255, 255, 0.8)",
@@ -1649,19 +1649,19 @@ class KotogawaMonitor:
         fig.update_xaxes(**xaxis_config)
         
         fig.update_layout(
-            height=400,
+            height=450,
             showlegend=True,
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.25,
+                y=-0.35,
                 xanchor="left",
                 x=0.0,
                 bgcolor="rgba(255, 255, 255, 0.8)",
                 bordercolor="rgba(0, 0, 0, 0.2)",
                 borderwidth=1
             ),
-            margin=dict(t=30, l=40, r=40, b=100),
+            margin=dict(t=30, l=40, r=40, b=140),
             autosize=True,
             font=dict(size=9)
         )
@@ -1806,12 +1806,12 @@ class KotogawaMonitor:
         
         # レイアウト設定
         fig.update_layout(
-            height=400,
+            height=450,
             showlegend=True,
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.45,
+                y=-0.35,
                 xanchor="left",
                 x=0.0,
                 bgcolor="rgba(255, 255, 255, 0.8)",
