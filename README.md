@@ -2,6 +2,8 @@
 
 山口県宇部市の厚東川ダムおよび厚東川（持世寺）の水位・雨量データをリアルタイムで監視・表示するWebアプリケーションです。Yahoo! Weather APIによる降水強度予測機能を搭載。
 
+公開URL：https://kotogawa-monitor-app-fjprveyn8fzb3mbffkwq6i.streamlit.app/
+
 ## 📋 概要
 
 - **データソース**: 山口県土木防災情報システム、Yahoo! Weather API
