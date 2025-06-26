@@ -1481,12 +1481,12 @@ class KotogawaMonitor:
         fig.update_xaxes(**xaxis_config)
         
         fig.update_layout(
-            height=470,
+            height=460,
             showlegend=True,
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.32,
+                y=-0.34,
                 xanchor="left",
                 x=0.0,
                 bgcolor="rgba(255, 255, 255, 0.8)",
