@@ -1757,11 +1757,6 @@ class KotogawaMonitor:
                 except (ValueError, KeyError):
                     continue
             
-            # デバッグ情報を表示
-            if forecast_debug_times:
-                earliest_forecast = min(forecast_debug_times)
-                latest_forecast = max(forecast_debug_times)
-                st.info(f"🔍 予測データ時刻範囲: {earliest_forecast.strftime('%H:%M')} - {latest_forecast.strftime('%H:%M')}, 現在時刻: {now_jst.strftime('%H:%M')}, 表示対象: {len(forecast_times)}件")
         
         # 観測データのプロット（棒グラフ、左軸）
         if obs_times and obs_intensities:
