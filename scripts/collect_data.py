@@ -833,6 +833,20 @@ class KotogawaDataCollector:
             # 週間予報データの収集（7日間）
             if len(forecast_data) > 1:
                 week_forecast = forecast_data[1]
+                print(f"DEBUG: forecast_data[1]の構造確認")
+                print(f"DEBUG: forecast_data[1]にtimeSeriesがあるか: {'timeSeries' in week_forecast}")
+                if 'timeSeries' in week_forecast:
+                    print(f"DEBUG: timeSeriesの数: {len(week_forecast['timeSeries'])}")
+                    for idx, ts in enumerate(week_forecast['timeSeries']):
+                        print(f"DEBUG: timeSeries[{idx}]のキー: {list(ts.keys())}")
+                        if 'areas' in ts:
+                            print(f"DEBUG: timeSeries[{idx}]のエリア数: {len(ts['areas'])}")
+                            for area in ts['areas']:
+                                area_code = area.get('area', {}).get('code')
+                                area_name = area.get('area', {}).get('name')
+                                area_keys = list(area.keys())
+                                print(f"DEBUG: timeSeries[{idx}] エリア {area_code}({area_name}) のキー: {area_keys}")
+                
                 if 'timeSeries' in week_forecast and len(week_forecast['timeSeries']) > 0:
                     # 天気コードと降水確率はtimeSeries[0]から取得
                     ts = week_forecast['timeSeries'][0]
@@ -851,13 +865,25 @@ class KotogawaDataCollector:
                     # 気温データはtimeSeries[1]から取得（存在する場合）
                     temps_max = []
                     temps_min = []
+                    print(f"DEBUG: 週間予報のtimeSeries数: {len(week_forecast['timeSeries'])}")
                     if len(week_forecast['timeSeries']) > 1:
                         ts_temp = week_forecast['timeSeries'][1]
+                        print(f"DEBUG: timeSeries[1]のエリア数: {len(ts_temp.get('areas', []))}")
                         for area in ts_temp.get('areas', []):
-                            if area.get('area', {}).get('code') in ['350000', '81428']:
+                            area_code = area.get('area', {}).get('code')
+                            area_name = area.get('area', {}).get('name')
+                            print(f"DEBUG: エリアコード: {area_code}, エリア名: {area_name}")
+                            if area_code in ['350000', '81428']:
                                 temps_max = area.get('tempsMax', [])
                                 temps_min = area.get('tempsMin', [])
+                                print(f"DEBUG: 一致したエリア({area_code}): 最高気温数={len(temps_max)}, 最低気温数={len(temps_min)}")
+                                print(f"DEBUG: 最高気温データ: {temps_max}")
+                                print(f"DEBUG: 最低気温データ: {temps_min}")
                                 break
+                        else:
+                            print("DEBUG: 対象エリアコード(350000, 81428)が見つかりませんでした")
+                    else:
+                        print("DEBUG: timeSeries[1]が存在しません")
                     
                     weekly_data = []
                     for i, time_str in enumerate(time_defines):
