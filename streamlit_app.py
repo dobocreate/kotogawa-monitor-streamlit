@@ -2138,6 +2138,7 @@ def main():
     # アプリ情報
     st.sidebar.markdown("---")
     st.sidebar.caption("厚東川氾濫監視システム v2.0")
+    st.sidebar.caption("※ 本システムは山口県公開データを再加工した参考情報です。防災判断は必ず公式発表をご確認ください。")
     st.sidebar.caption("Powered by Streamlit")
     
 
