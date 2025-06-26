@@ -658,9 +658,10 @@ class KotogawaMonitor:
             }
             
             .weather-temp {
-                font-size: 11px;
+                font-size: 14px;
                 color: #333;
                 margin-bottom: 0;
+                font-weight: bold;
             }
         </style>
         """, unsafe_allow_html=True)
