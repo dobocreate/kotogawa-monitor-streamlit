@@ -779,100 +779,110 @@ class KotogawaMonitor:
                 'modeBarButtonsToRemove': ['lasso2d', 'select2d'] if enable_graph_interaction else ['pan2d', 'zoom2d', 'lasso2d', 'select2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d']
             }
             
-            st.subheader("河川水位・全放流量")
-            fig1 = self.create_river_water_level_graph(history_data, enable_graph_interaction, display_hours)
-            st.plotly_chart(fig1, use_container_width=True, config=plotly_config)
+            # 2列レイアウトでグラフを表示
+            col1, col2 = st.columns(2)
             
-            st.subheader("ダム流入出量・累加雨量")
-            fig2 = self.create_dam_flow_graph(history_data, enable_graph_interaction, display_hours)
-            st.plotly_chart(fig2, use_container_width=True, config=plotly_config)
+            with col1:
+                st.subheader("河川水位・全放流量")
+                fig1 = self.create_river_water_level_graph(history_data, enable_graph_interaction, display_hours)
+                st.plotly_chart(fig1, use_container_width=True, config=plotly_config)
             
-            st.subheader("ダム貯水位・時間雨量")
-            # 最新の降水強度データを取得
-            latest_precipitation_data = None
-            try:
-                latest_data = self.load_latest_data()
-                if latest_data and 'precipitation_intensity' in latest_data:
-                    latest_precipitation_data = latest_data['precipitation_intensity']
-            except:
-                pass
+            with col2:
+                st.subheader("ダム流入出量・累加雨量")
+                fig2 = self.create_dam_flow_graph(history_data, enable_graph_interaction, display_hours)
+                st.plotly_chart(fig2, use_container_width=True, config=plotly_config)
             
-            fig3 = self.create_dam_water_level_graph(history_data, enable_graph_interaction, latest_precipitation_data, display_hours)
-            st.plotly_chart(fig3, use_container_width=True, config=plotly_config)
+            # 2行目
+            col3, col4 = st.columns(2)
             
-            # 降水強度グラフの表示
-            # 最新のAPIデータから取得（Yahoo! Weather APIグラフ用に再取得）
-            latest_api_precipitation_data = None
-            try:
-                # 最新データを再度取得（キャッシュから）
-                latest_data_for_api = self.load_latest_data()
-                if latest_data_for_api and 'precipitation_intensity' in latest_data_for_api:
-                    latest_api_precipitation_data = latest_data_for_api['precipitation_intensity']
-            except:
-                pass
-            
-            # APIデータがない場合は、履歴から観測値のみ取得
-            if not latest_api_precipitation_data and history_data:
-                    # 履歴データから観測値を収集
-                    all_observations = []
-                    update_time = None
-                    # 表示期間に基づいてデータをフィルタリング
-                    time_min, time_max = self.get_common_time_range(history_data, display_hours)
-                    if time_min and time_max:
-                        filtered_history_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
-                    else:
-                        filtered_history_data = history_data
-                    
-                    for item in filtered_history_data:
-                        precip_data = item.get('precipitation_intensity', {})
-                        if precip_data.get('observation'):
-                            all_observations.extend(precip_data.get('observation', []))
-                            if not update_time and precip_data.get('update_time'):
-                                update_time = precip_data.get('update_time')
-                    
-                    if all_observations:
-                        latest_api_precipitation_data = {
-                            'observation': all_observations,
-                            'forecast': [],  # 予測値は常に最新APIから取得
-                            'update_time': update_time
-                        }
-            
-            # 予測値を最新データから追加（観測値がある場合のみ）
-            if latest_api_precipitation_data:
+            with col3:
+                st.subheader("ダム貯水位・時間雨量")
+                # 最新の降水強度データを取得
+                latest_precipitation_data = None
                 try:
-                    if 'latest_data_for_api' not in locals():
-                        latest_data_for_api = self.load_latest_data()
-                    
-                    if latest_data_for_api and 'precipitation_intensity' in latest_data_for_api:
-                        api_forecast = latest_data_for_api['precipitation_intensity'].get('forecast', [])
-                        if api_forecast:
-                            latest_api_precipitation_data['forecast'] = api_forecast
+                    latest_data = self.load_latest_data()
+                    if latest_data and 'precipitation_intensity' in latest_data:
+                        latest_precipitation_data = latest_data['precipitation_intensity']
                 except:
                     pass
+                
+                fig3 = self.create_dam_water_level_graph(history_data, enable_graph_interaction, latest_precipitation_data, display_hours)
+                st.plotly_chart(fig3, use_container_width=True, config=plotly_config)
             
-            if latest_api_precipitation_data and (
-                latest_api_precipitation_data.get('observation') or 
-                latest_api_precipitation_data.get('forecast')
-            ):
-                st.subheader("Yahoo! Weather API")
-                # 更新時刻を表示
-                if latest_api_precipitation_data.get('update_time'):
+            with col4:
+                # 降水強度グラフの表示
+                # 最新のAPIデータから取得（Yahoo! Weather APIグラフ用に再取得）
+                latest_api_precipitation_data = None
+                try:
+                    # 最新データを再度取得（キャッシュから）
+                    latest_data_for_api = self.load_latest_data()
+                    if latest_data_for_api and 'precipitation_intensity' in latest_data_for_api:
+                        latest_api_precipitation_data = latest_data_for_api['precipitation_intensity']
+                except:
+                    pass
+                
+                # APIデータがない場合は、履歴から観測値のみ取得
+                if not latest_api_precipitation_data and history_data:
+                        # 履歴データから観測値を収集
+                        all_observations = []
+                        update_time = None
+                        # 表示期間に基づいてデータをフィルタリング
+                        time_min, time_max = self.get_common_time_range(history_data, display_hours)
+                        if time_min and time_max:
+                            filtered_history_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
+                        else:
+                            filtered_history_data = history_data
+                        
+                        for item in filtered_history_data:
+                            precip_data = item.get('precipitation_intensity', {})
+                            if precip_data.get('observation'):
+                                all_observations.extend(precip_data.get('observation', []))
+                                if not update_time and precip_data.get('update_time'):
+                                    update_time = precip_data.get('update_time')
+                        
+                        if all_observations:
+                            latest_api_precipitation_data = {
+                                'observation': all_observations,
+                                'forecast': [],  # 予測値は常に最新APIから取得
+                                'update_time': update_time
+                            }
+                
+                # 予測値を最新データから追加（観測値がある場合のみ）
+                if latest_api_precipitation_data:
                     try:
-                        update_dt = datetime.fromisoformat(latest_api_precipitation_data['update_time'])
-                        if update_dt.tzinfo is None:
-                            update_dt = update_dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-                        update_str = update_dt.strftime('%H:%M:%S')
-                        st.caption(f"更新日時 : {update_str}")
+                        if 'latest_data_for_api' not in locals():
+                            latest_data_for_api = self.load_latest_data()
+                        
+                        if latest_data_for_api and 'precipitation_intensity' in latest_data_for_api:
+                            api_forecast = latest_data_for_api['precipitation_intensity'].get('forecast', [])
+                            if api_forecast:
+                                latest_api_precipitation_data['forecast'] = api_forecast
                     except:
                         pass
                 
-                # データ状況の表示
-                obs_count = len(latest_api_precipitation_data.get('observation', []))
-                forecast_count = len(latest_api_precipitation_data.get('forecast', []))
-                st.caption(f"観測データ: {obs_count}件, 予測データ: {forecast_count}件")
-                
-                fig4 = self.create_precipitation_intensity_graph(latest_api_precipitation_data, enable_graph_interaction, history_data, display_hours)
-                st.plotly_chart(fig4, use_container_width=True, config=plotly_config)
+                if latest_api_precipitation_data and (
+                    latest_api_precipitation_data.get('observation') or 
+                    latest_api_precipitation_data.get('forecast')
+                ):
+                    st.subheader("Yahoo! Weather API")
+                    # 更新時刻を表示
+                    if latest_api_precipitation_data.get('update_time'):
+                        try:
+                            update_dt = datetime.fromisoformat(latest_api_precipitation_data['update_time'])
+                            if update_dt.tzinfo is None:
+                                update_dt = update_dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                            update_str = update_dt.strftime('%H:%M:%S')
+                            st.caption(f"更新日時 : {update_str}")
+                        except:
+                            pass
+                    
+                    # データ状況の表示
+                    obs_count = len(latest_api_precipitation_data.get('observation', []))
+                    forecast_count = len(latest_api_precipitation_data.get('forecast', []))
+                    st.caption(f"観測データ: {obs_count}件, 予測データ: {forecast_count}件")
+                    
+                    fig4 = self.create_precipitation_intensity_graph(latest_api_precipitation_data, enable_graph_interaction, history_data, display_hours)
+                    st.plotly_chart(fig4, use_container_width=True, config=plotly_config)
         
         with tab2:
             st.subheader("データテーブル")
@@ -2079,16 +2089,16 @@ def main():
             minutes_ago = int(time_diff.total_seconds() / 60)
             
             if minutes_ago < 60:
-                st.sidebar.success(f"観測時刻　：　{minutes_ago}分前")
+                st.sidebar.success(f"観測時刻 ： {minutes_ago}分前")
             elif minutes_ago < 120:
-                st.sidebar.warning(f"観測時刻　：　{minutes_ago}分前")
+                st.sidebar.warning(f"観測時刻 ： {minutes_ago}分前")
             else:
-                st.sidebar.error(f"観測時刻　：　{minutes_ago}分前")
+                st.sidebar.error(f"観測時刻 ： {minutes_ago}分前")
         except:
             st.sidebar.info("● 観測時刻確認中")
     
     # データ統計
-    st.sidebar.info(f"データ件数　：　{len(history_data)}件")
+    st.sidebar.info(f"データ件数 ： {len(history_data)}件")
     
     # 警戒レベル説明
     with st.sidebar.expander("■ 警戒レベル説明"):
