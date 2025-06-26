@@ -1903,51 +1903,50 @@ def main():
     monitor = KotogawaMonitor()
     
     # サイドバー設定
-    st.sidebar.header("更新設定")
-    
-    # 自動更新設定
-    refresh_interval = st.sidebar.selectbox(
-        "自動更新間隔",
-        options=[
-            ("自動更新なし", 0),
-            ("10分", 10 * 60 * 1000),
-            ("30分", 30 * 60 * 1000),
-            ("60分", 60 * 60 * 1000)
-        ],
-        index=1,  # デフォルトは10分
-        format_func=lambda x: x[0]
-    )
-    
-    # 表示期間設定
-    display_hours = st.sidebar.selectbox(
-        "表示期間",
-        [6, 12, 24, 48, 72],
-        index=2,
-        format_func=lambda x: f"{x}時間"
-    )
-    
-    # 手動更新ボタン
-    if st.sidebar.button("手動更新", type="primary", key="sidebar_refresh"):
-        monitor.load_history_data.clear()
-        st.cache_data.clear()
-        st.rerun()
+    # 更新設定
+    with st.sidebar.expander("更新設定", expanded=True):
+        # 自動更新設定
+        refresh_interval = st.selectbox(
+            "自動更新間隔",
+            options=[
+                ("自動更新なし", 0),
+                ("10分", 10 * 60 * 1000),
+                ("30分", 30 * 60 * 1000),
+                ("60分", 60 * 60 * 1000)
+            ],
+            index=1,  # デフォルトは10分
+            format_func=lambda x: x[0]
+        )
+        
+        # 表示期間設定
+        display_hours = st.selectbox(
+            "表示期間",
+            [6, 12, 24, 48, 72],
+            index=2,
+            format_func=lambda x: f"{x}時間"
+        )
+        
+        # 手動更新ボタン
+        if st.button("手動更新", type="primary", key="sidebar_refresh"):
+            monitor.load_history_data.clear()
+            st.cache_data.clear()
+            st.rerun()
     
     # 表示設定
-    st.sidebar.subheader("表示設定")
-    
-    # グラフ操作設定
-    enable_graph_interaction = st.sidebar.checkbox(
-        "グラフの編集の有効化",
-        value=False,
-        help="チェックを入れるとグラフの拡大・縮小・移動が可能になります"
-    )
-    
-    # 週間天気表示設定
-    show_weekly_weather = st.sidebar.checkbox(
-        "週間天気を表示",
-        value=True,
-        help="チェックを外すと週間天気予報を非表示にします"
-    )
+    with st.sidebar.expander("表示設定", expanded=True):
+        # グラフ操作設定
+        enable_graph_interaction = st.checkbox(
+            "グラフの編集の有効化",
+            value=False,
+            help="チェックを入れるとグラフの拡大・縮小・移動が可能になります"
+        )
+        
+        # 週間天気表示設定
+        show_weekly_weather = st.checkbox(
+            "週間天気を表示",
+            value=True,
+            help="チェックを外すと週間天気予報を非表示にします"
+        )
     
     # アラート閾値設定
     with st.sidebar.expander("アラート設定", expanded=False):
@@ -2107,20 +2106,21 @@ def main():
     with st.sidebar.expander("■ データソース"):
         st.write("""
         **厚東川ダム**
-        - 観測地点: 宇部市
-        - 更新間隔: 10分
-        
-        **厚東川(持世寺)**
-        - 観測地点: 宇部市持世寺
-        - 更新間隔: 10分
-        
-        データ提供: 山口県土木防災情報システム
+        ・ 更新間隔 ： 10分
+
+        **厚東川**
+        ・ 更新間隔 ： 10分
+
+        データ提供:山口県土木防災情報システム
         """)
     
-    # アプリ情報
-    st.sidebar.markdown("---")
-    st.sidebar.caption("厚東川リアルタイム監視システム v2.0")
-    st.sidebar.caption("Powered by Streamlit")
+    # システム情報
+    with st.sidebar.expander("■ システム情報", expanded=False):
+        st.write("""
+        **厚東川氾濫監視システム v2.0**
+        
+        Powered by Streamlit
+        """)
     
 
 if __name__ == "__main__":
