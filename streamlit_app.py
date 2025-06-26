@@ -811,7 +811,7 @@ class KotogawaMonitor:
             
             with col4:
                 # 降水強度グラフの表示
-                # 最新のAPIデータから取得（Yahoo! Weather APIグラフ用に再取得）
+                # 最新のAPIデータから取得（降水強度・時間雨量グラフ用に再取得）
                 latest_api_precipitation_data = None
                 try:
                     # 最新データを再度取得（キャッシュから）
@@ -864,7 +864,7 @@ class KotogawaMonitor:
                     latest_api_precipitation_data.get('observation') or 
                     latest_api_precipitation_data.get('forecast')
                 ):
-                    st.subheader("Yahoo! Weather API")
+                    st.subheader("降水強度・時間雨量")
                     
                     fig4 = self.create_precipitation_intensity_graph(latest_api_precipitation_data, enable_graph_interaction, history_data, display_hours)
                     st.plotly_chart(fig4, use_container_width=True, config=plotly_config)
@@ -1331,7 +1331,7 @@ class KotogawaMonitor:
                 secondary_y=True
             )
         
-        # Yahoo! Weather API降水強度データを追加
+        # 降水強度・時間雨量データを追加
         # 表示期間の計算
         end_time = now_jst
         start_time = end_time - timedelta(hours=display_hours)
@@ -1903,13 +1903,7 @@ def main():
     monitor = KotogawaMonitor()
     
     # サイドバー設定
-    st.sidebar.header("設定")
-    
-    # 手動更新ボタン
-    if st.sidebar.button("手動更新", type="primary", key="sidebar_refresh"):
-        monitor.load_history_data.clear()
-        st.cache_data.clear()
-        st.rerun()
+    st.sidebar.header("更新設定")
     
     # 自動更新設定
     refresh_interval = st.sidebar.selectbox(
@@ -1932,6 +1926,15 @@ def main():
         format_func=lambda x: f"{x}時間"
     )
     
+    # 手動更新ボタン
+    if st.sidebar.button("手動更新", type="primary", key="sidebar_refresh"):
+        monitor.load_history_data.clear()
+        st.cache_data.clear()
+        st.rerun()
+    
+    # 表示設定
+    st.sidebar.subheader("表示設定")
+    
     # グラフ操作設定
     enable_graph_interaction = st.sidebar.checkbox(
         "グラフの編集の有効化",
@@ -1947,11 +1950,11 @@ def main():
     )
     
     # アラート閾値設定
-    st.sidebar.subheader("アラート設定")
-    river_warning = st.sidebar.number_input("河川警戒水位 (m)", value=3.8, step=0.1)
-    river_danger = st.sidebar.number_input("河川危険水位 (m)", value=5.0, step=0.1)
-    dam_warning = st.sidebar.number_input("ダム警戒水位 (m)", value=39.2, step=0.1, help="洪水時最高水位")
-    dam_danger = st.sidebar.number_input("ダム危険水位 (m)", value=40.0, step=0.1, help="設計最高水位")
+    with st.sidebar.expander("アラート設定", expanded=False):
+        river_warning = st.number_input("河川警戒水位 (m)", value=3.8, step=0.1)
+        river_danger = st.number_input("河川危険水位 (m)", value=5.0, step=0.1)
+        dam_warning = st.number_input("ダム警戒水位 (m)", value=39.2, step=0.1, help="洪水時最高水位")
+        dam_danger = st.number_input("ダム危険水位 (m)", value=40.0, step=0.1, help="設計最高水位")
     
     thresholds = {
         'river_warning': river_warning,
