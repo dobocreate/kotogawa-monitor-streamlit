@@ -1214,12 +1214,12 @@ class KotogawaMonitor:
         fig.update_xaxes(**xaxis_config)
         
         fig.update_layout(
-            height=450,
+            height=465,
             showlegend=True,
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.35,
+                y=-0.33,
                 xanchor="left",
                 x=0.0,
                 bgcolor="rgba(255, 255, 255, 0.8)",
@@ -1649,12 +1649,12 @@ class KotogawaMonitor:
         fig.update_xaxes(**xaxis_config)
         
         fig.update_layout(
-            height=450,
+            height=465,
             showlegend=True,
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.35,
+                y=-0.33,
                 xanchor="left",
                 x=0.0,
                 bgcolor="rgba(255, 255, 255, 0.8)",
@@ -1806,12 +1806,12 @@ class KotogawaMonitor:
         
         # レイアウト設定
         fig.update_layout(
-            height=450,
+            height=465,
             showlegend=True,
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.35,
+                y=-0.33,
                 xanchor="left",
                 x=0.0,
                 bgcolor="rgba(255, 255, 255, 0.8)",
