@@ -862,28 +862,36 @@ class KotogawaDataCollector:
                             pops = area.get('pops', [])
                             break
                     
-                    # 気温データはtimeSeries[1]から取得（存在する場合）
+                    # 気温データを全timeSeriesから検索
                     temps_max = []
                     temps_min = []
                     print(f"DEBUG: 週間予報のtimeSeries数: {len(week_forecast['timeSeries'])}")
-                    if len(week_forecast['timeSeries']) > 1:
-                        ts_temp = week_forecast['timeSeries'][1]
-                        print(f"DEBUG: timeSeries[1]のエリア数: {len(ts_temp.get('areas', []))}")
+                    
+                    for ts_idx, ts_temp in enumerate(week_forecast['timeSeries']):
+                        print(f"DEBUG: timeSeries[{ts_idx}]のエリア数: {len(ts_temp.get('areas', []))}")
                         for area in ts_temp.get('areas', []):
                             area_code = area.get('area', {}).get('code')
                             area_name = area.get('area', {}).get('name')
-                            print(f"DEBUG: エリアコード: {area_code}, エリア名: {area_name}")
-                            if area_code in ['350000', '81428']:
+                            has_temp_max = 'tempsMax' in area
+                            has_temp_min = 'tempsMin' in area
+                            print(f"DEBUG: timeSeries[{ts_idx}] エリア: {area_code}({area_name}), tempsMax={has_temp_max}, tempsMin={has_temp_min}")
+                            
+                            # 温度データがあるエリアを検索（エリアコードは問わず）
+                            if has_temp_max and has_temp_min:
                                 temps_max = area.get('tempsMax', [])
                                 temps_min = area.get('tempsMin', [])
-                                print(f"DEBUG: 一致したエリア({area_code}): 最高気温数={len(temps_max)}, 最低気温数={len(temps_min)}")
+                                print(f"DEBUG: 温度データ発見 エリア({area_code}): 最高気温数={len(temps_max)}, 最低気温数={len(temps_min)}")
                                 print(f"DEBUG: 最高気温データ: {temps_max}")
                                 print(f"DEBUG: 最低気温データ: {temps_min}")
-                                break
-                        else:
-                            print("DEBUG: 対象エリアコード(350000, 81428)が見つかりませんでした")
-                    else:
-                        print("DEBUG: timeSeries[1]が存在しません")
+                                # 温度データが見つかったらbreak
+                                if temps_max and temps_min:
+                                    break
+                        # 温度データが見つかったら外側のループもbreak
+                        if temps_max and temps_min:
+                            break
+                    
+                    if not (temps_max and temps_min):
+                        print("DEBUG: 温度データが見つかりませんでした")
                     
                     weekly_data = []
                     for i, time_str in enumerate(time_defines):
