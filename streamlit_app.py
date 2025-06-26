@@ -1936,14 +1936,6 @@ def main():
             format_func=lambda x: x[0]
         )
         
-        # 表示期間設定
-        display_hours = st.selectbox(
-            "表示期間",
-            [6, 12, 24, 48, 72],
-            index=2,
-            format_func=lambda x: f"{x}時間"
-        )
-        
         # 手動更新ボタン
         if st.button("手動更新", type="primary", key="sidebar_refresh"):
             monitor.load_history_data.clear()
@@ -1952,6 +1944,14 @@ def main():
     
     # 表示設定
     with st.sidebar.expander("表示設定", expanded=True):
+        # 表示期間設定
+        display_hours = st.selectbox(
+            "表示期間",
+            [6, 12, 24, 48, 72],
+            index=2,
+            format_func=lambda x: f"{x}時間"
+        )
+        
         # グラフ操作設定
         enable_graph_interaction = st.checkbox(
             "グラフの編集の有効化",
