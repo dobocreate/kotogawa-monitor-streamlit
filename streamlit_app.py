@@ -243,6 +243,10 @@ class KotogawaMonitor:
                     if processed_files >= max_files:
                         break
                     
+                    # daily_summaryファイルはスキップ
+                    if file_path.name == "daily_summary.json":
+                        continue
+                    
                     try:
                         with open(file_path, 'r', encoding='utf-8') as f:
                             data = json.load(f)

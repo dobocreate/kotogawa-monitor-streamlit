@@ -1336,13 +1336,10 @@ class KotogawaDataCollector:
                     'data': dam_rainfall_data['dam']
                 })
             
-            # 降雨データのチェック
+            # 降雨データのチェック - エラー判定から除外（nullでも正常データとして扱う）
+            # 雨量データは取得できない場合があるため、エラーとしない
             if all(v is None for k, v in dam_rainfall_data['rainfall'].items()):
-                errors.append({
-                    'step': 'rainfall_data_collection',
-                    'error': 'All rainfall data values are None',
-                    'data': dam_rainfall_data['rainfall']
-                })
+                print("Rainfall data is None - treating as normal condition")
         except Exception as e:
             print(f"Error collecting dam and rainfall data: {e}")
             errors.append({
@@ -1513,8 +1510,8 @@ class KotogawaDataCollector:
         # 古いデータのクリーンアップ
         self.cleanup_old_data()
         
-        # 日次サマリーの作成（前日分）
-        self.create_daily_summary()
+        # 日次サマリーの作成（前日分）- 使用されていないため無効化
+        # self.create_daily_summary()
         
         return data
 
