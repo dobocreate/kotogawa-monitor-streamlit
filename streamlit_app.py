@@ -635,6 +635,7 @@ class KotogawaMonitor:
             .weather-date {
                 font-weight: bold;
                 margin-bottom: 5px;
+                font-size: 12px;
             }
             
             .weather-label {
@@ -655,10 +656,11 @@ class KotogawaMonitor:
             
             .weather-precip {
                 margin-bottom: 5px;
+                font-size: 12px;
             }
             
             .weather-temp {
-                font-size: 14px;
+                font-size: 12px;
                 color: #333;
                 margin-bottom: 0;
                 font-weight: bold;
