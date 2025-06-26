@@ -2057,33 +2057,35 @@ def main():
     # システム情報（サイドバー）
     st.sidebar.subheader("システム情報")
     
-    # 観測時刻の表示
-    if latest_data and latest_data.get('data_time'):
-        try:
-            # data_timeを使用（観測時刻）
-            obs_time = datetime.fromisoformat(latest_data['data_time'].replace('Z', '+00:00'))
-            if obs_time.tzinfo is None:
-                obs_time = obs_time.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-            
-            # 現在時刻（日本時間）
-            now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
-            time_diff = now_jst - obs_time
-            minutes_ago = int(time_diff.total_seconds() / 60)
-            
-            if minutes_ago < 60:
-                st.sidebar.success(f"観測時刻 ： {minutes_ago}分前")
-            elif minutes_ago < 120:
-                st.sidebar.warning(f"観測時刻 ： {minutes_ago}分前")
-            else:
-                st.sidebar.error(f"観測時刻 ： {minutes_ago}分前")
-        except:
-            st.sidebar.info("● 観測時刻確認中")
-    
-    # データ統計
-    st.sidebar.info(f"データ件数 ： {len(history_data)}件")
+    # 観測時刻とデータ統計
+    with st.sidebar.expander("■ 観測状況", expanded=False):
+        # 観測時刻の表示
+        if latest_data and latest_data.get('data_time'):
+            try:
+                # data_timeを使用（観測時刻）
+                obs_time = datetime.fromisoformat(latest_data['data_time'].replace('Z', '+00:00'))
+                if obs_time.tzinfo is None:
+                    obs_time = obs_time.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                
+                # 現在時刻（日本時間）
+                now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
+                time_diff = now_jst - obs_time
+                minutes_ago = int(time_diff.total_seconds() / 60)
+                
+                if minutes_ago < 60:
+                    st.success(f"観測時刻 ： {minutes_ago}分前")
+                elif minutes_ago < 120:
+                    st.warning(f"観測時刻 ： {minutes_ago}分前")
+                else:
+                    st.error(f"観測時刻 ： {minutes_ago}分前")
+            except:
+                st.info("● 観測時刻確認中")
+        
+        # データ統計
+        st.info(f"データ件数 ： {len(history_data)}件")
     
     # 警戒レベル説明
-    with st.sidebar.expander("■ 警戒レベル説明"):
+    with st.sidebar.expander("■ 警戒レベル説明", expanded=False):
         st.write(f"""
         **河川水位基準**
         - 正常: 3.80m未満
@@ -2103,7 +2105,7 @@ def main():
         """)
     
     # データソース情報
-    with st.sidebar.expander("■ データソース"):
+    with st.sidebar.expander("■ データソース", expanded=False):
         st.write("""
         **厚東川ダム**
         ・ 更新間隔 ： 10分
@@ -2114,13 +2116,10 @@ def main():
         データ提供:山口県土木防災情報システム
         """)
     
-    # システム情報
-    with st.sidebar.expander("■ システム情報", expanded=False):
-        st.write("""
-        **厚東川氾濫監視システム v2.0**
-        
-        Powered by Streamlit
-        """)
+    # アプリ情報
+    st.sidebar.markdown("---")
+    st.sidebar.caption("厚東川氾濫監視システム v2.0")
+    st.sidebar.caption("Powered by Streamlit")
     
 
 if __name__ == "__main__":
