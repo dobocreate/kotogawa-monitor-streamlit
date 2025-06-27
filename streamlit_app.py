@@ -28,7 +28,7 @@ st.set_page_config(
     page_title="厚東川監視システム",
     page_icon="■",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="auto"  # モバイルでは自動的にcollapsed、デスクトップではexpanded
 )
 
 # サイドバー表示時のレスポンシブ対応CSS
@@ -128,13 +128,8 @@ st.markdown("""
     
     /* モバイル端末でサイドバーを初期状態で閉じる */
     @media (max-width: 768px) {
-        /* ページ読み込み時にサイドバーを非表示 */
-        section[data-testid="stSidebar"][aria-expanded="true"] {
-            display: none;
-        }
-        
-        /* サイドバーが閉じている状態を維持 */
-        section[data-testid="stSidebar"] {
+        /* 初期ロード時のみサイドバーを閉じる */
+        section[data-testid="stSidebar"]:not([aria-expanded="true"]) {
             transform: translateX(-100%);
         }
         
