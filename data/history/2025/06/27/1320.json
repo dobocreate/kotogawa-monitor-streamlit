@@ -1,16 +1,16 @@
 {
-  "timestamp": "2025-06-27T14:28:07.554747+09:00",
-  "data_time": "2025-06-27T14:20:00+09:00",
+  "timestamp": "2025-06-27T13:29:28.449040+09:00",
+  "data_time": "2025-06-27T13:20:00+09:00",
   "dam": {
-    "water_level": 36.87,
-    "storage_rate": 98.5,
-    "inflow": 29.64,
-    "outflow": 20.48,
+    "water_level": 36.85,
+    "storage_rate": 98.3,
+    "inflow": 29.37,
+    "outflow": 20.91,
     "storage_change": null
   },
   "river": {
     "water_level": 2.77,
-    "level_change": 0.0,
+    "level_change": -0.01,
     "status": "正常"
   },
   "rainfall": {
@@ -133,36 +133,10 @@
   "precipitation_intensity": {
     "observation": [
       {
-        "datetime": "2025-06-27T14:02:00+09:00",
+        "datetime": "2025-06-27T13:02:00+09:00",
         "intensity": 0.0
       }
     ],
-    "forecast": [
-      {
-        "datetime": "2025-06-27T14:03:00+09:00",
-        "intensity": 0.0
-      },
-      {
-        "datetime": "2025-06-27T14:04:00+09:00",
-        "intensity": 0.0
-      },
-      {
-        "datetime": "2025-06-27T14:05:00+09:00",
-        "intensity": 0.0
-      },
-      {
-        "datetime": "2025-06-27T15:00:00+09:00",
-        "intensity": 0.0
-      },
-      {
-        "datetime": "2025-06-27T15:01:00+09:00",
-        "intensity": 0.0
-      },
-      {
-        "datetime": "2025-06-27T15:02:00+09:00",
-        "intensity": 0.0
-      }
-    ],
-    "update_time": "2025-06-27T14:28:07.554543+09:00"
+    "update_time": "2025-06-27T13:29:28.448846+09:00"
   }
 }

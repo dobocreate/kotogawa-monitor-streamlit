@@ -1,34 +1,36 @@
 {
-  "timestamp": "2025-06-27T14:28:07.554747+09:00",
-  "data_time": "2025-06-27T14:20:00+09:00",
+  "timestamp": "2025-06-27T08:56:26.952655+09:00",
+  "data_time": "2025-06-27T08:50:00+09:00",
   "dam": {
-    "water_level": 36.87,
-    "storage_rate": 98.5,
-    "inflow": 29.64,
-    "outflow": 20.48,
+    "water_level": 36.78,
+    "storage_rate": 97.5,
+    "inflow": 47.9,
+    "outflow": 31.73,
     "storage_change": null
   },
   "river": {
-    "water_level": 2.77,
+    "water_level": 2.91,
     "level_change": 0.0,
     "status": "正常"
   },
   "rainfall": {
-    "hourly": 0,
-    "cumulative": 0,
-    "change": 0
+    "hourly": null,
+    "cumulative": null,
+    "change": null
   },
   "weather": {
     "today": {
       "weather_code": "100",
-      "weather_text": "晴れ",
+      "weather_text": "晴れ　所により　昼前　まで　霧",
       "temp_max": 29,
       "temp_min": 29,
       "precipitation_probability": [
+        0,
         10,
         0
       ],
       "precipitation_times": [
+        "06時",
         "12時",
         "18時"
       ]
@@ -54,34 +56,43 @@
     "day_after_tomorrow": {
       "weather_code": "101",
       "weather_text": "晴れ時々くもり",
-      "temp_max": 29,
-      "temp_min": 25,
+      "temp_max": 30,
+      "temp_min": 23,
       "precipitation_probability": [
-        10
+        30
       ],
       "precipitation_times": [
         "日中"
       ]
     },
-    "update_time": "2025-06-27T11:00:00+09:00",
+    "update_time": "2025-06-27T05:00:00+09:00",
     "weekly_forecast": [
       {
-        "date": "2025-06-28",
-        "day_of_week": "Sat",
-        "weather_code": "100",
-        "weather_text": "晴れ",
+        "date": "2025-06-27",
+        "day_of_week": "Fri",
+        "weather_code": "211",
+        "weather_text": "くもり時々晴れ一時雪",
         "precipitation_probability": null,
         "temp_max": null,
         "temp_min": null
+      },
+      {
+        "date": "2025-06-28",
+        "day_of_week": "Sat",
+        "weather_code": "101",
+        "weather_text": "晴れ時々くもり",
+        "precipitation_probability": 20,
+        "temp_max": 30,
+        "temp_min": 24
       },
       {
         "date": "2025-06-29",
         "day_of_week": "Sun",
         "weather_code": "101",
         "weather_text": "晴れ時々くもり",
-        "precipitation_probability": 10,
-        "temp_max": 29,
-        "temp_min": 25
+        "precipitation_probability": 30,
+        "temp_max": 30,
+        "temp_min": 23
       },
       {
         "date": "2025-06-30",
@@ -90,7 +101,7 @@
         "weather_text": "晴れ時々くもり",
         "precipitation_probability": 30,
         "temp_max": 31,
-        "temp_min": 24
+        "temp_min": 23
       },
       {
         "date": "2025-07-01",
@@ -113,18 +124,9 @@
       {
         "date": "2025-07-03",
         "day_of_week": "Thu",
-        "weather_code": "101",
-        "weather_text": "晴れ時々くもり",
-        "precipitation_probability": 20,
-        "temp_max": 31,
-        "temp_min": 24
-      },
-      {
-        "date": "2025-07-04",
-        "day_of_week": "Fri",
-        "weather_code": "101",
-        "weather_text": "晴れ時々くもり",
-        "precipitation_probability": 20,
+        "weather_code": "201",
+        "weather_text": "くもり時々晴れ",
+        "precipitation_probability": 30,
         "temp_max": 31,
         "temp_min": 24
       }
@@ -133,36 +135,10 @@
   "precipitation_intensity": {
     "observation": [
       {
-        "datetime": "2025-06-27T14:02:00+09:00",
+        "datetime": "2025-06-27T08:05:00+09:00",
         "intensity": 0.0
       }
     ],
-    "forecast": [
-      {
-        "datetime": "2025-06-27T14:03:00+09:00",
-        "intensity": 0.0
-      },
-      {
-        "datetime": "2025-06-27T14:04:00+09:00",
-        "intensity": 0.0
-      },
-      {
-        "datetime": "2025-06-27T14:05:00+09:00",
-        "intensity": 0.0
-      },
-      {
-        "datetime": "2025-06-27T15:00:00+09:00",
-        "intensity": 0.0
-      },
-      {
-        "datetime": "2025-06-27T15:01:00+09:00",
-        "intensity": 0.0
-      },
-      {
-        "datetime": "2025-06-27T15:02:00+09:00",
-        "intensity": 0.0
-      }
-    ],
-    "update_time": "2025-06-27T14:28:07.554543+09:00"
+    "update_time": "2025-06-27T08:56:26.952509+09:00"
   }
 }
