@@ -28,7 +28,7 @@ st.set_page_config(
     page_title="厚東川監視システム",
     page_icon="■",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"  # モバイル・デスクトップ共に初期状態は閉じる
 )
 
 # サイドバー表示時のレスポンシブ対応CSS
@@ -126,44 +126,8 @@ st.markdown("""
         text-align: center !important;
     }
     
-    /* モバイル端末でサイドバーを初期状態で閉じる */
-    @media (max-width: 768px) {
-        /* 初期ロード時にサイドバーを強制的に閉じる */
-        section[data-testid="stSidebar"] {
-            transform: translateX(-21rem) !important;
-            transition: transform 300ms ease !important;
-            width: 21rem !important;
-        }
-        
-        /* ユーザーが明示的に開いた時のみ表示 */
-        section[data-testid="stSidebar"][aria-expanded="true"]:not(.sidebar-closed) {
-            transform: translateX(0) !important;
-        }
-        
-        /* ハンバーガーメニューボタンは表示 */
-        button[kind="header"] {
-            display: block !important;
-        }
-    }
     
 </style>
-
-<script>
-    // モバイル端末で初期ロード時にサイドバーを閉じる
-    document.addEventListener('DOMContentLoaded', function() {
-        if (window.innerWidth <= 768) {
-            // サイドバーを閉じるためのクリックイベントをシミュレート
-            setTimeout(function() {
-                const sidebar = document.querySelector('section[data-testid="stSidebar"]');
-                const hamburger = document.querySelector('button[kind="header"]');
-                
-                if (sidebar && sidebar.getAttribute('aria-expanded') === 'true' && hamburger) {
-                    hamburger.click();
-                }
-            }, 100);
-        }
-    });
-</script>
 """, unsafe_allow_html=True)
 
 class KotogawaMonitor:
