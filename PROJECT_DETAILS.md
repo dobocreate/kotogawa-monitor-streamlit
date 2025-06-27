@@ -154,6 +154,23 @@ obsdt = observation_time.strftime('%Y%m%d%H%M')
 
 ## 最近の主要変更
 
+### 2025年6月27日 v2.4リリース
+1. **雨量データエラー処理の改善**
+   - 雨量データがnullの場合もエラーとせず正常データとして処理
+   - daily_summary.json作成機能を無効化（未使用機能）
+   - daily_summaryファイルの読み込みスキップ処理追加
+   - エラーファイル26件を削除（error_*.json、daily_summary.json）
+   - エラー表示が23件→0件に大幅改善
+
+2. **バグ修正**
+   - 雨量データnull時のTypeError修正（アラートチェック時の比較演算子エラー）
+   - nullチェックを追加してアプリクラッシュを防止
+
+3. **モバイルサイドバー問題の修正**
+   - 複雑なCSS/JavaScript処理を削除
+   - initial_sidebar_state="collapsed"に変更（全デバイスで初期状態は閉じる）
+   - Streamlitの標準動作に準拠してサイドバー開閉問題を解決
+
 ### 2025年6月27日 v2.3リリース
 1. **UI/UX改善**
    - システムヘッダー上部の余分なスペースを削除（st_autorefresh配置変更）
@@ -308,21 +325,22 @@ streamlit run streamlit_app_minimal.py
 - **Streamlit Cloud管理**: https://share.streamlit.io/
 - **GitHub Actions管理**: https://github.com/dobocreate/kotogawa-monitor-streamlit/actions
 
-## 現在の状態（2025年6月27日 11:00 JST）
+## 現在の状態（2025年6月27日 15:00 JST）
 
 ### システム稼働状況
-- **Streamlit App**: ✅ 稼働中（v2.3）
-- **最新データ**: 2025-06-27 10:50 JST
+- **Streamlit App**: ✅ 稼働中（v2.4）
+- **最新データ**: 2025-06-27 14:50 JST
 - **GitHub Actions**: ✅ 10分間隔で正常稼働中
 - **Yahoo! Weather API**: ✅ 正常稼働中
 
 ### 最新観測データ
-- **ダム貯水位**: 36.79m (97.6%)
-- **河川水位**: 2.94m (正常)
-- **流入量**: 47.9 m³/s
-- **全放流量**: 42.04 m³/s
+- **ダム貯水位**: 36.88m (98.6%)
+- **河川水位**: 2.82m (正常)
+- **流入量**: 29.02 m³/s
+- **全放流量**: 20.52 m³/s
+- **時間雨量**: 0 mm/h（雨量データ取得成功）
 - **降水強度**: 0.0 mm/h（観測値）
-- **天気**: 晴れ　夜遅く　くもり
+- **天気**: 晴れ
 
 ### 解決済み課題
 1. ✅ GitHub Actions自動実行の安定化
@@ -336,6 +354,10 @@ streamlit run streamlit_app_minimal.py
 9. ✅ モバイル対応（サイドバー初期非表示）
 10. ✅ サイドバーUI全面改善
 11. ✅ 免責事項の追加
+12. ✅ 雨量データnull時のエラー処理改善
+13. ✅ daily_summary機能の無効化
+14. ✅ TypeErrorバグの修正（雨量アラートチェック）
+15. ✅ モバイルサイドバー開閉問題の解決
 
 ## 今後の改善案
 1. データ取得エラー時の通知機能
