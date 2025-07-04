@@ -1,16 +1,16 @@
 {
-  "timestamp": "2025-07-04T08:56:21.890441+09:00",
-  "data_time": "2025-07-04T08:50:00+09:00",
+  "timestamp": "2025-07-04T10:45:08.176909+09:00",
+  "data_time": "2025-07-04T10:30:00+09:00",
   "dam": {
     "water_level": 36.82,
     "storage_rate": 97.9,
     "inflow": 6.67,
-    "outflow": 6.06,
+    "outflow": 6.08,
     "storage_change": null
   },
   "river": {
-    "water_level": 2.83,
-    "level_change": 0.0,
+    "water_level": 2.84,
+    "level_change": 0.01,
     "status": "正常"
   },
   "rainfall": {
@@ -26,11 +26,9 @@
       "temp_min": 33,
       "precipitation_probability": [
         0,
-        0,
         0
       ],
       "precipitation_times": [
-        "06時",
         "12時",
         "18時"
       ]
@@ -56,20 +54,20 @@
     "day_after_tomorrow": {
       "weather_code": "101",
       "weather_text": "晴れ時々くもり",
-      "temp_max": 32,
-      "temp_min": 27,
+      "temp_max": 33,
+      "temp_min": 28,
       "precipitation_probability": [
-        20
+        10
       ],
       "precipitation_times": [
         "日中"
       ]
     },
-    "update_time": "2025-07-04T05:00:00+09:00",
+    "update_time": "2025-07-04T11:00:00+09:00",
     "weekly_forecast": [
       {
-        "date": "2025-07-04",
-        "day_of_week": "Fri",
+        "date": "2025-07-05",
+        "day_of_week": "Sat",
         "weather_code": "100",
         "weather_text": "晴れ",
         "precipitation_probability": null,
@@ -77,31 +75,22 @@
         "temp_min": null
       },
       {
-        "date": "2025-07-05",
-        "day_of_week": "Sat",
-        "weather_code": "101",
-        "weather_text": "晴れ時々くもり",
-        "precipitation_probability": 10,
-        "temp_max": 33,
-        "temp_min": 27
-      },
-      {
         "date": "2025-07-06",
         "day_of_week": "Sun",
         "weather_code": "101",
         "weather_text": "晴れ時々くもり",
-        "precipitation_probability": 20,
-        "temp_max": 32,
-        "temp_min": 27
+        "precipitation_probability": 10,
+        "temp_max": 33,
+        "temp_min": 28
       },
       {
         "date": "2025-07-07",
         "day_of_week": "Mon",
         "weather_code": "101",
         "weather_text": "晴れ時々くもり",
-        "precipitation_probability": 20,
+        "precipitation_probability": 10,
         "temp_max": 32,
-        "temp_min": 26
+        "temp_min": 27
       },
       {
         "date": "2025-07-08",
@@ -127,6 +116,15 @@
         "weather_code": "101",
         "weather_text": "晴れ時々くもり",
         "precipitation_probability": 20,
+        "temp_max": 33,
+        "temp_min": 26
+      },
+      {
+        "date": "2025-07-11",
+        "day_of_week": "Fri",
+        "weather_code": "101",
+        "weather_text": "晴れ時々くもり",
+        "precipitation_probability": 20,
         "temp_max": 32,
         "temp_min": 26
       }
@@ -135,36 +133,36 @@
   "precipitation_intensity": {
     "observation": [
       {
-        "datetime": "2025-07-04T08:05:00+09:00",
+        "datetime": "2025-07-04T10:04:00+09:00",
         "intensity": 0.0
       }
     ],
     "forecast": [
       {
-        "datetime": "2025-07-04T09:00:00+09:00",
+        "datetime": "2025-07-04T10:05:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2025-07-04T09:01:00+09:00",
+        "datetime": "2025-07-04T11:00:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2025-07-04T09:02:00+09:00",
+        "datetime": "2025-07-04T11:01:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2025-07-04T09:03:00+09:00",
+        "datetime": "2025-07-04T11:02:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2025-07-04T09:04:00+09:00",
+        "datetime": "2025-07-04T11:03:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2025-07-04T09:05:00+09:00",
+        "datetime": "2025-07-04T11:04:00+09:00",
         "intensity": 0.0
       }
     ],
-    "update_time": "2025-07-04T08:56:21.890285+09:00"
+    "update_time": "2025-07-04T10:45:08.176746+09:00"
   }
 }
