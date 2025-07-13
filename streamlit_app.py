@@ -348,25 +348,17 @@ class KotogawaMonitor:
                     try:
                         dt = datetime.strptime(clean_timestamp, fmt)
                         formatted_timestamp = dt.strftime('%Y-%m-%dT%H:%M:%S+09:00')
-                        
-                        if processed_count < 5:
                         break
                         
                     except ValueError:
-                        if processed_count < 5:
                         continue
                 
                 if dt is None:
                     error_count += 1
-                    if processed_count < 5:
                     continue
                 
                 # 対応する河川データを探す（クリーニング済みタイムスタンプでマッチング）
                 water_row = water_df[water_df['clean_timestamp'] == clean_timestamp]
-                
-                    if not water_row.empty:
-                        river_level = water_row['water_level'].iloc[0]
-                    else:
                 
                 # 通常モードと同じJSON形式のデータ構造に変換
                 data_point = {
