@@ -264,9 +264,6 @@ class KotogawaMonitor:
             
             current_time -= timedelta(days=1)
         
-        # エラーサマリー表示（エラーが多い場合のみ表示）
-        if error_count > 10:
-            st.warning(f"■ 履歴データの読み込みで {error_count} 件のエラーがありました")
         
         # 時系列順にソート
         try:
@@ -413,7 +410,6 @@ class KotogawaMonitor:
                 sample_data.append(data_point)
                 processed_count += 1
             
-            # 統計情報を表示
             
             if not sample_data:
                 st.warning("⚠️ サンプルデータの読み込みに失敗しました")
@@ -2347,8 +2343,6 @@ def main():
                 except:
                     st.info("● 観測時刻確認中")
             
-            # データ統計
-            st.info(f"データ件数 ： {len(history_data)}件")
         
         # 警戒レベル説明
         with st.expander("■ 警戒レベル説明", expanded=False):
