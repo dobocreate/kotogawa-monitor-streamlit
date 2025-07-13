@@ -1561,15 +1561,16 @@ class KotogawaMonitor:
         
         # APIデータがない場合は履歴データから観測値を取得
         if not obs_times and history_data:
-            # 表示期間に基づいてデータをフィルタリング（デモモード時はスキップ）
-            if demo_mode:
-                filtered_history_data = history_data
-            else:
-                time_min_history, time_max_history = self.get_common_time_range(history_data, display_hours, demo_mode)
-                if time_min_history and time_max_history:
-                    filtered_history_data = self.filter_data_by_time_range(history_data, time_min_history, time_max_history - timedelta(hours=2))
+            # 表示期間に基づいてデータをフィルタリング
+            time_min_history, time_max_history = self.get_common_time_range(history_data, display_hours, demo_mode)
+            if time_min_history and time_max_history:
+                # デモモード時もタイムレンジでフィルタリング
+                if demo_mode:
+                    filtered_history_data = self.filter_data_by_time_range(history_data, time_min_history, time_max_history)
                 else:
-                    filtered_history_data = history_data
+                    filtered_history_data = self.filter_data_by_time_range(history_data, time_min_history, time_max_history - timedelta(hours=2))
+            else:
+                filtered_history_data = history_data
             
             for item in filtered_history_data:
                 precip_data = item.get('precipitation_intensity', {})
@@ -1709,15 +1710,16 @@ class KotogawaMonitor:
         # 現在時刻を取得
         now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
         
-        # 表示期間に基づいてデータをフィルタリング（デモモード時はスキップ）
-        if demo_mode:
-            filtered_data = history_data
-        else:
-            time_min, time_max = self.get_common_time_range(history_data, display_hours, demo_mode)
-            if time_min and time_max:
-                filtered_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
+        # 表示期間に基づいてデータをフィルタリング
+        time_min, time_max = self.get_common_time_range(history_data, display_hours, demo_mode)
+        if time_min and time_max:
+            # デモモード時もタイムレンジでフィルタリング
+            if demo_mode:
+                filtered_data = self.filter_data_by_time_range(history_data, time_min, time_max)
             else:
-                filtered_data = history_data
+                filtered_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
+        else:
+            filtered_data = history_data
         
         if not filtered_data:
             fig = go.Figure()
@@ -1976,15 +1978,16 @@ class KotogawaMonitor:
             rainfall_times = []
             rainfall_values = []
             
-            # 表示期間に基づいてデータをフィルタリング（デモモード時はスキップ）
-            if demo_mode:
-                filtered_history_data = history_data
-            else:
-                time_min, time_max = self.get_common_time_range(history_data, display_hours, demo_mode)
-                if time_min and time_max:
-                    filtered_history_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
+            # 表示期間に基づいてデータをフィルタリング
+            time_min, time_max = self.get_common_time_range(history_data, display_hours, demo_mode)
+            if time_min and time_max:
+                # デモモード時もタイムレンジでフィルタリング
+                if demo_mode:
+                    filtered_history_data = self.filter_data_by_time_range(history_data, time_min, time_max)
                 else:
-                    filtered_history_data = history_data
+                    filtered_history_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
+            else:
+                filtered_history_data = history_data
             
             for item in filtered_history_data:
                 # 観測時刻（data_time）を使用、なければtimestampを使用
