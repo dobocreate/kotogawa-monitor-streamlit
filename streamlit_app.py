@@ -1670,8 +1670,8 @@ class KotogawaMonitor:
         )
         fig.update_yaxes(
             title_text="時間雨量 (mm/h)",
-            range=[20, 45],
-            dtick=2.5,
+            range=[0, 50],
+            dtick=5,
             secondary_y=True,
             title_font_size=12,
             tickfont_size=12
