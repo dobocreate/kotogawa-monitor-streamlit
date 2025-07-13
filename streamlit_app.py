@@ -493,7 +493,7 @@ class KotogawaMonitor:
                     autosize=True,
                     font=dict(size=9)
                 )
-                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key="today_weather_chart")
         
         # 明日の天気
         with col2:
@@ -551,7 +551,7 @@ class KotogawaMonitor:
                     autosize=True,
                     font=dict(size=9)
                 )
-                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key="tomorrow_weather_chart")
         
         
         # 警戒メッセージ
@@ -858,12 +858,12 @@ class KotogawaMonitor:
             with col1:
                 st.subheader("河川水位・全放流量")
                 fig1 = self.create_river_water_level_graph(history_data, enable_graph_interaction, display_hours)
-                st.plotly_chart(fig1, use_container_width=True, config=plotly_config)
+                st.plotly_chart(fig1, use_container_width=True, config=plotly_config, key="river_water_level_chart")
             
             with col2:
                 st.subheader("ダム流入出量・累加雨量")
                 fig2 = self.create_dam_flow_graph(history_data, enable_graph_interaction, display_hours)
-                st.plotly_chart(fig2, use_container_width=True, config=plotly_config)
+                st.plotly_chart(fig2, use_container_width=True, config=plotly_config, key="dam_flow_chart")
             
             # 2行目
             col3, col4 = st.columns(2)
@@ -880,7 +880,7 @@ class KotogawaMonitor:
                     pass
                 
                 fig3 = self.create_dam_water_level_graph(history_data, enable_graph_interaction, latest_precipitation_data, display_hours)
-                st.plotly_chart(fig3, use_container_width=True, config=plotly_config)
+                st.plotly_chart(fig3, use_container_width=True, config=plotly_config, key="dam_water_level_chart")
             
             with col4:
                 # 降水強度グラフの表示
@@ -940,7 +940,7 @@ class KotogawaMonitor:
                     st.subheader("降水強度・時間雨量")
                     
                     fig4 = self.create_precipitation_intensity_graph(latest_api_precipitation_data, enable_graph_interaction, history_data, display_hours)
-                    st.plotly_chart(fig4, use_container_width=True, config=plotly_config)
+                    st.plotly_chart(fig4, use_container_width=True, config=plotly_config, key="precipitation_intensity_chart")
         
         with tab2:
             st.subheader("データテーブル")
