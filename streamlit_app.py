@@ -996,15 +996,16 @@ class KotogawaMonitor:
                         # 履歴データから観測値を収集
                         all_observations = []
                         update_time = None
-                        # 表示期間に基づいてデータをフィルタリング（デモモード時はスキップ）
-                        if demo_mode:
-                            filtered_history_data = history_data
-                        else:
-                            time_min, time_max = self.get_common_time_range(history_data, display_hours, demo_mode)
-                            if time_min and time_max:
-                                filtered_history_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
+                        # 表示期間に基づいてデータをフィルタリング
+                        time_min, time_max = self.get_common_time_range(history_data, display_hours, demo_mode)
+                        if time_min and time_max:
+                            # デモモード時もタイムレンジでフィルタリング
+                            if demo_mode:
+                                filtered_history_data = self.filter_data_by_time_range(history_data, time_min, time_max)
                             else:
-                                filtered_history_data = history_data
+                                filtered_history_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
+                        else:
+                            filtered_history_data = history_data
                         
                         for item in filtered_history_data:
                             precip_data = item.get('precipitation_intensity', {})
@@ -1230,6 +1231,8 @@ class KotogawaMonitor:
             # デモモード: 固定期間（2023年6月27日12:00〜7月1日12:00）に設定
             time_min = datetime(2023, 6, 27, 12, 0, tzinfo=ZoneInfo('Asia/Tokyo'))
             time_max = datetime(2023, 7, 1, 12, 0, tzinfo=ZoneInfo('Asia/Tokyo'))
+            # デバッグ用ログ
+            print(f"デモモード時間範囲設定: {time_min} 〜 {time_max}")
             
         else:
             # 通常モード: 現在時刻（日本時間）基準
@@ -1275,15 +1278,16 @@ class KotogawaMonitor:
         # 現在時刻を取得
         now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
         
-        # 表示期間に基づいてデータをフィルタリング（デモモード時はスキップ）
-        if demo_mode:
-            filtered_data = history_data
-        else:
-            time_min, time_max = self.get_common_time_range(history_data, display_hours, demo_mode)
-            if time_min and time_max:
-                filtered_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
+        # 表示期間に基づいてデータをフィルタリング
+        time_min, time_max = self.get_common_time_range(history_data, display_hours, demo_mode)
+        if time_min and time_max:
+            # デモモード時もタイムレンジでフィルタリング
+            if demo_mode:
+                filtered_data = self.filter_data_by_time_range(history_data, time_min, time_max)
             else:
-                filtered_data = history_data
+                filtered_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
+        else:
+            filtered_data = history_data
         
         if not filtered_data:
             fig = go.Figure()
@@ -1431,15 +1435,16 @@ class KotogawaMonitor:
         # 現在時刻を取得（予測データ処理で使用）
         now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
         
-        # 表示期間に基づいてデータをフィルタリング（デモモード時はスキップ）
-        if demo_mode:
-            filtered_data = history_data
-        else:
-            time_min, time_max = self.get_common_time_range(history_data, display_hours, demo_mode)
-            if time_min and time_max:
-                filtered_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
+        # 表示期間に基づいてデータをフィルタリング
+        time_min, time_max = self.get_common_time_range(history_data, display_hours, demo_mode)
+        if time_min and time_max:
+            # デモモード時もタイムレンジでフィルタリング
+            if demo_mode:
+                filtered_data = self.filter_data_by_time_range(history_data, time_min, time_max)
             else:
-                filtered_data = history_data
+                filtered_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
+        else:
+            filtered_data = history_data
         
         if not filtered_data:
             fig = go.Figure()
