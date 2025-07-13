@@ -241,7 +241,7 @@ class KotogawaMonitor:
                                     data_timestamp = datetime.fromisoformat(data['timestamp'].replace('Z', '+00:00'))
                                     if data_timestamp.tzinfo is None:
                                         data_timestamp = data_timestamp.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-                                    
+                                    else:
                                         data_timestamp = data_timestamp.astimezone(ZoneInfo('Asia/Tokyo'))
                                     
                                     # 全データを読み込み（表示範囲はグラフ側で制御）
@@ -252,7 +252,7 @@ class KotogawaMonitor:
                                     # タイムスタンプ解析エラーの場合も追加（後方互換性）
                                     history_data.append(data)
                                     processed_files += 1
-                            
+                            else:
                                 error_count += 1
                                 
                     except json.JSONDecodeError:
@@ -264,6 +264,9 @@ class KotogawaMonitor:
             
             current_time -= timedelta(days=1)
         
+        # エラーサマリー表示（エラーが多い場合のみ表示）
+        if error_count > 10:
+            st.warning(f"■ 履歴データの読み込みで {error_count} 件のエラーがありました")
         
         # 時系列順にソート
         try:
@@ -283,6 +286,8 @@ class KotogawaMonitor:
         water_csv_path = Path("sample/water-level_20230625-20230702.csv")
         
         try:
+            st.info("🔍 デバッグ: サンプルCSVファイルの読み込みを開始...")
+            
             # ファイル存在確認
             if not dam_csv_path.exists():
                 st.error(f"❌ ダムCSVファイルが見つかりません: {dam_csv_path}")
@@ -291,14 +296,20 @@ class KotogawaMonitor:
                 st.error(f"❌ 河川CSVファイルが見つかりません: {water_csv_path}")
                 return []
             
+            st.success(f"✅ CSVファイルが見つかりました")
+            
             # ダムデータの読み込み（Shift-JISエンコーディング）
+            st.info("📊 ダムデータを読み込み中...")
             dam_df = pd.read_csv(dam_csv_path, encoding='shift_jis', skiprows=7)
+            st.info(f"ダムデータ読み込み完了: {len(dam_df)}行")
             
             dam_df.columns = ['timestamp', 'hourly_rain', 'cumulative_rain', 'water_level', 
                              'storage_rate', 'inflow', 'outflow', 'storage_change']
             
             # 河川水位データの読み込み（Shift-JISエンコーディング）
+            st.info("🌊 河川データを読み込み中...")
             water_df = pd.read_csv(water_csv_path, encoding='shift_jis', skiprows=6)
+            st.info(f"河川データ読み込み完了: {len(water_df)}行")
             
             water_df.columns = ['timestamp', 'water_level', 'level_change']
             
@@ -317,10 +328,16 @@ class KotogawaMonitor:
             water_df['level_change'] = pd.to_numeric(water_df['level_change'], errors='coerce').fillna(0)
             
             # データの結合と変換
+            st.info("🔄 データ変換を開始...")
             sample_data = []
             processed_count = 0
             error_count = 0
             
+            # 先頭数行を表示してデバッグ
+            st.info("📋 ダムデータの先頭5行:")
+            st.dataframe(dam_df.head())
+            st.info("📋 河川データの先頭5行:")
+            st.dataframe(water_df.head())
             
             for idx, row in dam_df.iterrows():
                 timestamp_str = str(row['timestamp']).strip()
@@ -331,6 +348,8 @@ class KotogawaMonitor:
                 # 先頭と末尾の全角スペースや半角スペースのみを削除して標準化
                 clean_timestamp = timestamp_str.replace('　', '').strip()
                 
+                if processed_count < 5:  # 最初の5件のデバッグ情報を表示
+                    st.info(f"🔍 処理中 {processed_count + 1}: 元タイムスタンプ='{timestamp_str}', クリーン='{clean_timestamp}'")
                     
                 # タイムスタンプの解析とISO形式への変換
                 dt = None
@@ -345,17 +364,34 @@ class KotogawaMonitor:
                     try:
                         dt = datetime.strptime(clean_timestamp, fmt)
                         formatted_timestamp = dt.strftime('%Y-%m-%dT%H:%M:%S+09:00')
+                        
+                        if processed_count < 5:
+                            st.success(f"✅ タイムスタンプ変換成功 (形式: {fmt}): {formatted_timestamp}")
                         break
                         
                     except ValueError:
+                        if processed_count < 5:
+                            st.warning(f"⚠️ 形式 '{fmt}' で解析失敗")
                         continue
                 
                 if dt is None:
                     error_count += 1
+                    if processed_count < 5:
+                        st.error(f"❌ 全ての形式で解析失敗: '{timestamp_str}' (長さ: {len(timestamp_str)}文字)")
+                        # 文字の詳細表示
+                        char_info = [f"'{c}' ({ord(c)})" for c in timestamp_str[:20]]  # 最初の20文字
+                        st.error(f"文字詳細: {', '.join(char_info)}")
                     continue
                 
                 # 対応する河川データを探す（クリーニング済みタイムスタンプでマッチング）
                 water_row = water_df[water_df['clean_timestamp'] == clean_timestamp]
+                
+                if processed_count < 5:  # デバッグ出力
+                    if not water_row.empty:
+                        river_level = water_row['water_level'].iloc[0]
+                        st.success(f"🌊 河川データマッチ成功: 水位={river_level}m")
+                    else:
+                        st.warning(f"⚠️ 河川データマッチ失敗: '{clean_timestamp}'")
                 
                 # 通常モードと同じJSON形式のデータ構造に変換
                 data_point = {
@@ -410,8 +446,16 @@ class KotogawaMonitor:
                 sample_data.append(data_point)
                 processed_count += 1
             
+            # 統計情報を表示
+            st.info(f"📊 変換統計: 処理済み={processed_count}件, エラー={error_count}件, 出力={len(sample_data)}件")
             
-            if not sample_data:
+            if sample_data:
+                st.success(f"✅ サンプルデータを読み込みました: {len(sample_data)}件")
+                # 最初のデータポイントをサンプル表示
+                if len(sample_data) > 0:
+                    st.info("📋 変換されたデータのサンプル（1件目）:")
+                    st.json(sample_data[0])
+            else:
                 st.warning("⚠️ サンプルデータの読み込みに失敗しました")
             
             return sample_data
@@ -453,7 +497,7 @@ class KotogawaMonitor:
         elif river_status in ['水防団待機']:
             alerts['river'] = '注意'
             alert_level = max(alert_level, 1)
-        
+        else:
             alerts['river'] = '正常'
         
         # ダム水位チェック
@@ -491,7 +535,7 @@ class KotogawaMonitor:
             alerts['overall'] = '警戒'
         elif alert_level >= 1:
             alerts['overall'] = '注意'
-        
+        else:
             alerts['overall'] = '正常'
         
         return alerts
@@ -669,7 +713,7 @@ class KotogawaMonitor:
                     return "🌤️"  # 晴れ時々くもり
                 elif code in ['102', '112', '113']:
                     return "🌦️"  # 晴れ一時雨
-                
+                else:
                     return "☀️"
             # くもり系
             elif code.startswith('2'):
@@ -683,7 +727,7 @@ class KotogawaMonitor:
                     return "🌧️"  # くもり時々雨
                 elif code in ['204']:
                     return "🌨️"  # くもり一時雪
-                
+                else:
                     return "☁️"
             # 雨系
             elif code.startswith('3'):
@@ -699,7 +743,7 @@ class KotogawaMonitor:
                     return "⛈️"  # 大雨
                 elif code in ['311']:
                     return "🌦️"  # 雨のち晴れ
-                
+                else:
                     return "🌧️"
             # 雪系
             elif code.startswith('4'):
@@ -713,7 +757,7 @@ class KotogawaMonitor:
                     return "🌨️"  # 雪時々雨、雪のち雨
                 elif code in ['406']:
                     return "❄️"  # 大雪
-                
+                else:
                     return "❄️"
         
         # 天気テキストベースの判定（フォールバック）
@@ -724,19 +768,19 @@ class KotogawaMonitor:
                     return "🌦️"
                 elif "くもり" in text or "曇" in text:
                     return "🌤️"
-                
+                else:
                     return "☀️"
             elif "くもり" in text or "曇" in text:
                 if "雨" in text:
                     return "🌧️"
                 elif "晴" in text:
                     return "⛅"
-                
+                else:
                     return "☁️"
             elif "雨" in text:
                 if "大雨" in text or "雷" in text:
                     return "⛈️"
-                
+                else:
                     return "🌧️"
             elif "雪" in text:
                 return "❄️"
@@ -852,7 +896,7 @@ class KotogawaMonitor:
                         day_label = "明日"
                     elif target_date == today + timedelta(days=2):
                         day_label = "明後日"
-                    
+                    else:
                         # 英語の曜日を日本語に変換
                         day_label = weekday_jp.get(day_of_week, day_of_week)
                     
@@ -872,7 +916,7 @@ class KotogawaMonitor:
                 # 短縮版のテキスト
                 if len(weather_text) > 6:
                     weather_short = weather_text[:6] + "..."
-                
+                else:
                     weather_short = weather_text
                 html_content += f'<div class="weather-text">{weather_short}</div>'
                 
@@ -885,9 +929,9 @@ class KotogawaMonitor:
                         precip_text = f'雨 <strong>{precip_prob}%</strong>'
                     elif precip_prob >= 30:
                         precip_text = f'曇 {precip_prob}%'
-                    
+                    else:
                         precip_text = f'晴 {precip_prob}%'
-                
+                else:
                     precip_text = '--'
                 
                 html_content += f'<div class="weather-precip">{precip_text}</div>'
@@ -902,7 +946,7 @@ class KotogawaMonitor:
                     temp_text = f'{temp_max}°/--'
                 elif temp_min is not None:
                     temp_text = f'--/{temp_min}°'
-                
+                else:
                     temp_text = '--/--'
                 
                 html_content += f'<div class="weather-temp">{temp_text}</div>'
@@ -982,11 +1026,11 @@ class KotogawaMonitor:
                         # 表示期間に基づいてデータをフィルタリング（デモモード時はスキップ）
                         if demo_mode:
                             filtered_history_data = history_data
-                        
+                        else:
                             time_min, time_max = self.get_common_time_range(history_data, display_hours, demo_mode=False)
                             if time_min and time_max:
                                 filtered_history_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
-                            
+                            else:
                                 filtered_history_data = history_data
                         
                         for item in filtered_history_data:
@@ -1039,7 +1083,7 @@ class KotogawaMonitor:
                     file_name=f"kotogawa_data_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
                     mime="text/csv"
                 )
-            
+            else:
                 st.info("表示するデータがありません")
     
     def create_metrics_display(self, data: Dict[str, Any]) -> None:
@@ -1057,13 +1101,13 @@ class KotogawaMonitor:
                 # タイムゾーンがない場合は日本時間として扱う
                 if dt.tzinfo is None:
                     dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-                
+                else:
                     # UTCから日本時間に変換
                     dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
                 obs_time_str = dt.strftime('%Y/%m/%d %H:%M')
             except:
                 obs_time_str = observation_time
-        
+        else:
             obs_time_str = "不明"
         
         # 3つのセクションに分けて表示
@@ -1102,9 +1146,9 @@ class KotogawaMonitor:
                             st.error(f"危険 {river_status}")
                         elif river_status in ['氾濫注意', '水防団待機']:
                             st.warning(f"注意 {river_status}")
-                    
+                    else:
                         st.success(f"{river_status}")
-                
+                else:
                     st.metric(label="水位 (m)", value="--")
             
             with river_subcol2:
@@ -1135,7 +1179,7 @@ class KotogawaMonitor:
                         st.error("雨 大雨注意")
                     elif hourly_rain > 10:
                         st.warning("雨 雨量多め")
-                
+                else:
                     st.metric(label="60分雨量 (mm)", value="--")
             
             with rain_subcol2:
@@ -1145,7 +1189,7 @@ class KotogawaMonitor:
                         label="累加雨量 (mm)",
                         value=f"{cumulative_rain}"
                     )
-                
+                else:
                     st.metric(label="累加雨量 (mm)", value="--")
         
         # ダム情報（小画面対応：列数を動的調整）
@@ -1161,7 +1205,7 @@ class KotogawaMonitor:
                     value=f"{dam_level:.2f}",
                     delta=data.get('dam', {}).get('storage_change')
                 )
-            
+            else:
                 st.metric(label="貯水位 (m)", value="--")
         
         with dam_col2:
@@ -1171,7 +1215,7 @@ class KotogawaMonitor:
                     label="貯水率 (%)",
                     value=f"{storage_rate:.1f}"
                 )
-            
+            else:
                 st.metric(label="貯水率 (%)", value="--")
         
         with dam_col3:
@@ -1181,7 +1225,7 @@ class KotogawaMonitor:
                     label="流入量 (m³/s)",
                     value=f"{inflow:.2f}"
                 )
-            
+            else:
                 st.metric(label="流入量 (m³/s)", value="--")
         
         with dam_col4:
@@ -1191,7 +1235,7 @@ class KotogawaMonitor:
                     label="全放流量 (m³/s)",
                     value=f"{outflow:.2f}"
                 )
-            
+            else:
                 st.metric(label="全放流量 (m³/s)", value="--")
         
         with dam_col5:
@@ -1230,7 +1274,7 @@ class KotogawaMonitor:
             time_max = latest_timestamp + timedelta(hours=1)
             time_min = time_max - timedelta(hours=display_hours)
             
-        
+        else:
             # 通常モード: 現在時刻（日本時間）基準
             now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
             
@@ -1256,7 +1300,7 @@ class KotogawaMonitor:
                 dt = datetime.fromisoformat(data_time.replace('Z', '+00:00'))
                 if dt.tzinfo is None:
                     dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-                
+                else:
                     dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
                 
                 # 指定された時間範囲内のデータのみ追加
@@ -1277,11 +1321,11 @@ class KotogawaMonitor:
         # 表示期間に基づいてデータをフィルタリング（デモモード時はスキップ）
         if demo_mode:
             filtered_data = history_data
-        
+        else:
             time_min, time_max = self.get_common_time_range(history_data, display_hours, demo_mode=False)
             if time_min and time_max:
                 filtered_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
-            
+            else:
                 filtered_data = history_data
         
         if not filtered_data:
@@ -1303,7 +1347,7 @@ class KotogawaMonitor:
                 # タイムゾーンがない場合はJSTとして扱う
                 if dt.tzinfo is None:
                     dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-                
+                else:
                     dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
             except:
                 continue
@@ -1433,11 +1477,11 @@ class KotogawaMonitor:
         # 表示期間に基づいてデータをフィルタリング（デモモード時はスキップ）
         if demo_mode:
             filtered_data = history_data
-        
+        else:
             time_min, time_max = self.get_common_time_range(history_data, display_hours, demo_mode=False)
             if time_min and time_max:
                 filtered_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
-            
+            else:
                 filtered_data = history_data
         
         if not filtered_data:
@@ -1459,7 +1503,7 @@ class KotogawaMonitor:
                 # タイムゾーンがない場合はJSTとして扱う
                 if dt.tzinfo is None:
                     dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-                
+                else:
                     dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
             except:
                 continue
@@ -1538,14 +1582,14 @@ class KotogawaMonitor:
                     dt = datetime.fromisoformat(item['datetime'])
                     if dt.tzinfo is None:
                         dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-                    
+                    else:
                         dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
                     
                     # 表示期間内のデータのみを追加
                     if start_time <= dt <= end_time:
                         obs_times.append(dt)
                         obs_intensities.append(item['intensity'])
-                    
+                    else:
                         # 範囲外データをカウント
                         out_of_range_count += 1
                         if latest_out_of_range_time is None or dt > latest_out_of_range_time:
@@ -1558,11 +1602,11 @@ class KotogawaMonitor:
             # 表示期間に基づいてデータをフィルタリング（デモモード時はスキップ）
             if demo_mode:
                 filtered_history_data = history_data
-            
+            else:
                 time_min_history, time_max_history = self.get_common_time_range(history_data, display_hours, demo_mode=False)
                 if time_min_history and time_max_history:
                     filtered_history_data = self.filter_data_by_time_range(history_data, time_min_history, time_max_history - timedelta(hours=2))
-                
+                else:
                     filtered_history_data = history_data
             
             for item in filtered_history_data:
@@ -1573,14 +1617,14 @@ class KotogawaMonitor:
                             dt = datetime.fromisoformat(obs['datetime'])
                             if dt.tzinfo is None:
                                 dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-                            
+                            else:
                                 dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
                             
                             # 表示期間内のデータのみを追加
                             if start_time <= dt <= end_time:
                                 obs_times.append(dt)
                                 obs_intensities.append(obs['intensity'])
-                            
+                            else:
                                 # 範囲外データをカウント
                                 out_of_range_count += 1
                                 if latest_out_of_range_time is None or dt > latest_out_of_range_time:
@@ -1617,7 +1661,7 @@ class KotogawaMonitor:
                         dt = datetime.fromisoformat(item['datetime'])
                         if dt.tzinfo is None:
                             dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-                        
+                        else:
                             dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
                         
                         # 現在時刻以降のデータまたは過去30分以内の予測データを使用
@@ -1706,11 +1750,11 @@ class KotogawaMonitor:
         # 表示期間に基づいてデータをフィルタリング（デモモード時はスキップ）
         if demo_mode:
             filtered_data = history_data
-        
+        else:
             time_min, time_max = self.get_common_time_range(history_data, display_hours, demo_mode=False)
             if time_min and time_max:
                 filtered_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
-            
+            else:
                 filtered_data = history_data
         
         if not filtered_data:
@@ -1732,7 +1776,7 @@ class KotogawaMonitor:
                 # タイムゾーンがない場合はJSTとして扱う
                 if dt.tzinfo is None:
                     dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-                
+                else:
                     dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
             except:
                 continue
@@ -1864,7 +1908,7 @@ class KotogawaMonitor:
         # デモモード時のY軸範囲設定
         if demo_mode:
             fig.update_yaxes(range=[0, 1200], secondary_y=False)  # 左軸（流入出量）：最大1200
-            fig.update_yaxes(range=[0, 300], dtick=25, secondary_y=True)  # 右軸（累加雨量）：最大300、間隔25mm
+            fig.update_yaxes(range=[0, 300], secondary_y=True)  # 右軸（累加雨量）：最大300
         
         # インタラクションが無効の場合は軸を固定
         if not enable_interaction:
@@ -1898,14 +1942,14 @@ class KotogawaMonitor:
                     dt = datetime.fromisoformat(item['datetime'])
                     if dt.tzinfo is None:
                         dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-                    
+                    else:
                         dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
                     
                     # 表示期間内のデータのみを追加
                     if start_time <= dt <= end_time:
                         obs_times.append(dt)
                         obs_intensities.append(item['intensity'])
-                    
+                    else:
                         # 範囲外データをカウント
                         out_of_range_count += 1
                         if latest_out_of_range_time is None or dt > latest_out_of_range_time:
@@ -1930,7 +1974,7 @@ class KotogawaMonitor:
                     dt = datetime.fromisoformat(item['datetime'])
                     if dt.tzinfo is None:
                         dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-                    
+                    else:
                         dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
                     forecast_debug_times.append(dt)
                     
@@ -1973,11 +2017,11 @@ class KotogawaMonitor:
             # 表示期間に基づいてデータをフィルタリング（デモモード時はスキップ）
             if demo_mode:
                 filtered_history_data = history_data
-            
+            else:
                 time_min, time_max = self.get_common_time_range(history_data, display_hours, demo_mode=False)
                 if time_min and time_max:
                     filtered_history_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
-                
+                else:
                     filtered_history_data = history_data
             
             for item in filtered_history_data:
@@ -1987,7 +2031,7 @@ class KotogawaMonitor:
                     dt = datetime.fromisoformat(data_time.replace('Z', '+00:00'))
                     if dt.tzinfo is None:
                         dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-                    
+                    else:
                         dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
                     
                     rainfall = item.get('rainfall', {}).get('hourly')
@@ -2083,7 +2127,7 @@ class KotogawaMonitor:
                 # タイムゾーンがない場合はJSTとして扱う
                 if dt.tzinfo is None:
                     dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
-                
+                else:
                     dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
                 formatted_time = dt.strftime('%Y-%m-%d %H:%M')
             except:
@@ -2108,12 +2152,28 @@ def main():
     # サイドバー設定
     # 更新設定
     with st.sidebar.expander("更新設定", expanded=True):
-        # 開発/本運用モードをコードレベルで設定
-        # 開発時は DEVELOPMENT_MODE = True に変更してください
-        DEVELOPMENT_MODE = False  # True: 開発モード（60分間隔）, False: 本運用モード（10分間隔）
+        # モード選択
+        mode = st.radio(
+            "システムモード",
+            options=["運用モード", "開発モード"],
+            index=0,  # デフォルトは運用モード
+            help="運用モード: 10分間隔で監視、開発モード: 60分間隔（開発中のGitコンフリクト回避）"
+        )
         
-        if DEVELOPMENT_MODE:
-            # 開発モード: 長い間隔でGitコンフリクト回避
+        # モードに応じた自動更新設定
+        if mode == "運用モード":
+            refresh_interval = st.selectbox(
+                "自動更新間隔",
+                options=[
+                    ("自動更新なし", 0),
+                    ("10分（推奨）", 10 * 60 * 1000),
+                    ("30分", 30 * 60 * 1000),
+                    ("60分", 60 * 60 * 1000)
+                ],
+                index=1,  # デフォルトは10分
+                format_func=lambda x: x[0]
+            )
+        else:  # 開発モード
             refresh_interval = st.selectbox(
                 "自動更新間隔",
                 options=[
@@ -2124,19 +2184,6 @@ def main():
                     ("1分（テスト用）", 1 * 60 * 1000)
                 ],
                 index=1,  # デフォルトは60分
-                format_func=lambda x: x[0]
-            )
-        else:
-            # 本運用モード: 通常の監視間隔
-            refresh_interval = st.selectbox(
-                "自動更新間隔",
-                options=[
-                    ("自動更新なし", 0),
-                    ("10分（推奨）", 10 * 60 * 1000),
-                    ("30分", 30 * 60 * 1000),
-                    ("60分", 60 * 60 * 1000)
-                ],
-                index=1,  # デフォルトは10分
                 format_func=lambda x: x[0]
             )
         
@@ -2176,19 +2223,6 @@ def main():
             value=False,
             help="過去の河川・ダムデータ（2023/6/25-7/2）を表示します"
         )
-        
-        # QRコード表示
-        st.markdown("---")
-        st.markdown("**📱 QRコード**")
-        qr_code_path = Path("qr-code.png")
-        if qr_code_path.exists():
-            try:
-                with open(qr_code_path, "rb") as qr_file:
-                    st.image(qr_file.read(), width=150, caption="厚東川監視システム")
-            except Exception as e:
-                st.info("QRコードが利用できません")
-        else:
-            st.info("QRコードファイルが見つかりません")
     
     # アラート閾値設定
     with st.sidebar.expander("アラート設定", expanded=False):
@@ -2208,7 +2242,7 @@ def main():
     st.markdown('<h1 style="text-align: center; margin-top: 0; margin-bottom: 1rem;">厚東川氾濫監視システムv2.0</h1>', unsafe_allow_html=True)
     
     # モード表示
-    if DEVELOPMENT_MODE:
+    if mode == "開発モード":
         st.warning("🔧 開発モード - データ更新頻度を抑制中（Gitコンフリクト回避）")
     
     # 自動更新の実行（ヘッダーの後に配置）- デモモード時は無効化
@@ -2270,7 +2304,7 @@ def main():
                 st.warning("🟠 現在の状況: 警戒")
             elif alerts['overall'] == '注意':
                 st.warning("🟡 現在の状況: 注意")
-            
+            else:
                 st.info("⚪ 現在の状況: 確認中")
         
         with col2:
@@ -2284,7 +2318,7 @@ def main():
                     st.success(f"🕐 最終更新: {update_time}")
                 except:
                     st.error("🕐 最終更新: 取得失敗")
-            
+            else:
                 st.warning("🕐 最終更新: データなし")
         
         with col3:
@@ -2300,9 +2334,9 @@ def main():
                     st.success(f"📡 API取得: {api_time}")
                 except:
                     st.error("📡 API取得: 取得失敗")
-            
+            else:
                 st.warning("📡 API取得: データなし")
-    
+    else:
         st.warning("⚠️ データの読み込み中...")
     
     st.markdown("---")
@@ -2338,11 +2372,13 @@ def main():
                         st.success(f"観測時刻 ： {minutes_ago}分前")
                     elif minutes_ago < 120:
                         st.warning(f"観測時刻 ： {minutes_ago}分前")
-                    
+                    else:
                         st.error(f"観測時刻 ： {minutes_ago}分前")
                 except:
                     st.info("● 観測時刻確認中")
             
+            # データ統計
+            st.info(f"データ件数 ： {len(history_data)}件")
         
         # 警戒レベル説明
         with st.expander("■ 警戒レベル説明", expanded=False):
