@@ -313,6 +313,9 @@ class KotogawaMonitor:
             
             water_df.columns = ['timestamp', 'water_level', 'level_change']
             
+            # 河川データのタイムスタンプもクリーニング（ダムデータと同じ形式に統一）
+            water_df['clean_timestamp'] = water_df['timestamp'].astype(str).str.replace('　', '').str.strip()
+            
             # データクリーニング：空の値を適切に処理
             dam_df['hourly_rain'] = pd.to_numeric(dam_df['hourly_rain'], errors='coerce').fillna(0)
             dam_df['cumulative_rain'] = pd.to_numeric(dam_df['cumulative_rain'], errors='coerce').fillna(0)
@@ -380,8 +383,15 @@ class KotogawaMonitor:
                         st.error(f"文字詳細: {', '.join(char_info)}")
                     continue
                 
-                # 対応する河川データを探す
-                water_row = water_df[water_df['timestamp'] == timestamp_str]
+                # 対応する河川データを探す（クリーニング済みタイムスタンプでマッチング）
+                water_row = water_df[water_df['clean_timestamp'] == clean_timestamp]
+                
+                if processed_count < 5:  # デバッグ出力
+                    if not water_row.empty:
+                        river_level = water_row['water_level'].iloc[0]
+                        st.success(f"🌊 河川データマッチ成功: 水位={river_level}m")
+                    else:
+                        st.warning(f"⚠️ 河川データマッチ失敗: '{clean_timestamp}'")
                 
                 # 通常モードと同じJSON形式のデータ構造に変換
                 data_point = {
