@@ -286,13 +286,31 @@ class KotogawaMonitor:
         water_csv_path = Path("sample/water-level_20230625-20230702.csv")
         
         try:
+            st.info("🔍 デバッグ: サンプルCSVファイルの読み込みを開始...")
+            
+            # ファイル存在確認
+            if not dam_csv_path.exists():
+                st.error(f"❌ ダムCSVファイルが見つかりません: {dam_csv_path}")
+                return []
+            if not water_csv_path.exists():
+                st.error(f"❌ 河川CSVファイルが見つかりません: {water_csv_path}")
+                return []
+            
+            st.success(f"✅ CSVファイルが見つかりました")
+            
             # ダムデータの読み込み（Shift-JISエンコーディング）
+            st.info("📊 ダムデータを読み込み中...")
             dam_df = pd.read_csv(dam_csv_path, encoding='shift_jis', skiprows=7)
+            st.info(f"ダムデータ読み込み完了: {len(dam_df)}行")
+            
             dam_df.columns = ['timestamp', 'hourly_rain', 'cumulative_rain', 'water_level', 
                              'storage_rate', 'inflow', 'outflow', 'storage_change']
             
             # 河川水位データの読み込み（Shift-JISエンコーディング）
+            st.info("🌊 河川データを読み込み中...")
             water_df = pd.read_csv(water_csv_path, encoding='shift_jis', skiprows=6)
+            st.info(f"河川データ読み込み完了: {len(water_df)}行")
+            
             water_df.columns = ['timestamp', 'water_level', 'level_change']
             
             # データクリーニング：空の値を適切に処理
@@ -307,12 +325,24 @@ class KotogawaMonitor:
             water_df['level_change'] = pd.to_numeric(water_df['level_change'], errors='coerce').fillna(0)
             
             # データの結合と変換
+            st.info("🔄 データ変換を開始...")
             sample_data = []
+            processed_count = 0
+            error_count = 0
+            
+            # 先頭数行を表示してデバッグ
+            st.info("📋 ダムデータの先頭5行:")
+            st.dataframe(dam_df.head())
+            st.info("📋 河川データの先頭5行:")
+            st.dataframe(water_df.head())
             
             for idx, row in dam_df.iterrows():
                 timestamp_str = str(row['timestamp']).strip()
                 if pd.isna(timestamp_str) or timestamp_str == '' or timestamp_str == 'nan':
                     continue
+                
+                if processed_count < 5:  # 最初の5件のデバッグ情報を表示
+                    st.info(f"🔍 処理中 {processed_count + 1}: タイムスタンプ='{timestamp_str}'")
                     
                 # タイムスタンプの解析とISO形式への変換
                 try:
@@ -320,7 +350,14 @@ class KotogawaMonitor:
                     dt = datetime.strptime(timestamp_str, ' %Y/%m/%d %H:%M')
                     # ISO形式に変換（JSTタイムゾーン付き）
                     formatted_timestamp = dt.strftime('%Y-%m-%dT%H:%M:%S+09:00')
+                    
+                    if processed_count < 5:
+                        st.success(f"✅ タイムスタンプ変換成功: {formatted_timestamp}")
+                        
                 except Exception as e:
+                    error_count += 1
+                    if processed_count < 5:
+                        st.error(f"❌ タイムスタンプ解析エラー: {e}")
                     continue
                 
                 # 対応する河川データを探す
@@ -377,11 +414,19 @@ class KotogawaMonitor:
                 }
                 
                 sample_data.append(data_point)
+                processed_count += 1
+            
+            # 統計情報を表示
+            st.info(f"📊 変換統計: 処理済み={processed_count}件, エラー={error_count}件, 出力={len(sample_data)}件")
             
             if sample_data:
-                st.success(f"サンプルデータを読み込みました: {len(sample_data)}件")
+                st.success(f"✅ サンプルデータを読み込みました: {len(sample_data)}件")
+                # 最初のデータポイントをサンプル表示
+                if len(sample_data) > 0:
+                    st.info("📋 変換されたデータのサンプル（1件目）:")
+                    st.json(sample_data[0])
             else:
-                st.warning("サンプルデータの読み込みに失敗しました")
+                st.warning("⚠️ サンプルデータの読み込みに失敗しました")
             
             return sample_data
             
