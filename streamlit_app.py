@@ -2224,14 +2224,14 @@ def main():
         # デモモードの場合はサンプルデータを読み込む
         with st.spinner('デモデータを読み込み中...'):
             sample_data = monitor.load_sample_csv_data()
-            if not sample_data:
+            if sample_data:
                 latest_data = sample_data[-1]  # 最新のデータポイントを取得
                 history_data = sample_data
-            
+            else:
                 latest_data = None
                 history_data = []
         cache_key = "demo_mode"
-    
+    else:
         # 通常モード
         with st.spinner('データを更新中...'):
             latest_data = monitor.load_latest_data()
@@ -2250,7 +2250,7 @@ def main():
     # アラート状態の取得
     if latest_data:
         alerts = monitor.check_alert_status(latest_data, thresholds)
-    
+    else:
         alerts = {'overall': 'データなし', 'river': 'データなし', 'dam': 'データなし', 'rainfall': 'データなし'}
     
     # デモモード表示
