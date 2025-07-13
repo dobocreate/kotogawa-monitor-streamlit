@@ -1881,7 +1881,7 @@ class KotogawaMonitor:
         # デモモード時のY軸範囲設定
         if demo_mode:
             fig.update_yaxes(range=[0, 1200], secondary_y=False)  # 左軸（流入出量）：最大1200
-            fig.update_yaxes(range=[0, 300], secondary_y=True)  # 右軸（累加雨量）：最大300
+            fig.update_yaxes(range=[0, 300], dtick=25, secondary_y=True)  # 右軸（累加雨量）：最大300、間隔25mm
         
         # インタラクションが無効の場合は軸を固定
         if not enable_interaction:
