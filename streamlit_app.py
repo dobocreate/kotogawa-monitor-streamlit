@@ -1017,7 +1017,7 @@ class KotogawaMonitor:
                         if demo_mode:
                             filtered_history_data = history_data
                         else:
-                            time_min, time_max = self.get_common_time_range(history_data, display_hours)
+                            time_min, time_max = self.get_common_time_range(history_data, display_hours, demo_mode=False)
                             if time_min and time_max:
                                 filtered_history_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
                             else:
@@ -1238,20 +1238,42 @@ class KotogawaMonitor:
             # 空のカラム
             pass
     
-    def get_common_time_range(self, history_data: List[Dict[str, Any]], display_hours: int = 24) -> tuple:
+    def get_common_time_range(self, history_data: List[Dict[str, Any]], display_hours: int = 24, demo_mode: bool = False) -> tuple:
         """履歴データから共通の時間範囲を取得（将来予測値を考慮）"""
         if not history_data:
             return None, None
         
-        # 現在時刻（日本時間）
-        now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
-        
-        # 表示期間に基づいた開始時刻を計算
-        start_time = now_jst - timedelta(hours=display_hours)
-        
-        # 終了時刻は現在時刻+2時間（予測値表示のため）
-        time_min = start_time
-        time_max = now_jst + timedelta(hours=2)
+        if demo_mode:
+            # デモモード: サンプルデータの日時に基づいて時間範囲を計算
+            # 最新のタイムスタンプを取得
+            latest_timestamp = None
+            for data in history_data:
+                if data.get('timestamp'):
+                    try:
+                        ts = datetime.fromisoformat(data['timestamp'].replace('+09:00', ''))
+                        ts = ts.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                        if latest_timestamp is None or ts > latest_timestamp:
+                            latest_timestamp = ts
+                    except (ValueError, AttributeError):
+                        continue
+            
+            if latest_timestamp is None:
+                return None, None
+            
+            # デモモード用の時間範囲: 最新データ+1時間を終了時刻として、そこから表示期間分遡る
+            time_max = latest_timestamp + timedelta(hours=1)
+            time_min = time_max - timedelta(hours=display_hours)
+            
+        else:
+            # 通常モード: 現在時刻（日本時間）基準
+            now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
+            
+            # 表示期間に基づいた開始時刻を計算
+            start_time = now_jst - timedelta(hours=display_hours)
+            
+            # 終了時刻は現在時刻+2時間（予測値表示のため）
+            time_min = start_time
+            time_max = now_jst + timedelta(hours=2)
         
         return time_min, time_max
     
@@ -1290,7 +1312,7 @@ class KotogawaMonitor:
         if demo_mode:
             filtered_data = history_data
         else:
-            time_min, time_max = self.get_common_time_range(history_data, display_hours)
+            time_min, time_max = self.get_common_time_range(history_data, display_hours, demo_mode=False)
             if time_min and time_max:
                 filtered_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
             else:
@@ -1395,7 +1417,7 @@ class KotogawaMonitor:
         )
         
         # 共通の時間範囲を取得して設定
-        time_min, time_max = self.get_common_time_range(history_data, display_hours)
+        time_min, time_max = self.get_common_time_range(history_data, display_hours, demo_mode)
         xaxis_config = dict(
             title_text="時刻",
             title_font_size=12,
@@ -1441,7 +1463,7 @@ class KotogawaMonitor:
         if demo_mode:
             filtered_data = history_data
         else:
-            time_min, time_max = self.get_common_time_range(history_data, display_hours)
+            time_min, time_max = self.get_common_time_range(history_data, display_hours, demo_mode=False)
             if time_min and time_max:
                 filtered_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
             else:
@@ -1566,7 +1588,7 @@ class KotogawaMonitor:
             if demo_mode:
                 filtered_history_data = history_data
             else:
-                time_min_history, time_max_history = self.get_common_time_range(history_data, display_hours)
+                time_min_history, time_max_history = self.get_common_time_range(history_data, display_hours, demo_mode=False)
                 if time_min_history and time_max_history:
                     filtered_history_data = self.filter_data_by_time_range(history_data, time_min_history, time_max_history - timedelta(hours=2))
                 else:
@@ -1668,7 +1690,7 @@ class KotogawaMonitor:
         )
         
         # 共通の時間範囲を取得して設定
-        time_min, time_max = self.get_common_time_range(history_data, display_hours)
+        time_min, time_max = self.get_common_time_range(history_data, display_hours, demo_mode)
         xaxis_config = dict(
             title_text="時刻",
             title_font_size=12,
@@ -1714,7 +1736,7 @@ class KotogawaMonitor:
         if demo_mode:
             filtered_data = history_data
         else:
-            time_min, time_max = self.get_common_time_range(history_data, display_hours)
+            time_min, time_max = self.get_common_time_range(history_data, display_hours, demo_mode=False)
             if time_min and time_max:
                 filtered_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
             else:
@@ -1839,7 +1861,7 @@ class KotogawaMonitor:
         )
         
         # 共通の時間範囲を取得して設定
-        time_min, time_max = self.get_common_time_range(history_data, display_hours)
+        time_min, time_max = self.get_common_time_range(history_data, display_hours, demo_mode)
         xaxis_config = dict(
             title_text="時刻",
             title_font_size=12,
@@ -1976,7 +1998,7 @@ class KotogawaMonitor:
             if demo_mode:
                 filtered_history_data = history_data
             else:
-                time_min, time_max = self.get_common_time_range(history_data, display_hours)
+                time_min, time_max = self.get_common_time_range(history_data, display_hours, demo_mode=False)
                 if time_min and time_max:
                     filtered_history_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
                 else:
@@ -2031,7 +2053,7 @@ class KotogawaMonitor:
         # 軸設定 - 履歴データから共通の時間範囲を取得
         time_min, time_max = None, None
         if history_data:
-            time_min, time_max = self.get_common_time_range(history_data, display_hours)
+            time_min, time_max = self.get_common_time_range(history_data, display_hours, demo_mode=False)
         
         xaxis_config = dict(
             title_text="時刻",
