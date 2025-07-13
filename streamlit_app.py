@@ -2184,10 +2184,15 @@ def main():
         # QRコード表示
         st.markdown("---")
         st.markdown("**📱 QRコード**")
-        try:
-            st.image("qr-code.png", width=150, caption="厚東川監視システム")
-        except FileNotFoundError:
-            st.warning("QRコードファイル（qr-code.png）が見つかりません")
+        qr_code_path = Path("qr-code.png")
+        if qr_code_path.exists():
+            try:
+                with open(qr_code_path, "rb") as qr_file:
+                    st.image(qr_file.read(), width=150, caption="厚東川監視システム")
+            except Exception as e:
+                st.info("QRコードが利用できません")
+        else:
+            st.info("QRコードファイルが見つかりません")
     
     # アラート閾値設定
     with st.sidebar.expander("アラート設定", expanded=False):
