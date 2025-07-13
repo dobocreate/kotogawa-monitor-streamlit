@@ -276,8 +276,8 @@ class KotogawaMonitor:
             
         return history_data
     
-    def load_sample_csv_data(self) -> Dict[str, Any]:
-        """サンプルCSVファイルを読み込んでJSON形式に変換"""
+    def load_sample_csv_data(self) -> List[Dict[str, Any]]:
+        """サンプルCSVファイルを読み込んで通常モードと同じJSON形式に変換"""
         import pandas as pd
         from datetime import datetime
         
@@ -295,9 +295,14 @@ class KotogawaMonitor:
             water_df = pd.read_csv(water_csv_path, encoding='shift_jis', skiprows=6)
             water_df.columns = ['timestamp', 'water_level', 'level_change']
             
-            # データクリーニング：空の値を0に変換
+            # データクリーニング：空の値を適切に処理
             dam_df['hourly_rain'] = pd.to_numeric(dam_df['hourly_rain'], errors='coerce').fillna(0)
             dam_df['cumulative_rain'] = pd.to_numeric(dam_df['cumulative_rain'], errors='coerce').fillna(0)
+            dam_df['water_level'] = pd.to_numeric(dam_df['water_level'], errors='coerce')
+            dam_df['storage_rate'] = pd.to_numeric(dam_df['storage_rate'], errors='coerce')
+            dam_df['inflow'] = pd.to_numeric(dam_df['inflow'], errors='coerce')
+            dam_df['outflow'] = pd.to_numeric(dam_df['outflow'], errors='coerce')
+            
             water_df['water_level'] = pd.to_numeric(water_df['water_level'], errors='coerce')
             water_df['level_change'] = pd.to_numeric(water_df['level_change'], errors='coerce').fillna(0)
             
@@ -305,21 +310,23 @@ class KotogawaMonitor:
             sample_data = []
             
             for idx, row in dam_df.iterrows():
-                timestamp_str = row['timestamp'].strip()
-                if pd.isna(timestamp_str) or timestamp_str == '':
+                timestamp_str = str(row['timestamp']).strip()
+                if pd.isna(timestamp_str) or timestamp_str == '' or timestamp_str == 'nan':
                     continue
                     
-                # タイムスタンプの解析
+                # タイムスタンプの解析とISO形式への変換
                 try:
+                    # CSVの形式: ' 2023/06/25 00:10'
                     dt = datetime.strptime(timestamp_str, ' %Y/%m/%d %H:%M')
-                    formatted_timestamp = dt.strftime('%Y-%m-%d %H:%M:%S')
-                except:
+                    # ISO形式に変換（JSTタイムゾーン付き）
+                    formatted_timestamp = dt.strftime('%Y-%m-%dT%H:%M:%S+09:00')
+                except Exception as e:
                     continue
                 
                 # 対応する河川データを探す
                 water_row = water_df[water_df['timestamp'] == timestamp_str]
                 
-                # JSON形式のデータ構造に変換
+                # 通常モードと同じJSON形式のデータ構造に変換
                 data_point = {
                     'timestamp': formatted_timestamp,
                     'data_time': formatted_timestamp,
@@ -327,25 +334,61 @@ class KotogawaMonitor:
                         'water_level': float(row['water_level']) if pd.notna(row['water_level']) else None,
                         'storage_rate': float(row['storage_rate']) if pd.notna(row['storage_rate']) else None,
                         'inflow': float(row['inflow']) if pd.notna(row['inflow']) else None,
-                        'outflow': float(row['outflow']) if pd.notna(row['outflow']) else None
+                        'outflow': float(row['outflow']) if pd.notna(row['outflow']) else None,
+                        'storage_change': None  # サンプルデータには含まれない
                     },
                     'river': {
                         'water_level': float(water_row['water_level'].iloc[0]) if not water_row.empty and pd.notna(water_row['water_level'].iloc[0]) else None,
-                        'level_change': float(water_row['level_change'].iloc[0]) if not water_row.empty and pd.notna(water_row['level_change'].iloc[0]) else None,
+                        'level_change': float(water_row['level_change'].iloc[0]) if not water_row.empty and pd.notna(water_row['level_change'].iloc[0]) else 0.0,
                         'status': '正常'  # サンプルデータでは常に正常とする
                     },
                     'rainfall': {
                         'hourly': int(row['hourly_rain']) if pd.notna(row['hourly_rain']) else 0,
-                        'cumulative': int(row['cumulative_rain']) if pd.notna(row['cumulative_rain']) else 0
+                        'cumulative': int(row['cumulative_rain']) if pd.notna(row['cumulative_rain']) else 0,
+                        'change': 0  # 通常データとの互換性のため
+                    },
+                    # ダミーの天気データ（グラフ描画に必要）
+                    'weather': {
+                        'today': {
+                            'weather_code': '100',
+                            'weather_text': 'サンプルデータ',
+                            'temp_max': None,
+                            'temp_min': None,
+                            'precipitation_probability': [0],
+                            'precipitation_times': ['']
+                        },
+                        'tomorrow': {
+                            'weather_code': '100',
+                            'weather_text': 'サンプルデータ',
+                            'temp_max': None,
+                            'temp_min': None,
+                            'precipitation_probability': [0],
+                            'precipitation_times': ['']
+                        },
+                        'update_time': formatted_timestamp,
+                        'weekly_forecast': []
+                    },
+                    # ダミーの降水強度データ
+                    'precipitation_intensity': {
+                        'observation': [],
+                        'forecast': [],
+                        'update_time': formatted_timestamp
                     }
                 }
                 
                 sample_data.append(data_point)
             
+            if sample_data:
+                st.success(f"サンプルデータを読み込みました: {len(sample_data)}件")
+            else:
+                st.warning("サンプルデータの読み込みに失敗しました")
+            
             return sample_data
             
         except Exception as e:
             st.error(f"サンプルCSVファイルの読み込みエラー: {e}")
+            import traceback
+            st.error(f"詳細エラー: {traceback.format_exc()}")
             return []
     
     def check_alert_status(self, data: Dict[str, Any], thresholds: Dict[str, float]) -> Dict[str, str]:
@@ -905,12 +948,15 @@ class KotogawaMonitor:
                         # 履歴データから観測値を収集
                         all_observations = []
                         update_time = None
-                        # 表示期間に基づいてデータをフィルタリング
-                        time_min, time_max = self.get_common_time_range(history_data, display_hours)
-                        if time_min and time_max:
-                            filtered_history_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
-                        else:
+                        # 表示期間に基づいてデータをフィルタリング（デモモード時はスキップ）
+                        if demo_mode:
                             filtered_history_data = history_data
+                        else:
+                            time_min, time_max = self.get_common_time_range(history_data, display_hours)
+                            if time_min and time_max:
+                                filtered_history_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
+                            else:
+                                filtered_history_data = history_data
                         
                         for item in filtered_history_data:
                             precip_data = item.get('precipitation_intensity', {})
@@ -1326,12 +1372,15 @@ class KotogawaMonitor:
         # 現在時刻を取得（予測データ処理で使用）
         now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
         
-        # 表示期間に基づいてデータをフィルタリング
-        time_min, time_max = self.get_common_time_range(history_data, display_hours)
-        if time_min and time_max:
-            filtered_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
-        else:
+        # 表示期間に基づいてデータをフィルタリング（デモモード時はスキップ）
+        if demo_mode:
             filtered_data = history_data
+        else:
+            time_min, time_max = self.get_common_time_range(history_data, display_hours)
+            if time_min and time_max:
+                filtered_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
+            else:
+                filtered_data = history_data
         
         if not filtered_data:
             fig = go.Figure()
@@ -1448,12 +1497,15 @@ class KotogawaMonitor:
         
         # APIデータがない場合は履歴データから観測値を取得
         if not obs_times and history_data:
-            # 表示期間に基づいてデータをフィルタリング
-            time_min_history, time_max_history = self.get_common_time_range(history_data, display_hours)
-            if time_min_history and time_max_history:
-                filtered_history_data = self.filter_data_by_time_range(history_data, time_min_history, time_max_history - timedelta(hours=2))
-            else:
+            # 表示期間に基づいてデータをフィルタリング（デモモード時はスキップ）
+            if demo_mode:
                 filtered_history_data = history_data
+            else:
+                time_min_history, time_max_history = self.get_common_time_range(history_data, display_hours)
+                if time_min_history and time_max_history:
+                    filtered_history_data = self.filter_data_by_time_range(history_data, time_min_history, time_max_history - timedelta(hours=2))
+                else:
+                    filtered_history_data = history_data
             
             for item in filtered_history_data:
                 precip_data = item.get('precipitation_intensity', {})
@@ -1593,12 +1645,15 @@ class KotogawaMonitor:
         # 現在時刻を取得
         now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
         
-        # 表示期間に基づいてデータをフィルタリング
-        time_min, time_max = self.get_common_time_range(history_data, display_hours)
-        if time_min and time_max:
-            filtered_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
-        else:
+        # 表示期間に基づいてデータをフィルタリング（デモモード時はスキップ）
+        if demo_mode:
             filtered_data = history_data
+        else:
+            time_min, time_max = self.get_common_time_range(history_data, display_hours)
+            if time_min and time_max:
+                filtered_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
+            else:
+                filtered_data = history_data
         
         if not filtered_data:
             fig = go.Figure()
@@ -1852,10 +1907,13 @@ class KotogawaMonitor:
             rainfall_times = []
             rainfall_values = []
             
-            # 表示期間に基づいてデータをフィルタリング
-            time_min, time_max = self.get_common_time_range(history_data, display_hours)
-            if time_min and time_max:
-                filtered_history_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
+            # 表示期間に基づいてデータをフィルタリング（デモモード時はスキップ）
+            if demo_mode:
+                filtered_history_data = history_data
+            else:
+                time_min, time_max = self.get_common_time_range(history_data, display_hours)
+                if time_min and time_max:
+                    filtered_history_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
             else:
                 filtered_history_data = history_data
             
