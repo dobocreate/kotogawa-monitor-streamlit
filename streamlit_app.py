@@ -286,8 +286,6 @@ class KotogawaMonitor:
         water_csv_path = Path("sample/water-level_20230625-20230702.csv")
         
         try:
-            st.info("🔍 デバッグ: サンプルCSVファイルの読み込みを開始...")
-            
             # ファイル存在確認
             if not dam_csv_path.exists():
                 st.error(f"❌ ダムCSVファイルが見つかりません: {dam_csv_path}")
@@ -296,20 +294,14 @@ class KotogawaMonitor:
                 st.error(f"❌ 河川CSVファイルが見つかりません: {water_csv_path}")
                 return []
             
-            st.success(f"✅ CSVファイルが見つかりました")
-            
             # ダムデータの読み込み（Shift-JISエンコーディング）
-            st.info("📊 ダムデータを読み込み中...")
             dam_df = pd.read_csv(dam_csv_path, encoding='shift_jis', skiprows=7)
-            st.info(f"ダムデータ読み込み完了: {len(dam_df)}行")
             
             dam_df.columns = ['timestamp', 'hourly_rain', 'cumulative_rain', 'water_level', 
                              'storage_rate', 'inflow', 'outflow', 'storage_change']
             
             # 河川水位データの読み込み（Shift-JISエンコーディング）
-            st.info("🌊 河川データを読み込み中...")
             water_df = pd.read_csv(water_csv_path, encoding='shift_jis', skiprows=6)
-            st.info(f"河川データ読み込み完了: {len(water_df)}行")
             
             water_df.columns = ['timestamp', 'water_level', 'level_change']
             
@@ -328,16 +320,10 @@ class KotogawaMonitor:
             water_df['level_change'] = pd.to_numeric(water_df['level_change'], errors='coerce').fillna(0)
             
             # データの結合と変換
-            st.info("🔄 データ変換を開始...")
             sample_data = []
             processed_count = 0
             error_count = 0
             
-            # 先頭数行を表示してデバッグ
-            st.info("📋 ダムデータの先頭5行:")
-            st.dataframe(dam_df.head())
-            st.info("📋 河川データの先頭5行:")
-            st.dataframe(water_df.head())
             
             for idx, row in dam_df.iterrows():
                 timestamp_str = str(row['timestamp']).strip()
@@ -348,8 +334,6 @@ class KotogawaMonitor:
                 # 先頭と末尾の全角スペースや半角スペースのみを削除して標準化
                 clean_timestamp = timestamp_str.replace('　', '').strip()
                 
-                if processed_count < 5:  # 最初の5件のデバッグ情報を表示
-                    st.info(f"🔍 処理中 {processed_count + 1}: 元タイムスタンプ='{timestamp_str}', クリーン='{clean_timestamp}'")
                     
                 # タイムスタンプの解析とISO形式への変換
                 dt = None
@@ -366,32 +350,23 @@ class KotogawaMonitor:
                         formatted_timestamp = dt.strftime('%Y-%m-%dT%H:%M:%S+09:00')
                         
                         if processed_count < 5:
-                            st.success(f"✅ タイムスタンプ変換成功 (形式: {fmt}): {formatted_timestamp}")
                         break
                         
                     except ValueError:
                         if processed_count < 5:
-                            st.warning(f"⚠️ 形式 '{fmt}' で解析失敗")
                         continue
                 
                 if dt is None:
                     error_count += 1
                     if processed_count < 5:
-                        st.error(f"❌ 全ての形式で解析失敗: '{timestamp_str}' (長さ: {len(timestamp_str)}文字)")
-                        # 文字の詳細表示
-                        char_info = [f"'{c}' ({ord(c)})" for c in timestamp_str[:20]]  # 最初の20文字
-                        st.error(f"文字詳細: {', '.join(char_info)}")
                     continue
                 
                 # 対応する河川データを探す（クリーニング済みタイムスタンプでマッチング）
                 water_row = water_df[water_df['clean_timestamp'] == clean_timestamp]
                 
-                if processed_count < 5:  # デバッグ出力
                     if not water_row.empty:
                         river_level = water_row['water_level'].iloc[0]
-                        st.success(f"🌊 河川データマッチ成功: 水位={river_level}m")
                     else:
-                        st.warning(f"⚠️ 河川データマッチ失敗: '{clean_timestamp}'")
                 
                 # 通常モードと同じJSON形式のデータ構造に変換
                 data_point = {
@@ -1908,7 +1883,7 @@ class KotogawaMonitor:
         # デモモード時のY軸範囲設定
         if demo_mode:
             fig.update_yaxes(range=[0, 1200], secondary_y=False)  # 左軸（流入出量）：最大1200
-            fig.update_yaxes(range=[0, 300], secondary_y=True)  # 右軸（累加雨量）：最大300
+            fig.update_yaxes(range=[0, 300], dtick=25, secondary_y=True)  # 右軸（累加雨量）：最大300、間隔25mm
         
         # インタラクションが無効の場合は軸を固定
         if not enable_interaction:
