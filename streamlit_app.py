@@ -342,22 +342,42 @@ class KotogawaMonitor:
                     continue
                 
                 if processed_count < 5:  # 最初の5件のデバッグ情報を表示
-                    st.info(f"🔍 処理中 {processed_count + 1}: タイムスタンプ='{timestamp_str}'")
+                    st.info(f"🔍 処理中 {processed_count + 1}: 元タイムスタンプ='{timestamp_str}', クリーン='{clean_timestamp}'")
                     
                 # タイムスタンプの解析とISO形式への変換
-                try:
-                    # CSVの形式: ' 2023/06/25 00:10'
-                    dt = datetime.strptime(timestamp_str, ' %Y/%m/%d %H:%M')
-                    # ISO形式に変換（JSTタイムゾーン付き）
-                    formatted_timestamp = dt.strftime('%Y-%m-%dT%H:%M:%S+09:00')
-                    
-                    if processed_count < 5:
-                        st.success(f"✅ タイムスタンプ変換成功: {formatted_timestamp}")
+                dt = None
+                formatted_timestamp = None
+                
+                # 複数の形式を試行（全角スペースや半角スペースを考慮）
+                # 先頭と末尾の全角スペースや半角スペースのみを削除して標準化
+                clean_timestamp = timestamp_str.replace('　', '').strip()
+                
+                timestamp_formats = [
+                    '%Y/%m/%d %H:%M',    # 標準形式: '2023/06/25 00:20'
+                    '%Y/%m/%d %H:%M:%S', # 秒あり: '2023/06/25 00:20:00'
+                ]
+                
+                for fmt in timestamp_formats:
+                    try:
+                        dt = datetime.strptime(clean_timestamp, fmt)
+                        formatted_timestamp = dt.strftime('%Y-%m-%dT%H:%M:%S+09:00')
                         
-                except Exception as e:
+                        if processed_count < 5:
+                            st.success(f"✅ タイムスタンプ変換成功 (形式: {fmt}): {formatted_timestamp}")
+                        break
+                        
+                    except ValueError:
+                        if processed_count < 5:
+                            st.warning(f"⚠️ 形式 '{fmt}' で解析失敗")
+                        continue
+                
+                if dt is None:
                     error_count += 1
                     if processed_count < 5:
-                        st.error(f"❌ タイムスタンプ解析エラー: {e}")
+                        st.error(f"❌ 全ての形式で解析失敗: '{timestamp_str}' (長さ: {len(timestamp_str)}文字)")
+                        # 文字の詳細表示
+                        char_info = [f"'{c}' ({ord(c)})" for c in timestamp_str[:20]]  # 最初の20文字
+                        st.error(f"文字詳細: {', '.join(char_info)}")
                     continue
                 
                 # 対応する河川データを探す
