@@ -2130,7 +2130,7 @@ def main():
                 index=1,  # デフォルトは60分
                 format_func=lambda x: x[0]
             )
-        
+        else:
             # 本運用モード: 通常の監視間隔
             refresh_interval = st.selectbox(
                 "自動更新間隔",
