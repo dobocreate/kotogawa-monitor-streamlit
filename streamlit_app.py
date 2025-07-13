@@ -341,16 +341,16 @@ class KotogawaMonitor:
                 if pd.isna(timestamp_str) or timestamp_str == '' or timestamp_str == 'nan':
                     continue
                 
+                # 複数の形式を試行（全角スペースや半角スペースを考慮）
+                # 先頭と末尾の全角スペースや半角スペースのみを削除して標準化
+                clean_timestamp = timestamp_str.replace('　', '').strip()
+                
                 if processed_count < 5:  # 最初の5件のデバッグ情報を表示
                     st.info(f"🔍 処理中 {processed_count + 1}: 元タイムスタンプ='{timestamp_str}', クリーン='{clean_timestamp}'")
                     
                 # タイムスタンプの解析とISO形式への変換
                 dt = None
                 formatted_timestamp = None
-                
-                # 複数の形式を試行（全角スペースや半角スペースを考慮）
-                # 先頭と末尾の全角スペースや半角スペースのみを削除して標準化
-                clean_timestamp = timestamp_str.replace('　', '').strip()
                 
                 timestamp_formats = [
                     '%Y/%m/%d %H:%M',    # 標準形式: '2023/06/25 00:20'
