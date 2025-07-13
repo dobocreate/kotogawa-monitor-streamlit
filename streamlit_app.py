@@ -295,6 +295,12 @@ class KotogawaMonitor:
             water_df = pd.read_csv(water_csv_path, encoding='shift_jis', skiprows=6)
             water_df.columns = ['timestamp', 'water_level', 'level_change']
             
+            # データクリーニング：空の値を0に変換
+            dam_df['hourly_rain'] = pd.to_numeric(dam_df['hourly_rain'], errors='coerce').fillna(0)
+            dam_df['cumulative_rain'] = pd.to_numeric(dam_df['cumulative_rain'], errors='coerce').fillna(0)
+            water_df['water_level'] = pd.to_numeric(water_df['water_level'], errors='coerce')
+            water_df['level_change'] = pd.to_numeric(water_df['level_change'], errors='coerce').fillna(0)
+            
             # データの結合と変換
             sample_data = []
             
@@ -833,7 +839,7 @@ class KotogawaMonitor:
         
         st.markdown("---")
     
-    def create_data_analysis_display(self, history_data: List[Dict[str, Any]], enable_graph_interaction: bool, display_hours: int = 24) -> None:
+    def create_data_analysis_display(self, history_data: List[Dict[str, Any]], enable_graph_interaction: bool, display_hours: int = 24, demo_mode: bool = False) -> None:
         """データ分析セクションを表示する"""
         # データ分析セクション
         st.markdown("## データ分析")
@@ -857,12 +863,12 @@ class KotogawaMonitor:
             
             with col1:
                 st.subheader("河川水位・全放流量")
-                fig1 = self.create_river_water_level_graph(history_data, enable_graph_interaction, display_hours)
+                fig1 = self.create_river_water_level_graph(history_data, enable_graph_interaction, display_hours, demo_mode)
                 st.plotly_chart(fig1, use_container_width=True, config=plotly_config, key="river_water_level_chart")
             
             with col2:
                 st.subheader("ダム流入出量・累加雨量")
-                fig2 = self.create_dam_flow_graph(history_data, enable_graph_interaction, display_hours)
+                fig2 = self.create_dam_flow_graph(history_data, enable_graph_interaction, display_hours, demo_mode)
                 st.plotly_chart(fig2, use_container_width=True, config=plotly_config, key="dam_flow_chart")
             
             # 2行目
@@ -879,7 +885,7 @@ class KotogawaMonitor:
                 except:
                     pass
                 
-                fig3 = self.create_dam_water_level_graph(history_data, enable_graph_interaction, latest_precipitation_data, display_hours)
+                fig3 = self.create_dam_water_level_graph(history_data, enable_graph_interaction, latest_precipitation_data, display_hours, demo_mode)
                 st.plotly_chart(fig3, use_container_width=True, config=plotly_config, key="dam_water_level_chart")
             
             with col4:
@@ -939,7 +945,7 @@ class KotogawaMonitor:
                 ):
                     st.subheader("降水強度・時間雨量")
                     
-                    fig4 = self.create_precipitation_intensity_graph(latest_api_precipitation_data, enable_graph_interaction, history_data, display_hours)
+                    fig4 = self.create_precipitation_intensity_graph(latest_api_precipitation_data, enable_graph_interaction, history_data, display_hours, demo_mode)
                     st.plotly_chart(fig4, use_container_width=True, config=plotly_config, key="precipitation_intensity_chart")
         
         with tab2:
@@ -1164,17 +1170,20 @@ class KotogawaMonitor:
         
         return filtered_data
     
-    def create_river_water_level_graph(self, history_data: List[Dict[str, Any]], enable_interaction: bool = False, display_hours: int = 24) -> go.Figure:
+    def create_river_water_level_graph(self, history_data: List[Dict[str, Any]], enable_interaction: bool = False, display_hours: int = 24, demo_mode: bool = False) -> go.Figure:
         """河川水位グラフを作成（河川水位 + ダム全放流量の二軸表示）"""
         # 現在時刻を取得
         now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
         
-        # 表示期間に基づいてデータをフィルタリング
-        time_min, time_max = self.get_common_time_range(history_data, display_hours)
-        if time_min and time_max:
-            filtered_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
-        else:
+        # 表示期間に基づいてデータをフィルタリング（デモモード時はスキップ）
+        if demo_mode:
             filtered_data = history_data
+        else:
+            time_min, time_max = self.get_common_time_range(history_data, display_hours)
+            if time_min and time_max:
+                filtered_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
+            else:
+                filtered_data = history_data
         
         if not filtered_data:
             fig = go.Figure()
@@ -1312,7 +1321,7 @@ class KotogawaMonitor:
         
         return fig
     
-    def create_dam_water_level_graph(self, history_data: List[Dict[str, Any]], enable_interaction: bool = False, latest_precipitation_data: Dict[str, Any] = None, display_hours: int = 24) -> go.Figure:
+    def create_dam_water_level_graph(self, history_data: List[Dict[str, Any]], enable_interaction: bool = False, latest_precipitation_data: Dict[str, Any] = None, display_hours: int = 24, demo_mode: bool = False) -> go.Figure:
         """ダム水位グラフを作成（ダム水位 + 時間雨量の二軸表示）"""
         # 現在時刻を取得（予測データ処理で使用）
         now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
@@ -1579,7 +1588,7 @@ class KotogawaMonitor:
         
         return fig
     
-    def create_dam_flow_graph(self, history_data: List[Dict[str, Any]], enable_interaction: bool = False, display_hours: int = 24) -> go.Figure:
+    def create_dam_flow_graph(self, history_data: List[Dict[str, Any]], enable_interaction: bool = False, display_hours: int = 24, demo_mode: bool = False) -> go.Figure:
         """ダム流入出量グラフを作成（流入量・全放流量 + 累加雨量の二軸表示）"""
         # 現在時刻を取得
         now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
@@ -1747,7 +1756,7 @@ class KotogawaMonitor:
         
         return fig
     
-    def create_precipitation_intensity_graph(self, precipitation_data: Dict[str, Any], enable_interaction: bool = True, history_data: List[Dict[str, Any]] = None, display_hours: int = 24) -> go.Figure:
+    def create_precipitation_intensity_graph(self, precipitation_data: Dict[str, Any], enable_interaction: bool = True, history_data: List[Dict[str, Any]] = None, display_hours: int = 24, demo_mode: bool = False) -> go.Figure:
         """降水強度グラフを作成"""
         from plotly.subplots import make_subplots
         fig = make_subplots(specs=[[{"secondary_y": True}]])
@@ -2175,7 +2184,7 @@ def main():
         monitor.create_weather_forecast_display(latest_data, show_weekly_weather)
     
     # データ分析表示
-    monitor.create_data_analysis_display(history_data, enable_graph_interaction, display_hours)
+    monitor.create_data_analysis_display(history_data, enable_graph_interaction, display_hours, demo_mode)
     
     # システム情報（サイドバー）
     with st.sidebar.expander("システム情報", expanded=True):
