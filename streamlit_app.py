@@ -276,6 +276,72 @@ class KotogawaMonitor:
             
         return history_data
     
+    def load_sample_csv_data(self) -> Dict[str, Any]:
+        """サンプルCSVファイルを読み込んでJSON形式に変換"""
+        import pandas as pd
+        from datetime import datetime
+        
+        # CSVファイルのパス
+        dam_csv_path = Path("sample/dam_20230625-20230702.csv")
+        water_csv_path = Path("sample/water-level_20230625-20230702.csv")
+        
+        try:
+            # ダムデータの読み込み（Shift-JISエンコーディング）
+            dam_df = pd.read_csv(dam_csv_path, encoding='shift_jis', skiprows=7)
+            dam_df.columns = ['timestamp', 'hourly_rain', 'cumulative_rain', 'water_level', 
+                             'storage_rate', 'inflow', 'outflow', 'storage_change']
+            
+            # 河川水位データの読み込み（Shift-JISエンコーディング）
+            water_df = pd.read_csv(water_csv_path, encoding='shift_jis', skiprows=6)
+            water_df.columns = ['timestamp', 'water_level', 'level_change']
+            
+            # データの結合と変換
+            sample_data = []
+            
+            for idx, row in dam_df.iterrows():
+                timestamp_str = row['timestamp'].strip()
+                if pd.isna(timestamp_str) or timestamp_str == '':
+                    continue
+                    
+                # タイムスタンプの解析
+                try:
+                    dt = datetime.strptime(timestamp_str, ' %Y/%m/%d %H:%M')
+                    formatted_timestamp = dt.strftime('%Y-%m-%d %H:%M:%S')
+                except:
+                    continue
+                
+                # 対応する河川データを探す
+                water_row = water_df[water_df['timestamp'] == timestamp_str]
+                
+                # JSON形式のデータ構造に変換
+                data_point = {
+                    'timestamp': formatted_timestamp,
+                    'data_time': formatted_timestamp,
+                    'dam': {
+                        'water_level': float(row['water_level']) if pd.notna(row['water_level']) else None,
+                        'storage_rate': float(row['storage_rate']) if pd.notna(row['storage_rate']) else None,
+                        'inflow': float(row['inflow']) if pd.notna(row['inflow']) else None,
+                        'outflow': float(row['outflow']) if pd.notna(row['outflow']) else None
+                    },
+                    'river': {
+                        'water_level': float(water_row['water_level'].iloc[0]) if not water_row.empty and pd.notna(water_row['water_level'].iloc[0]) else None,
+                        'level_change': float(water_row['level_change'].iloc[0]) if not water_row.empty and pd.notna(water_row['level_change'].iloc[0]) else None,
+                        'status': '正常'  # サンプルデータでは常に正常とする
+                    },
+                    'rainfall': {
+                        'hourly': int(row['hourly_rain']) if pd.notna(row['hourly_rain']) else 0,
+                        'cumulative': int(row['cumulative_rain']) if pd.notna(row['cumulative_rain']) else 0
+                    }
+                }
+                
+                sample_data.append(data_point)
+            
+            return sample_data
+            
+        except Exception as e:
+            st.error(f"サンプルCSVファイルの読み込みエラー: {e}")
+            return []
+    
     def check_alert_status(self, data: Dict[str, Any], thresholds: Dict[str, float]) -> Dict[str, str]:
         """アラート状態をチェック"""
         alerts = {
@@ -1954,6 +2020,13 @@ def main():
             value=True,
             help="チェックを外すと週間天気予報を非表示にします"
         )
+        
+        # デモモード設定
+        demo_mode = st.checkbox(
+            "デモモード",
+            value=False,
+            help="過去の河川・ダムデータ（2023/6/25-7/2）を表示します"
+        )
     
     # アラート閾値設定
     with st.sidebar.expander("アラート設定", expanded=False):
@@ -1972,8 +2045,8 @@ def main():
     # システムヘッダーの表示
     st.markdown('<h1 style="text-align: center; margin-top: 0; margin-bottom: 1rem;">厚東川氾濫監視システムv2.0</h1>', unsafe_allow_html=True)
     
-    # 自動更新の実行（ヘッダーの後に配置）
-    if refresh_interval[1] > 0:
+    # 自動更新の実行（ヘッダーの後に配置）- デモモード時は無効化
+    if refresh_interval[1] > 0 and not demo_mode:
         count = st_autorefresh(
             interval=refresh_interval[1],
             limit=None,
@@ -1981,25 +2054,42 @@ def main():
         )
     
     # データ読み込み
-    with st.spinner('データを更新中...'):
-        latest_data = monitor.load_latest_data()
-    
-    # キャッシュキー取得
-    cache_key = monitor.get_cache_key()
-    
-    # 履歴データの読み込み
-    try:
-        with st.spinner("履歴データを読み込み中..."):
-            history_data = monitor.load_history_data(72, cache_key)
-    except Exception as e:
-        st.warning(f"履歴データの読み込みに失敗しました: {e}")
-        history_data = []
+    if demo_mode:
+        # デモモードの場合はサンプルデータを読み込む
+        with st.spinner('デモデータを読み込み中...'):
+            sample_data = monitor.load_sample_csv_data()
+            if sample_data:
+                latest_data = sample_data[-1]  # 最新のデータポイントを取得
+                history_data = sample_data
+            else:
+                latest_data = None
+                history_data = []
+        cache_key = "demo_mode"
+    else:
+        # 通常モード
+        with st.spinner('データを更新中...'):
+            latest_data = monitor.load_latest_data()
+        
+        # キャッシュキー取得
+        cache_key = monitor.get_cache_key()
+        
+        # 履歴データの読み込み
+        try:
+            with st.spinner("履歴データを読み込み中..."):
+                history_data = monitor.load_history_data(72, cache_key)
+        except Exception as e:
+            st.warning(f"履歴データの読み込みに失敗しました: {e}")
+            history_data = []
     
     # アラート状態の取得
     if latest_data:
         alerts = monitor.check_alert_status(latest_data, thresholds)
     else:
         alerts = {'overall': 'データなし', 'river': 'データなし', 'dam': 'データなし', 'rainfall': 'データなし'}
+    
+    # デモモード表示
+    if demo_mode:
+        st.info("📊 デモデータ表示中（2023年6月25日〜7月2日）")
     
     if latest_data:
         # 状態、更新時間、API取得時間を3列で表示
