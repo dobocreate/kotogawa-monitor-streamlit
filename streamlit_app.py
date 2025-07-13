@@ -1914,8 +1914,8 @@ class KotogawaMonitor:
                 time_min, time_max = self.get_common_time_range(history_data, display_hours)
                 if time_min and time_max:
                     filtered_history_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
-            else:
-                filtered_history_data = history_data
+                else:
+                    filtered_history_data = history_data
             
             for item in filtered_history_data:
                 # 観測時刻（data_time）を使用、なければtimestampを使用
