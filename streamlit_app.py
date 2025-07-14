@@ -779,10 +779,10 @@ class KotogawaMonitor:
         # レスポンシブ用のCSS
         st.markdown("""
         <style>
-            /* デフォルト（デスクトップ）: 7列表示 */
+            /* デフォルト（デスクトップ）: 6列表示 */
             .weekly-forecast-container {
                 display: grid;
-                grid-template-columns: repeat(7, 1fr);
+                grid-template-columns: repeat(6, 1fr);
                 gap: 10px;
             }
             
@@ -855,7 +855,7 @@ class KotogawaMonitor:
                 'Fri': '金', 'Sat': '土', 'Sun': '日'
             }
             
-            for day_data in weekly_forecast[:7]:
+            for day_data in weekly_forecast[1:7]:
                 html_content += '<div class="weather-day-item">'
                 
                 # 日付と曜日
@@ -1645,7 +1645,7 @@ class KotogawaMonitor:
                 go.Bar(
                     x=obs_times,
                     y=obs_intensities,
-                    name='降水強度・観測値（厚東川ダムbyYahoo!）',
+                    name='降水強度・観測値（厚東川ダム by Yahoo!）',
                     marker_color='#DC143C',
                     opacity=0.8,
                     width=600000,
@@ -1679,7 +1679,7 @@ class KotogawaMonitor:
                         go.Bar(
                             x=forecast_times,
                             y=forecast_intensities,
-                            name='降水強度・予測値（厚東川ダムbyYahoo!）',
+                            name='降水強度・予測値（厚東川ダム by Yahoo!）',
                             marker_color='#FF1493',
                             opacity=0.6,
                             width=600000,
@@ -1994,7 +1994,7 @@ class KotogawaMonitor:
             fig.add_trace(go.Bar(
                 x=obs_times,
                 y=obs_intensities,
-                name='降水強度・観測値（厚東川ダムbyYahoo!）',
+                name='降水強度・観測値（厚東川ダム by Yahoo!）',
                 marker=dict(color='#DC143C'),
                 hovertemplate='<b>観測値</b><br>%{x|%H:%M}<br>降水強度: %{y:.1f} mm/h<extra></extra>',
                 width=600000
@@ -2005,7 +2005,7 @@ class KotogawaMonitor:
             fig.add_trace(go.Bar(
                 x=forecast_times,
                 y=forecast_intensities,
-                name='降水強度・予測値（厚東川ダムbyYahoo!）',
+                name='降水強度・予測値（厚東川ダム by Yahoo!）',
                 marker=dict(color='#FF1493', opacity=0.7),
                 hovertemplate='<b>予測値</b><br>%{x|%H:%M}<br>降水強度: %{y:.1f} mm/h<extra></extra>',
                 width=600000
