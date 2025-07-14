@@ -1243,8 +1243,8 @@ class KotogawaMonitor:
             if latest_timestamp is None:
                 return None, None
             
-            # デモモード用の時間範囲: 最新データ+1時間を終了時刻として、そこから表示期間分遡る
-            time_max = latest_timestamp + timedelta(hours=1)
+            # デモモード用の時間範囲: 最新データ+3時間を終了時刻として、そこから表示期間分遡る
+            time_max = latest_timestamp + timedelta(hours=3)
             time_min = time_max - timedelta(hours=display_hours)
             
         else:
@@ -2238,7 +2238,15 @@ def main():
     
     # デモモード表示
     if demo_mode:
-        st.info("📊 デモデータ表示中（2023年6月25日〜7月2日）")
+        # 動的な時間範囲を計算
+        time_min, time_max = monitor.get_common_time_range(history_data, display_hours, demo_mode)
+        if time_min and time_max:
+            # 日本時間で表示
+            time_min_jst = time_min.strftime("%Y年%m月%d日")
+            time_max_jst = time_max.strftime("%Y年%m月%d日")
+            st.info(f"📊 デモデータ表示中（{time_min_jst}〜{time_max_jst}）")
+        else:
+            st.info("📊 デモデータ表示中")
     
     if latest_data:
         # 状態、更新時間、API取得時間を3列で表示
