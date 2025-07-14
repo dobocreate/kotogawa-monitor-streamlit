@@ -986,6 +986,15 @@ class KotogawaMonitor:
                 st.plotly_chart(fig3, use_container_width=True, config=plotly_config, key="dam_water_level_chart")
             
             with col4:
+                st.subheader("ダム放流量・時間雨量")
+                # 最新の降水強度データを取得（ダム貯水位と同じものを使用）
+                fig4 = self.create_dam_discharge_rainfall_graph(history_data, enable_graph_interaction, latest_precipitation_data, display_hours, demo_mode)
+                st.plotly_chart(fig4, use_container_width=True, config=plotly_config, key="dam_discharge_rainfall_chart")
+            
+            # 3行目
+            col5, col6 = st.columns(2)
+            
+            with col5:
                 # 降水強度グラフの表示
                 # 最新のAPIデータから取得（降水強度・時間雨量グラフ用に再取得）
                 latest_api_precipitation_data = None
@@ -1045,17 +1054,8 @@ class KotogawaMonitor:
                 ):
                     st.subheader("降水強度・時間雨量")
                     
-                    fig4 = self.create_precipitation_intensity_graph(latest_api_precipitation_data, enable_graph_interaction, history_data, display_hours, demo_mode)
-                    st.plotly_chart(fig4, use_container_width=True, config=plotly_config, key="precipitation_intensity_chart")
-            
-            # 3行目
-            col5, col6 = st.columns(2)
-            
-            with col5:
-                st.subheader("ダム放流量・時間雨量")
-                # 最新の降水強度データを取得（ダム貯水位と同じものを使用）
-                fig5 = self.create_dam_discharge_rainfall_graph(history_data, enable_graph_interaction, latest_precipitation_data, display_hours, demo_mode)
-                st.plotly_chart(fig5, use_container_width=True, config=plotly_config, key="dam_discharge_rainfall_chart")
+                    fig5 = self.create_precipitation_intensity_graph(latest_api_precipitation_data, enable_graph_interaction, history_data, display_hours, demo_mode)
+                    st.plotly_chart(fig5, use_container_width=True, config=plotly_config, key="precipitation_intensity_chart")
             
             with col6:
                 # 空白のカラム（将来の拡張用）
