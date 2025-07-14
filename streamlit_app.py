@@ -282,8 +282,8 @@ class KotogawaMonitor:
         from datetime import datetime
         
         # CSVファイルのパス
-        dam_csv_path = Path("sample/dam_20230625-20230702-12.csv")
-        water_csv_path = Path("sample/water-level_20230625-20230702-12.csv")
+        dam_csv_path = Path("sample/dam_20230625-20230701.csv")
+        water_csv_path = Path("sample/water-level_20230625-20230701.csv")
         
         try:
             
