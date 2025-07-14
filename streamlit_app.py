@@ -1394,7 +1394,7 @@ class KotogawaMonitor:
             line_color="red",
             line_width=2,
             annotation_text="氾濫危険水位 (5.5m)",
-            annotation_position="right",
+            annotation_position="top left",
             secondary_y=False
         )
         
