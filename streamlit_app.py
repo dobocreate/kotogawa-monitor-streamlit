@@ -1831,9 +1831,9 @@ class KotogawaMonitor:
                     x=df['timestamp'],
                     y=df['dam_discharge'],
                     mode='lines+markers',
-                    name='ダム放流量（厚東川ダム）',
-                    line=dict(color='#2ca02c', width=3),
-                    marker=dict(size=6, color='white', line=dict(width=2, color='#2ca02c'))
+                    name='全放流量（厚東川ダム）',
+                    line=dict(color='#d62728', width=3),
+                    marker=dict(size=6, color='white', line=dict(width=2, color='#d62728'))
                 ),
                 secondary_y=False
             )
