@@ -964,15 +964,7 @@ class KotogawaMonitor:
                 st.plotly_chart(fig1, use_container_width=True, config=plotly_config, key="river_water_level_chart")
             
             with col2:
-                st.subheader("ダム流入出量・累加雨量")
-                fig2 = self.create_dam_flow_graph(history_data, enable_graph_interaction, display_hours, demo_mode)
-                st.plotly_chart(fig2, use_container_width=True, config=plotly_config, key="dam_flow_chart")
-            
-            # 2行目
-            col3, col4 = st.columns(2)
-            
-            with col3:
-                st.subheader("ダム貯水位・時間雨量")
+                st.subheader("ダム放流量・時間雨量")
                 # 最新の降水強度データを取得
                 latest_precipitation_data = None
                 try:
@@ -982,14 +974,22 @@ class KotogawaMonitor:
                 except:
                     pass
                 
+                fig2 = self.create_dam_discharge_rainfall_graph(history_data, enable_graph_interaction, latest_precipitation_data, display_hours, demo_mode)
+                st.plotly_chart(fig2, use_container_width=True, config=plotly_config, key="dam_discharge_rainfall_chart")
+            
+            # 2行目
+            col3, col4 = st.columns(2)
+            
+            with col3:
+                st.subheader("ダム貯水位・時間雨量")
+                # 最新の降水強度データを取得（ダム放流量と同じものを使用）
                 fig3 = self.create_dam_water_level_graph(history_data, enable_graph_interaction, latest_precipitation_data, display_hours, demo_mode)
                 st.plotly_chart(fig3, use_container_width=True, config=plotly_config, key="dam_water_level_chart")
             
             with col4:
-                st.subheader("ダム放流量・時間雨量")
-                # 最新の降水強度データを取得（ダム貯水位と同じものを使用）
-                fig4 = self.create_dam_discharge_rainfall_graph(history_data, enable_graph_interaction, latest_precipitation_data, display_hours, demo_mode)
-                st.plotly_chart(fig4, use_container_width=True, config=plotly_config, key="dam_discharge_rainfall_chart")
+                st.subheader("ダム流入出量・累加雨量")
+                fig4 = self.create_dam_flow_graph(history_data, enable_graph_interaction, display_hours, demo_mode)
+                st.plotly_chart(fig4, use_container_width=True, config=plotly_config, key="dam_flow_chart")
             
             # 3行目
             col5, col6 = st.columns(2)
