@@ -2125,40 +2125,19 @@ def main():
     # サイドバー設定
     # 更新設定
     with st.sidebar.expander("更新設定", expanded=True):
-        # モード選択
-        mode = st.radio(
-            "システムモード",
-            options=["運用モード", "開発モード"],
-            index=0,  # デフォルトは運用モード
-            help="運用モード: 10分間隔で監視、開発モード: 60分間隔（開発中のGitコンフリクト回避）"
-        )
         
-        # モードに応じた自動更新設定
-        if mode == "運用モード":
-            refresh_interval = st.selectbox(
-                "自動更新間隔",
-                options=[
-                    ("自動更新なし", 0),
-                    ("10分（推奨）", 10 * 60 * 1000),
-                    ("30分", 30 * 60 * 1000),
-                    ("60分", 60 * 60 * 1000)
-                ],
-                index=1,  # デフォルトは10分
-                format_func=lambda x: x[0]
-            )
-        else:  # 開発モード
-            refresh_interval = st.selectbox(
-                "自動更新間隔",
-                options=[
-                    ("自動更新なし", 0),
-                    ("60分（推奨）", 60 * 60 * 1000),
-                    ("120分", 120 * 60 * 1000),
-                    ("30秒（テスト用）", 30 * 1000),
-                    ("1分（テスト用）", 1 * 60 * 1000)
-                ],
-                index=1,  # デフォルトは60分
-                format_func=lambda x: x[0]
-            )
+        # 自動更新設定
+        refresh_interval = st.selectbox(
+            "自動更新間隔",
+            options=[
+                ("自動更新なし", 0),
+                ("10分（推奨）", 10 * 60 * 1000),
+                ("30分", 30 * 60 * 1000),
+                ("60分", 60 * 60 * 1000)
+            ],
+            index=1,  # デフォルトは10分
+            format_func=lambda x: x[0]
+        )
         
         # 手動更新ボタン
         if st.button("手動更新", type="primary", key="sidebar_refresh"):
@@ -2214,9 +2193,6 @@ def main():
     # システムヘッダーの表示
     st.markdown('<h1 style="text-align: center; margin-top: 0; margin-bottom: 1rem;">厚東川氾濫監視システムv2.0</h1>', unsafe_allow_html=True)
     
-    # モード表示
-    if mode == "開発モード":
-        st.warning("🔧 開発モード - データ更新頻度を抑制中（Gitコンフリクト回避）")
     
     # 自動更新の実行（ヘッダーの後に配置）- デモモード時は無効化
     if refresh_interval[1] > 0 and not demo_mode:
