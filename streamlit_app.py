@@ -1558,7 +1558,7 @@ class KotogawaMonitor:
                 go.Bar(
                     x=df['timestamp'],
                     y=df['rainfall'],
-                    name='時間雨量（宇部市）',
+                    name='時間雨量（厚東川ダム）',
                     marker_color='#87CEEB',
                     opacity=0.7,
                     width=600000
@@ -1645,7 +1645,7 @@ class KotogawaMonitor:
                 go.Bar(
                     x=obs_times,
                     y=obs_intensities,
-                    name='降水強度・観測値（厚東川ダム）',
+                    name='降水強度・観測値（厚東川ダムbyYahoo!）',
                     marker_color='#DC143C',
                     opacity=0.8,
                     width=600000,
@@ -1679,7 +1679,7 @@ class KotogawaMonitor:
                         go.Bar(
                             x=forecast_times,
                             y=forecast_intensities,
-                            name='降水強度・予測値（厚東川ダム）',
+                            name='降水強度・予測値（厚東川ダムbyYahoo!）',
                             marker_color='#FF1493',
                             opacity=0.6,
                             width=600000,
@@ -1823,7 +1823,7 @@ class KotogawaMonitor:
                     x=df['timestamp'],
                     y=df['cumulative_rainfall'],
                     mode='lines',
-                    name='累加雨量（宇部市）',
+                    name='累加雨量（厚東川ダム）',
                     line=dict(color='#87CEEB', width=1),
                     fill='tozeroy',
                     fillcolor='rgba(135, 206, 235, 0.3)'
@@ -1994,7 +1994,7 @@ class KotogawaMonitor:
             fig.add_trace(go.Bar(
                 x=obs_times,
                 y=obs_intensities,
-                name='降水強度・観測値（厚東川ダム）',
+                name='降水強度・観測値（厚東川ダムbyYahoo!）',
                 marker=dict(color='#DC143C'),
                 hovertemplate='<b>観測値</b><br>%{x|%H:%M}<br>降水強度: %{y:.1f} mm/h<extra></extra>',
                 width=600000
@@ -2005,7 +2005,7 @@ class KotogawaMonitor:
             fig.add_trace(go.Bar(
                 x=forecast_times,
                 y=forecast_intensities,
-                name='降水強度・予測値（厚東川ダム）',
+                name='降水強度・予測値（厚東川ダムbyYahoo!）',
                 marker=dict(color='#FF1493', opacity=0.7),
                 hovertemplate='<b>予測値</b><br>%{x|%H:%M}<br>降水強度: %{y:.1f} mm/h<extra></extra>',
                 width=600000
@@ -2047,7 +2047,7 @@ class KotogawaMonitor:
                 fig.add_trace(go.Bar(
                     x=rainfall_times,
                     y=rainfall_values,
-                    name='時間雨量（宇部市）',
+                    name='時間雨量（厚東川ダム）',
                     marker=dict(color='#87CEEB', opacity=0.7),
                     hovertemplate='<b>時間雨量</b><br>%{x|%H:%M}<br>雨量: %{y:.1f} mm/h<extra></extra>',
                     width=600000
