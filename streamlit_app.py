@@ -1977,15 +1977,15 @@ class KotogawaMonitor:
         # 軸の設定（小画面対応）
         fig.update_yaxes(
             title_text="ダム放流量 (m³/s)",
-            range=[0, 100],
-            dtick=10,
+            range=[0, 1200],
+            dtick=100,
             secondary_y=False,
             title_font_size=12,
             tickfont_size=12
         )
         fig.update_yaxes(
             title_text="時間雨量 (mm/h)",
-            range=[0, 50],
+            range=[0, 60],
             dtick=5,
             secondary_y=True,
             title_font_size=12,
