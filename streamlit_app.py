@@ -1047,6 +1047,19 @@ class KotogawaMonitor:
                     
                     fig4 = self.create_precipitation_intensity_graph(latest_api_precipitation_data, enable_graph_interaction, history_data, display_hours, demo_mode)
                     st.plotly_chart(fig4, use_container_width=True, config=plotly_config, key="precipitation_intensity_chart")
+            
+            # 3行目
+            col5, col6 = st.columns(2)
+            
+            with col5:
+                st.subheader("ダム放流量・時間雨量")
+                # 最新の降水強度データを取得（ダム貯水位と同じものを使用）
+                fig5 = self.create_dam_discharge_rainfall_graph(history_data, enable_graph_interaction, latest_precipitation_data, display_hours, demo_mode)
+                st.plotly_chart(fig5, use_container_width=True, config=plotly_config, key="dam_discharge_rainfall_chart")
+            
+            with col6:
+                # 空白のカラム（将来の拡張用）
+                pass
         
         with tab2:
             st.subheader("データテーブル")
@@ -1693,6 +1706,279 @@ class KotogawaMonitor:
             title_text="ダム貯水位 (m)",
             range=[20, 45],
             dtick=2.5,
+            secondary_y=False,
+            title_font_size=12,
+            tickfont_size=12
+        )
+        fig.update_yaxes(
+            title_text="時間雨量 (mm/h)",
+            range=[0, 50],
+            dtick=5,
+            secondary_y=True,
+            title_font_size=12,
+            tickfont_size=12
+        )
+        
+        # 共通の時間範囲を取得して設定
+        time_min, time_max = self.get_common_time_range(history_data, display_hours, demo_mode)
+        xaxis_config = dict(
+            title_text="時刻",
+            title_font_size=12,
+            tickfont_size=12
+        )
+        if time_min and time_max:
+            xaxis_config['range'] = [time_min, time_max]
+        
+        fig.update_xaxes(**xaxis_config)
+        
+        fig.update_layout(
+            height=465,
+            showlegend=True,
+            legend=dict(
+                orientation="h",
+                yanchor="top",
+                y=-0.30,
+                xanchor="left",
+                x=0.0,
+                bgcolor="rgba(255, 255, 255, 0.8)",
+                bordercolor="rgba(0, 0, 0, 0.2)",
+                borderwidth=1
+            ),
+            margin=dict(t=30, l=40, r=40, b=140),
+            autosize=True,
+            font=dict(size=9)
+        )
+        
+        # インタラクションが無効の場合は軸を固定
+        if not enable_interaction:
+            fig.update_xaxes(fixedrange=True)
+            fig.update_yaxes(fixedrange=True, secondary_y=False)
+            fig.update_yaxes(fixedrange=True, secondary_y=True)
+        
+        return fig
+    
+    def create_dam_discharge_rainfall_graph(self, history_data: List[Dict[str, Any]], enable_interaction: bool = False, latest_precipitation_data: Dict[str, Any] = None, display_hours: int = 24, demo_mode: bool = False) -> go.Figure:
+        """ダム放流量グラフを作成（ダム放流量 + 時間雨量の二軸表示）"""
+        # 現在時刻を取得（予測データ処理で使用）
+        now_jst = datetime.now(ZoneInfo('Asia/Tokyo'))
+        
+        # 表示期間に基づいてデータをフィルタリング（デモモード時はスキップ）
+        if demo_mode:
+            filtered_data = history_data
+        else:
+            time_min, time_max = self.get_common_time_range(history_data, display_hours, demo_mode=False)
+            if time_min and time_max:
+                filtered_data = self.filter_data_by_time_range(history_data, time_min, time_max - timedelta(hours=2))
+            else:
+                filtered_data = history_data
+        
+        if not filtered_data:
+            fig = go.Figure()
+            fig.add_annotation(
+                text="表示するデータがありません",
+                xref="paper", yref="paper",
+                x=0.5, y=0.5, showarrow=False
+            )
+            return fig
+        
+        # データをDataFrameに変換
+        df_data = []
+        for item in filtered_data:
+            # 観測時刻（data_time）を使用、なければtimestampを使用
+            data_time = item.get('data_time') or item.get('timestamp', '')
+            try:
+                dt = datetime.fromisoformat(data_time.replace('Z', '+00:00'))
+                # タイムゾーンがない場合はJSTとして扱う
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                else:
+                    dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
+            except:
+                continue
+                
+            row = {'timestamp': dt}
+            
+            # ダム放流量
+            dam_discharge = item.get('dam', {}).get('outflow')
+            if dam_discharge is not None:
+                row['dam_discharge'] = dam_discharge
+            
+            # 雨量
+            rainfall = item.get('rainfall', {}).get('hourly')
+            if rainfall is not None:
+                row['rainfall'] = rainfall
+            
+            df_data.append(row)
+        
+        if not df_data:
+            fig = go.Figure()
+            fig.add_annotation(
+                text="有効なデータがありません",
+                xref="paper", yref="paper",
+                x=0.5, y=0.5, showarrow=False
+            )
+            return fig
+        
+        df = pd.DataFrame(df_data)
+        
+        # 二軸グラフを作成
+        fig = make_subplots(specs=[[{"secondary_y": True}]])
+        
+        # ダム放流量（左軸）
+        if 'dam_discharge' in df.columns:
+            fig.add_trace(
+                go.Scatter(
+                    x=df['timestamp'],
+                    y=df['dam_discharge'],
+                    mode='lines+markers',
+                    name='ダム放流量（厚東川ダム）',
+                    line=dict(color='#2ca02c', width=3),
+                    marker=dict(size=6, color='white', line=dict(width=2, color='#2ca02c'))
+                ),
+                secondary_y=False
+            )
+        
+        # 時間雨量（右軸）
+        if 'rainfall' in df.columns:
+            fig.add_trace(
+                go.Bar(
+                    x=df['timestamp'],
+                    y=df['rainfall'],
+                    name='時間雨量（厚東川ダム）',
+                    marker_color='#87CEEB',
+                    opacity=0.7,
+                    width=600000
+                ),
+                secondary_y=True
+            )
+        
+        # 降水強度・時間雨量データを追加
+        # 表示期間の計算
+        end_time = now_jst
+        start_time = end_time - timedelta(hours=display_hours)
+        
+        # 観測値の処理（APIデータを優先、なければ履歴から取得）
+        obs_times = []
+        obs_intensities = []
+        out_of_range_count = 0
+        latest_out_of_range_time = None
+        
+        # まず最新のAPIデータから観測値を取得
+        if latest_precipitation_data and latest_precipitation_data.get('observation'):
+            for item in latest_precipitation_data['observation']:
+                try:
+                    dt = datetime.fromisoformat(item['datetime'])
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                    else:
+                        dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
+                    
+                    # 表示期間内のデータのみを追加
+                    if start_time <= dt <= end_time:
+                        obs_times.append(dt)
+                        obs_intensities.append(item['intensity'])
+                    else:
+                        # 範囲外データをカウント
+                        out_of_range_count += 1
+                        if latest_out_of_range_time is None or dt > latest_out_of_range_time:
+                            latest_out_of_range_time = dt
+                except (ValueError, KeyError):
+                    continue
+        
+        # APIデータがない場合は履歴データから観測値を取得
+        if not obs_times and history_data:
+            # 表示期間に基づいてデータをフィルタリング（デモモード時はスキップ）
+            if demo_mode:
+                filtered_history_data = history_data
+            else:
+                time_min_history, time_max_history = self.get_common_time_range(history_data, display_hours, demo_mode=False)
+                if time_min_history and time_max_history:
+                    filtered_history_data = self.filter_data_by_time_range(history_data, time_min_history, time_max_history - timedelta(hours=2))
+                else:
+                    filtered_history_data = history_data
+            
+            for item in filtered_history_data:
+                precip_data = item.get('precipitation_intensity', {})
+                if precip_data.get('observation'):
+                    for obs in precip_data['observation']:
+                        try:
+                            dt = datetime.fromisoformat(obs['datetime'])
+                            if dt.tzinfo is None:
+                                dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                            else:
+                                dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
+                            
+                            # 表示期間内のデータのみを追加
+                            if start_time <= dt <= end_time:
+                                obs_times.append(dt)
+                                obs_intensities.append(obs['intensity'])
+                            else:
+                                # 範囲外データをカウント
+                                out_of_range_count += 1
+                                if latest_out_of_range_time is None or dt > latest_out_of_range_time:
+                                    latest_out_of_range_time = dt
+                        except (ValueError, KeyError):
+                            continue
+        
+        # 範囲外データのログ表示
+        if out_of_range_count > 0 and latest_out_of_range_time:
+            latest_time_str = latest_out_of_range_time.strftime('%Y-%m-%d %H:%M')
+            st.info(f"🔍 表示期間外の降水強度観測値: {out_of_range_count}件 (最新: {latest_time_str})")
+        
+        # 観測値をプロット
+        if obs_times and obs_intensities:
+            fig.add_trace(
+                go.Bar(
+                    x=obs_times,
+                    y=obs_intensities,
+                    name='降水強度・観測値（厚東川ダム by Yahoo!）',
+                    marker_color='#DC143C',
+                    opacity=0.8,
+                    width=600000,
+                    hovertemplate='<b>観測値</b><br>%{x|%H:%M}<br>降水強度: %{y:.1f} mm/h<extra></extra>'
+                ),
+                secondary_y=True
+            )
+            
+        # 予測値の処理（現在時刻以降のみ、APIデータから取得）
+        if latest_precipitation_data and latest_precipitation_data.get('forecast'):
+                forecast_times = []
+                forecast_intensities = []
+                for item in latest_precipitation_data['forecast']:
+                    try:
+                        dt = datetime.fromisoformat(item['datetime'])
+                        if dt.tzinfo is None:
+                            dt = dt.replace(tzinfo=ZoneInfo('Asia/Tokyo'))
+                        else:
+                            dt = dt.astimezone(ZoneInfo('Asia/Tokyo'))
+                        
+                        # 現在時刻以降のデータまたは過去30分以内の予測データを使用
+                        time_diff = (now_jst - dt).total_seconds() / 60  # 分単位の差
+                        if dt >= now_jst or time_diff <= 30:
+                            forecast_times.append(dt)
+                            forecast_intensities.append(item['intensity'])
+                    except (ValueError, KeyError):
+                        continue
+                
+                if forecast_times and forecast_intensities:
+                    fig.add_trace(
+                        go.Bar(
+                            x=forecast_times,
+                            y=forecast_intensities,
+                            name='降水強度・予測値（厚東川ダム by Yahoo!）',
+                            marker_color='#FF1493',
+                            opacity=0.6,
+                            width=600000,
+                            hovertemplate='<b>予測値</b><br>%{x|%H:%M}<br>降水強度: %{y:.1f} mm/h<extra></extra>'
+                        ),
+                        secondary_y=True
+                    )
+        
+        # 軸の設定（小画面対応）
+        fig.update_yaxes(
+            title_text="ダム放流量 (m³/s)",
+            range=[0, 100],
+            dtick=10,
             secondary_y=False,
             title_font_size=12,
             tickfont_size=12
