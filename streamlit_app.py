@@ -1393,9 +1393,21 @@ class KotogawaMonitor:
             line_dash="dash",
             line_color="red",
             line_width=2,
-            annotation_text="氾濫危険水位 (5.5m)",
-            annotation_position="top left",
             secondary_y=False
+        )
+        
+        # 氾濫危険水位のカスタムアノテーション（フォントサイズ調整）
+        fig.add_annotation(
+            x=0.02,
+            y=5.7,
+            text="氾濫危険水位 (5.5m)",
+            showarrow=False,
+            xref="paper",
+            yref="y",
+            font=dict(color="red", size=12, weight="bold"),
+            bgcolor="rgba(255,255,255,0.8)",
+            bordercolor="red",
+            borderwidth=1
         )
         
         # 軸の設定（小画面対応）
