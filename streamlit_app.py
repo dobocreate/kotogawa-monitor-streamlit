@@ -282,8 +282,8 @@ class KotogawaMonitor:
         from datetime import datetime
         
         # CSVファイルのパス
-        dam_csv_path = Path("sample/dam_20230625-20230702.csv")
-        water_csv_path = Path("sample/water-level_20230625-20230702.csv")
+        dam_csv_path = Path("sample/dam_20230625-20230702-12.csv")
+        water_csv_path = Path("sample/water-level_20230625-20230702-12.csv")
         
         try:
             
@@ -305,7 +305,13 @@ class KotogawaMonitor:
             # 河川水位データの読み込み（Shift-JISエンコーディング）
             water_df = pd.read_csv(water_csv_path, encoding='shift_jis', skiprows=6)
             
-            water_df.columns = ['timestamp', 'water_level', 'level_change']
+            # 列数に応じて適切に列名を設定
+            if len(water_df.columns) == 4:
+                water_df.columns = ['timestamp', 'water_level', 'level_change', 'empty']
+                # 不要な空列を削除
+                water_df = water_df.drop('empty', axis=1)
+            else:
+                water_df.columns = ['timestamp', 'water_level', 'level_change']
             
             # 河川データのタイムスタンプもクリーニング（ダムデータと同じ形式に統一）
             water_df['clean_timestamp'] = water_df['timestamp'].astype(str).str.replace('　', '').str.strip()
