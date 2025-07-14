@@ -1387,6 +1387,17 @@ class KotogawaMonitor:
                 secondary_y=True
             )
         
+        # 氾濫危険水位ライン（5.5m）を追加
+        fig.add_hline(
+            y=5.5,
+            line_dash="dash",
+            line_color="red",
+            line_width=2,
+            annotation_text="氾濫危険水位 (5.5m)",
+            annotation_position="right",
+            secondary_y=False
+        )
+        
         # 軸の設定（小画面対応）
         fig.update_yaxes(
             title_text="河川水位 (m)",
