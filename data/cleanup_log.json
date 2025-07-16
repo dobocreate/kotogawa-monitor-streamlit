@@ -1,21 +1,5 @@
 [
   {
-    "timestamp": "2025-07-06T01:56:31.592784",
-    "days_kept": 7,
-    "deleted_files": 0,
-    "before": {
-      "total_size_mb": 1.47,
-      "file_count": 464,
-      "data_dir": "/home/runner/work/kotogawa-monitor-streamlit/kotogawa-monitor-streamlit/data"
-    },
-    "after": {
-      "total_size_mb": 1.47,
-      "file_count": 464,
-      "data_dir": "/home/runner/work/kotogawa-monitor-streamlit/kotogawa-monitor-streamlit/data"
-    },
-    "space_freed_mb": 0.0
-  },
-  {
     "timestamp": "2025-07-07T01:53:50.154904",
     "days_kept": 7,
     "deleted_files": 0,
@@ -155,6 +139,22 @@
     "after": {
       "total_size_mb": 1.45,
       "file_count": 442,
+      "data_dir": "/home/runner/work/kotogawa-monitor-streamlit/kotogawa-monitor-streamlit/data"
+    },
+    "space_freed_mb": 0.0
+  },
+  {
+    "timestamp": "2025-07-16T01:54:04.210687",
+    "days_kept": 7,
+    "deleted_files": 0,
+    "before": {
+      "total_size_mb": 1.47,
+      "file_count": 447,
+      "data_dir": "/home/runner/work/kotogawa-monitor-streamlit/kotogawa-monitor-streamlit/data"
+    },
+    "after": {
+      "total_size_mb": 1.47,
+      "file_count": 447,
       "data_dir": "/home/runner/work/kotogawa-monitor-streamlit/kotogawa-monitor-streamlit/data"
     },
     "space_freed_mb": 0.0
