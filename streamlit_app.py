@@ -2465,7 +2465,7 @@ def main():
         # 表示期間設定
         display_hours = st.selectbox(
             "表示期間",
-            [6, 12, 24, 48, 72],
+            [6, 12, 24, 48, 72, 96, 120],
             index=2,
             format_func=lambda x: f"{x}時間"
         )
@@ -2540,7 +2540,7 @@ def main():
         # 履歴データの読み込み
         try:
             with st.spinner("履歴データを読み込み中..."):
-                history_data = monitor.load_history_data(72, cache_key)
+                history_data = monitor.load_history_data(120, cache_key)
         except Exception as e:
             st.warning(f"履歴データの読み込みに失敗しました: {e}")
             history_data = []
