@@ -435,12 +435,24 @@ class KotogawaDataCollector:
             target_time = observation_time.strftime('%H:%M')
             
             print(f"Looking for river data: {target_date} {target_time}")
+            print(f"DEBUG: Found {len(tables)} tables on the webpage")
             
-            for table in tables:
+            for table_idx, table in enumerate(tables):
+                print(f"DEBUG: Processing table {table_idx}")
+                # Phase 2: テーブル識別をTable 2に限定
+                if table_idx != 2:
+                    print(f"DEBUG: Skipping table {table_idx} (only processing table 2)")
+                    continue
                 rows = table.find_all('tr')
-                for row in rows:
+                print(f"DEBUG: Table {table_idx} has {len(rows)} rows")
+                for row_idx, row in enumerate(rows):
                     cells = row.find_all('td')
                     if len(cells) >= 4:  # 河川テーブルの最小列数（日付、時刻、水位、変化量など）
+                        if row_idx < 3 or row_idx >= len(rows) - 3:  # 最初と最後の数行のみデバッグ出力
+                            print(f"DEBUG: Row {row_idx} has {len(cells)} cells")
+                            for i in range(min(4, len(cells))):
+                                cell_text = cells[i].get_text().strip()
+                                print(f"DEBUG: Cell[{i}]: '{cell_text}' (len={len(cell_text)})")
                         try:
                             date_text = cells[0].get_text().strip()
                             time_text = cells[1].get_text().strip()
@@ -452,10 +464,20 @@ class KotogawaDataCollector:
                                 # 列位置に基づいてデータを抽出
                                 # 列2: 水位, 列3: 水位変化（推定）
                                 water_level_text = cells[2].get_text().strip()
+                                print(f"DEBUG: Water level text: '{water_level_text}' (repr: {repr(water_level_text)})")
+                                
+                                # Phase 3: データ妥当性チェック強化
+                                if not water_level_text:
+                                    print(f"DEBUG: Empty water level text, skipping")
+                                    continue
+                                if water_level_text.startswith('*') or water_level_text.startswith('-'):
+                                    print(f"DEBUG: Water level starts with special character, skipping: '{water_level_text}'")
+                                    continue
                                 
                                 # 水位
                                 try:
                                     level = float(water_level_text)
+                                    print(f"DEBUG: Parsed water level: {level}")
                                     if 0.5 <= level <= 10:  # 合理的な水位範囲
                                         river_data['water_level'] = level
                                         print(f"River water level: {level}m")
@@ -491,8 +513,8 @@ class KotogawaDataCollector:
                                         
                                         river_data['actual_observation_time'] = f"{date_text} {time_text}"
                                         break  # 目標行が見つかったら終了
-                                except ValueError:
-                                    print(f"Invalid river water level: {water_level_text}")
+                                except ValueError as e:
+                                    print(f"DEBUG: Cannot convert to float: '{water_level_text}', error: {e}")
                         except (IndexError, ValueError) as e:
                             continue
                 
@@ -503,18 +525,43 @@ class KotogawaDataCollector:
             if river_data['water_level'] is None:
                 print(f"Target river data not found. Looking for the latest available data...")
                 
-                for table in tables:
+                for table_idx, table in enumerate(tables):
+                    print(f"DEBUG: Fallback search in table {table_idx}")
+                    # Phase 2: フォールバック処理もTable 2に限定
+                    if table_idx != 2:
+                        print(f"DEBUG: Skipping table {table_idx} in fallback (only processing table 2)")
+                        continue
                     rows = table.find_all('tr')
+                    print(f"DEBUG: Fallback table {table_idx} has {len(rows)} rows")
+                    # Phase 3: 最大10行前までチェック（直近1時間40分のデータ）
+                    rows_to_check = rows[-10:] if len(rows) > 10 else rows
+                    print(f"DEBUG: Checking last {len(rows_to_check)} rows for fallback data")
                     # 最後から順に有効なデータ行を探す
-                    for row in reversed(rows):
+                    for row_idx, row in enumerate(reversed(rows_to_check)):
                         cells = row.find_all('td')
                         if len(cells) >= 4:
+                            if row_idx < 3:  # 最初の数行のみデバッグ出力
+                                print(f"DEBUG: Fallback row {row_idx} has {len(cells)} cells")
+                                for i in range(min(4, len(cells))):
+                                    cell_text = cells[i].get_text().strip()
+                                    print(f"DEBUG: Fallback Cell[{i}]: '{cell_text}'")
                             try:
                                 date_text = cells[0].get_text().strip()
                                 time_text = cells[1].get_text().strip()
+                                water_level_text = cells[2].get_text().strip()
+                                
+                                # Phase 3: より厳密な妥当性チェック
+                                if not (re.match(r'\d{4}/\d{2}/\d{2}', date_text) and 
+                                       re.match(r'\d{2}:\d{2}', time_text) and
+                                       water_level_text and 
+                                       not water_level_text.startswith('*') and
+                                       not water_level_text.startswith('-')):
+                                    continue
+                                
+                                print(f"DEBUG: Valid fallback candidate: {date_text} {time_text} = {water_level_text}")
                                 
                                 # 日付形式のチェック（YYYY/MM/DD）
-                                if re.match(r'\d{4}/\d{2}/\d{2}', date_text) and re.match(r'\d{2}:\d{2}', time_text):
+                                if True:  # 上記でチェック済み
                                     # この観測時刻のデータが既に保存されているかチェック
                                     obs_datetime = datetime.strptime(f"{date_text} {time_text}", "%Y/%m/%d %H:%M")
                                     obs_datetime = obs_datetime.replace(tzinfo=jst)
@@ -529,12 +576,13 @@ class KotogawaDataCollector:
                                     
                                     print(f"Found latest river data: {date_text} {time_text}")
                                     
-                                    # データを抽出
-                                    water_level_text = cells[2].get_text().strip()
+                                    # データを抽出（上記で取得済み）
+                                    print(f"DEBUG: Fallback water level text: '{water_level_text}' (repr: {repr(water_level_text)})")
                                     
                                     # 水位
                                     try:
                                         level = float(water_level_text)
+                                        print(f"DEBUG: Fallback parsed water level: {level}")
                                         if 0.5 <= level <= 10:  # 合理的な水位範囲
                                             river_data['water_level'] = level
                                             print(f"River water level: {level}m")
@@ -568,8 +616,8 @@ class KotogawaDataCollector:
                                             
                                             river_data['actual_observation_time'] = f"{date_text} {time_text}"
                                             break
-                                    except ValueError:
-                                        pass
+                                    except ValueError as e:
+                                        print(f"DEBUG: Fallback cannot convert to float: '{water_level_text}', error: {e}")
                                         
                             except (IndexError, ValueError) as e:
                                 continue
