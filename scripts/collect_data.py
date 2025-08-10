@@ -177,7 +177,6 @@ class KotogawaDataCollector:
             target_date = observation_time.strftime('%Y/%m/%d')
             target_time = observation_time.strftime('%H:%M')
             
-            print(f"Looking for dam data: {target_date} {target_time}")
             
             for table in tables:
                 rows = table.find_all('tr')
@@ -190,7 +189,6 @@ class KotogawaDataCollector:
                             
                             # 日時が完全一致する行を探す
                             if date_text == target_date and time_text == target_time:
-                                print(f"Found matching row: {date_text} {time_text}")
                                 
                                 # 列位置に基づいてデータを抽出
                                 # 列2: 貯水位, 列3: 貯水率, 列4: 流入量, 列5: 全放流量
@@ -204,36 +202,32 @@ class KotogawaDataCollector:
                                     level = float(water_level_text)
                                     if 30 <= level <= 40:  # 妥当性チェック
                                         dam_data['water_level'] = level
-                                        print(f"Dam water level: {level}m")
                                 except ValueError:
-                                    print(f"Invalid water level: {water_level_text}")
+                                    pass
                                 
                                 # 貯水率
                                 try:
                                     rate = float(storage_rate_text)
                                     if 0 <= rate <= 100:  # 妥当性チェック
                                         dam_data['storage_rate'] = rate
-                                        print(f"Storage rate: {rate}%")
                                 except ValueError:
-                                    print(f"Invalid storage rate: {storage_rate_text}")
+                                    pass
                                 
                                 # 流入量
                                 try:
                                     inflow = float(inflow_text)
                                     if 0 <= inflow <= 1500:  # 範囲を拡張
                                         dam_data['inflow'] = inflow
-                                        print(f"Inflow: {inflow} m³/s")
                                 except ValueError:
-                                    print(f"Invalid inflow: {inflow_text}")
+                                    pass
                                 
                                 # 全放流量
                                 try:
                                     outflow = float(outflow_text)
                                     if 0 <= outflow <= 1500:  # 範囲を拡張
                                         dam_data['outflow'] = outflow
-                                        print(f"Outflow: {outflow} m³/s")
                                 except ValueError:
-                                    print(f"Invalid outflow: {outflow_text}")
+                                    pass
                                 
                                 # 降雨データの取得（列７: 60分雨量、列８: 累加雨量）
                                 if len(cells) > 7:
@@ -243,9 +237,8 @@ class KotogawaDataCollector:
                                         hourly = int(hourly_text)
                                         if 0 <= hourly <= 200:  # 範囲を拡張
                                             rainfall_data['hourly'] = hourly
-                                            print(f"Hourly rainfall: {hourly}mm")
                                     except ValueError:
-                                        print(f"Invalid hourly rainfall: {cells[7].get_text().strip()}")
+                                        pass
                                 
                                 if len(cells) > 8:
                                     # 累加雨量
@@ -254,9 +247,8 @@ class KotogawaDataCollector:
                                         cumulative = int(cumulative_text)
                                         if 0 <= cumulative <= 1000:  # 範囲を拡張
                                             rainfall_data['cumulative'] = cumulative
-                                            print(f"Cumulative rainfall: {cumulative}mm")
                                     except ValueError:
-                                        print(f"Invalid cumulative rainfall: {cells[8].get_text().strip()}")
+                                        pass
                                 
                                 dam_data['actual_observation_time'] = f"{date_text} {time_text}"
                                 break  # 目標行が見つかったら終了
@@ -307,7 +299,6 @@ class KotogawaDataCollector:
                                         level = float(water_level_text)
                                         if 30 <= level <= 40:
                                             dam_data['water_level'] = level
-                                            print(f"Dam water level: {level}m")
                                     except ValueError:
                                         pass
                                     
@@ -316,7 +307,6 @@ class KotogawaDataCollector:
                                         rate = float(storage_rate_text)
                                         if 0 <= rate <= 100:
                                             dam_data['storage_rate'] = rate
-                                            print(f"Storage rate: {rate}%")
                                     except ValueError:
                                         pass
                                     
@@ -325,7 +315,6 @@ class KotogawaDataCollector:
                                         inflow = float(inflow_text)
                                         if 0 <= inflow <= 1500:
                                             dam_data['inflow'] = inflow
-                                            print(f"Inflow: {inflow} m³/s")
                                     except ValueError:
                                         pass
                                     
@@ -334,7 +323,6 @@ class KotogawaDataCollector:
                                         outflow = float(outflow_text)
                                         if 0 <= outflow <= 1500:
                                             dam_data['outflow'] = outflow
-                                            print(f"Outflow: {outflow} m³/s")
                                     except ValueError:
                                         pass
                                     
@@ -346,10 +334,9 @@ class KotogawaDataCollector:
                                             hourly = int(hourly_text)
                                             if 0 <= hourly <= 200:  # 範囲を拡張
                                                 rainfall_data['hourly'] = hourly
-                                                print(f"Hourly rainfall: {hourly}mm")
                                         except ValueError:
-                                            print(f"Invalid hourly rainfall: {cells[7].get_text().strip()}")
-                                    
+                                            pass
+                                        
                                     if len(cells) > 8:
                                         # 累加雨量
                                         try:
@@ -357,10 +344,9 @@ class KotogawaDataCollector:
                                             cumulative = int(cumulative_text)
                                             if 0 <= cumulative <= 1000:  # 範囲を拡張
                                                 rainfall_data['cumulative'] = cumulative
-                                                print(f"Cumulative rainfall: {cumulative}mm")
                                         except ValueError:
-                                            print(f"Invalid cumulative rainfall: {cells[8].get_text().strip()}")
-                                    
+                                            pass
+                                        
                                     if dam_data['water_level'] is not None:
                                         dam_data['actual_observation_time'] = f"{date_text} {time_text}"
                                         break
@@ -434,53 +420,35 @@ class KotogawaDataCollector:
             target_date = observation_time.strftime('%Y/%m/%d')
             target_time = observation_time.strftime('%H:%M')
             
-            print(f"Looking for river data: {target_date} {target_time}")
-            print(f"DEBUG: Found {len(tables)} tables on the webpage")
-            
             for table_idx, table in enumerate(tables):
-                print(f"DEBUG: Processing table {table_idx}")
                 # Phase 2: テーブル識別をTable 2に限定
                 if table_idx != 2:
-                    print(f"DEBUG: Skipping table {table_idx} (only processing table 2)")
                     continue
                 rows = table.find_all('tr')
-                print(f"DEBUG: Table {table_idx} has {len(rows)} rows")
-                for row_idx, row in enumerate(rows):
+                for row in rows:
                     cells = row.find_all('td')
                     if len(cells) >= 4:  # 河川テーブルの最小列数（日付、時刻、水位、変化量など）
-                        if row_idx < 3 or row_idx >= len(rows) - 3:  # 最初と最後の数行のみデバッグ出力
-                            print(f"DEBUG: Row {row_idx} has {len(cells)} cells")
-                            for i in range(min(4, len(cells))):
-                                cell_text = cells[i].get_text().strip()
-                                print(f"DEBUG: Cell[{i}]: '{cell_text}' (len={len(cell_text)})")
                         try:
                             date_text = cells[0].get_text().strip()
                             time_text = cells[1].get_text().strip()
                             
                             # 日時が完全一致する行を探す
                             if date_text == target_date and time_text == target_time:
-                                print(f"Found matching river row: {date_text} {time_text}")
-                                
                                 # 列位置に基づいてデータを抽出
                                 # 列2: 水位, 列3: 水位変化（推定）
                                 water_level_text = cells[2].get_text().strip()
-                                print(f"DEBUG: Water level text: '{water_level_text}' (repr: {repr(water_level_text)})")
                                 
                                 # Phase 3: データ妥当性チェック強化
                                 if not water_level_text:
-                                    print(f"DEBUG: Empty water level text, skipping")
                                     continue
                                 if water_level_text.startswith('*') or water_level_text.startswith('-'):
-                                    print(f"DEBUG: Water level starts with special character, skipping: '{water_level_text}'")
                                     continue
                                 
                                 # 水位
                                 try:
                                     level = float(water_level_text)
-                                    print(f"DEBUG: Parsed water level: {level}")
                                     if 0.5 <= level <= 10:  # 合理的な水位範囲
                                         river_data['water_level'] = level
-                                        print(f"River water level: {level}m")
                                         
                                         # 水位変化（列3があれば）
                                         if len(cells) > 3:
@@ -491,7 +459,6 @@ class KotogawaDataCollector:
                                                 if change_match:
                                                     change = float(change_match.group(1))
                                                     river_data['level_change'] = round(change, 2)
-                                                    print(f"Water level change: {change}m")
                                                 else:
                                                     river_data['level_change'] = 0.0
                                             except (ValueError, IndexError):
@@ -514,7 +481,7 @@ class KotogawaDataCollector:
                                         river_data['actual_observation_time'] = f"{date_text} {time_text}"
                                         break  # 目標行が見つかったら終了
                                 except ValueError as e:
-                                    print(f"DEBUG: Cannot convert to float: '{water_level_text}', error: {e}")
+                                    pass
                         except (IndexError, ValueError) as e:
                             continue
                 
@@ -523,28 +490,17 @@ class KotogawaDataCollector:
             
             # 目標データが見つからなかった場合、最終行（最新データ）を取得
             if river_data['water_level'] is None:
-                print(f"Target river data not found. Looking for the latest available data...")
-                
                 for table_idx, table in enumerate(tables):
-                    print(f"DEBUG: Fallback search in table {table_idx}")
                     # Phase 2: フォールバック処理もTable 2に限定
                     if table_idx != 2:
-                        print(f"DEBUG: Skipping table {table_idx} in fallback (only processing table 2)")
                         continue
                     rows = table.find_all('tr')
-                    print(f"DEBUG: Fallback table {table_idx} has {len(rows)} rows")
                     # Phase 3: 最大10行前までチェック（直近1時間40分のデータ）
                     rows_to_check = rows[-10:] if len(rows) > 10 else rows
-                    print(f"DEBUG: Checking last {len(rows_to_check)} rows for fallback data")
                     # 最後から順に有効なデータ行を探す
-                    for row_idx, row in enumerate(reversed(rows_to_check)):
+                    for row in reversed(rows_to_check):
                         cells = row.find_all('td')
                         if len(cells) >= 4:
-                            if row_idx < 3:  # 最初の数行のみデバッグ出力
-                                print(f"DEBUG: Fallback row {row_idx} has {len(cells)} cells")
-                                for i in range(min(4, len(cells))):
-                                    cell_text = cells[i].get_text().strip()
-                                    print(f"DEBUG: Fallback Cell[{i}]: '{cell_text}'")
                             try:
                                 date_text = cells[0].get_text().strip()
                                 time_text = cells[1].get_text().strip()
@@ -558,8 +514,6 @@ class KotogawaDataCollector:
                                        not water_level_text.startswith('-')):
                                     continue
                                 
-                                print(f"DEBUG: Valid fallback candidate: {date_text} {time_text} = {water_level_text}")
-                                
                                 # 日付形式のチェック（YYYY/MM/DD）
                                 if True:  # 上記でチェック済み
                                     # この観測時刻のデータが既に保存されているかチェック
@@ -571,21 +525,14 @@ class KotogawaDataCollector:
                                     history_file = date_dir / f"{obs_datetime.strftime('%H%M')}.json"
                                     
                                     if history_file.exists():
-                                        print(f"River data for {date_text} {time_text} already exists. Skipping.")
                                         continue
                                     
-                                    print(f"Found latest river data: {date_text} {time_text}")
-                                    
                                     # データを抽出（上記で取得済み）
-                                    print(f"DEBUG: Fallback water level text: '{water_level_text}' (repr: {repr(water_level_text)})")
-                                    
                                     # 水位
                                     try:
                                         level = float(water_level_text)
-                                        print(f"DEBUG: Fallback parsed water level: {level}")
                                         if 0.5 <= level <= 10:  # 合理的な水位範囲
                                             river_data['water_level'] = level
-                                            print(f"River water level: {level}m")
                                             
                                             # 水位変化（列３があれば）
                                             if len(cells) > 3:
@@ -617,7 +564,7 @@ class KotogawaDataCollector:
                                             river_data['actual_observation_time'] = f"{date_text} {time_text}"
                                             break
                                     except ValueError as e:
-                                        print(f"DEBUG: Fallback cannot convert to float: '{water_level_text}', error: {e}")
+                                        pass
                                         
                             except (IndexError, ValueError) as e:
                                 continue
@@ -881,19 +828,13 @@ class KotogawaDataCollector:
             # 週間予報データの収集（7日間）
             if len(forecast_data) > 1:
                 week_forecast = forecast_data[1]
-                print(f"DEBUG: forecast_data[1]の構造確認")
-                print(f"DEBUG: forecast_data[1]にtimeSeriesがあるか: {'timeSeries' in week_forecast}")
                 if 'timeSeries' in week_forecast:
-                    print(f"DEBUG: timeSeriesの数: {len(week_forecast['timeSeries'])}")
                     for idx, ts in enumerate(week_forecast['timeSeries']):
-                        print(f"DEBUG: timeSeries[{idx}]のキー: {list(ts.keys())}")
                         if 'areas' in ts:
-                            print(f"DEBUG: timeSeries[{idx}]のエリア数: {len(ts['areas'])}")
                             for area in ts['areas']:
                                 area_code = area.get('area', {}).get('code')
                                 area_name = area.get('area', {}).get('name')
                                 area_keys = list(area.keys())
-                                print(f"DEBUG: timeSeries[{idx}] エリア {area_code}({area_name}) のキー: {area_keys}")
                 
                 if 'timeSeries' in week_forecast and len(week_forecast['timeSeries']) > 0:
                     # 天気コードと降水確率はtimeSeries[0]から取得
@@ -913,33 +854,24 @@ class KotogawaDataCollector:
                     # 気温データを全timeSeriesから検索
                     temps_max = []
                     temps_min = []
-                    print(f"DEBUG: 週間予報のtimeSeries数: {len(week_forecast['timeSeries'])}")
                     
                     for ts_idx, ts_temp in enumerate(week_forecast['timeSeries']):
-                        print(f"DEBUG: timeSeries[{ts_idx}]のエリア数: {len(ts_temp.get('areas', []))}")
                         for area in ts_temp.get('areas', []):
                             area_code = area.get('area', {}).get('code')
                             area_name = area.get('area', {}).get('name')
                             has_temp_max = 'tempsMax' in area
                             has_temp_min = 'tempsMin' in area
-                            print(f"DEBUG: timeSeries[{ts_idx}] エリア: {area_code}({area_name}), tempsMax={has_temp_max}, tempsMin={has_temp_min}")
                             
                             # 温度データがあるエリアを検索（エリアコードは問わず）
                             if has_temp_max and has_temp_min:
                                 temps_max = area.get('tempsMax', [])
                                 temps_min = area.get('tempsMin', [])
-                                print(f"DEBUG: 温度データ発見 エリア({area_code}): 最高気温数={len(temps_max)}, 最低気温数={len(temps_min)}")
-                                print(f"DEBUG: 最高気温データ: {temps_max}")
-                                print(f"DEBUG: 最低気温データ: {temps_min}")
                                 # 温度データが見つかったらbreak
                                 if temps_max and temps_min:
                                     break
                         # 温度データが見つかったら外側のループもbreak
                         if temps_max and temps_min:
                             break
-                    
-                    if not (temps_max and temps_min):
-                        print("DEBUG: 温度データが見つかりませんでした")
                     
                     weekly_data = []
                     for i, time_str in enumerate(time_defines):
@@ -1002,11 +934,6 @@ class KotogawaDataCollector:
                     
                     weather_data['weekly_forecast'] = weekly_data
             
-            print(f"Weather data collected successfully")
-            print(f"Today: {weather_data['today']['weather_text']}, Max: {weather_data['today']['temp_max']}°C, Min: {weather_data['today']['temp_min']}°C")
-            print(f"Tomorrow: {weather_data['tomorrow']['weather_text']}, Max: {weather_data['tomorrow']['temp_max']}°C, Min: {weather_data['tomorrow']['temp_min']}°C")
-            print(f"Day after tomorrow: {weather_data['day_after_tomorrow']['weather_text']}, Max: {weather_data['day_after_tomorrow']['temp_max']}°C, Min: {weather_data['day_after_tomorrow']['temp_min']}°C")
-            print(f"Weekly forecast: {len(weather_data['weekly_forecast'])} days")
             
         except requests.RequestException as e:
             print(f"Error fetching weather data: {e}")
@@ -1034,7 +961,6 @@ class KotogawaDataCollector:
                 'interval': '10'
             }
             
-            print(f"Fetching precipitation intensity from Yahoo API...")
             response = requests.get(self.yahoo_api_url, params=params, headers=self.headers, timeout=self.timeout)
             response.raise_for_status()
             
@@ -1081,7 +1007,6 @@ class KotogawaDataCollector:
                 jst = ZoneInfo('Asia/Tokyo')
                 precipitation_data['update_time'] = datetime.now(jst).isoformat()
                 
-                print(f"Precipitation intensity data collected: {len(precipitation_data['observation'])} observations, {len(precipitation_data['forecast'])} forecasts")
             
         except requests.RequestException as e:
             print(f"Error fetching precipitation intensity data: {e}")
