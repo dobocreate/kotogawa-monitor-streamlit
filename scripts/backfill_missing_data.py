@@ -330,7 +330,7 @@ class DataBackfiller:
 def main():
     """メイン関数"""
     parser = argparse.ArgumentParser(description='Backfill missing monitoring data')
-    parser.add_argument('--hours', type=int, default=6, help='Hours to look back (default: 6)')
+    parser.add_argument('--hours', type=int, default=12, help='Hours to look back (default: 12)')
     parser.add_argument('--max', type=int, default=6, help='Maximum items to fetch (default: 6)')
     parser.add_argument('--dry-run', action='store_true', help='Dry run mode (no actual fetching)')
     

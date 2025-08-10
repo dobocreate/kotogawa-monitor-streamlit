@@ -46,7 +46,7 @@ jobs:
         
     - name: Backfill missing data
       run: |
-        python scripts/backfill_missing_data.py --hours 6 --max 6 || echo "Backfill completed with some failures"
+        python scripts/backfill_missing_data.py --hours 12 --max 6 || echo "Backfill completed with some failures"
         
     - name: Run data collection
       run: |
