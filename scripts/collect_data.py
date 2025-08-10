@@ -220,7 +220,7 @@ class KotogawaDataCollector:
                                 # 流入量
                                 try:
                                     inflow = float(inflow_text)
-                                    if 0 <= inflow <= 100:  # 範囲を拡張
+                                    if 0 <= inflow <= 1500:  # 範囲を拡張
                                         dam_data['inflow'] = inflow
                                         print(f"Inflow: {inflow} m³/s")
                                 except ValueError:
@@ -229,7 +229,7 @@ class KotogawaDataCollector:
                                 # 全放流量
                                 try:
                                     outflow = float(outflow_text)
-                                    if 0 <= outflow <= 100:  # 範囲を拡張
+                                    if 0 <= outflow <= 1500:  # 範囲を拡張
                                         dam_data['outflow'] = outflow
                                         print(f"Outflow: {outflow} m³/s")
                                 except ValueError:
@@ -323,7 +323,7 @@ class KotogawaDataCollector:
                                     # 流入量
                                     try:
                                         inflow = float(inflow_text)
-                                        if 0 <= inflow <= 100:
+                                        if 0 <= inflow <= 1500:
                                             dam_data['inflow'] = inflow
                                             print(f"Inflow: {inflow} m³/s")
                                     except ValueError:
@@ -332,7 +332,7 @@ class KotogawaDataCollector:
                                     # 全放流量
                                     try:
                                         outflow = float(outflow_text)
-                                        if 0 <= outflow <= 100:
+                                        if 0 <= outflow <= 1500:
                                             dam_data['outflow'] = outflow
                                             print(f"Outflow: {outflow} m³/s")
                                     except ValueError:
