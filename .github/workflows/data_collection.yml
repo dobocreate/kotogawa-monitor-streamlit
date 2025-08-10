@@ -44,6 +44,10 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         
+    - name: Backfill missing data
+      run: |
+        python scripts/backfill_missing_data.py --hours 6 --max 6 || echo "Backfill completed with some failures"
+        
     - name: Run data collection
       run: |
         python scripts/collect_data.py
