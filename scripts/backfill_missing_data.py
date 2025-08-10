@@ -84,6 +84,14 @@ class DataBackfiller:
         }
         river_soup = self.collector.fetch_page(self.collector.river_url, river_params)
         
+        # 河川データ取得失敗時の追加リトライ
+        if not river_soup:
+            print(f"    River data fetch failed, retrying...")
+            time.sleep(2)  # 短時間待機
+            river_soup = self.collector.fetch_page(self.collector.river_url, river_params)
+            if not river_soup:
+                print(f"    River data fetch failed after retry")
+        
         # データ解析（既存のロジックを再利用）
         dam_data = self._parse_dam_data(dam_soup, target_time)
         river_data = self._parse_river_data(river_soup, target_time) if river_soup else None
@@ -91,6 +99,16 @@ class DataBackfiller:
         if dam_data['dam']['water_level'] is None and (river_data is None or river_data['water_level'] is None):
             print(f"    No valid data found for {target_time.strftime('%H:%M')}")
             return None
+        
+        # データ完全性チェック
+        is_complete = (
+            dam_data['dam']['water_level'] is not None and
+            river_data is not None and
+            river_data['water_level'] is not None
+        )
+        
+        if not is_complete:
+            print(f"    Warning: Incomplete data detected - Dam: {dam_data['dam']['water_level'] is not None}, River: {river_data is not None and river_data['water_level'] is not None if river_data else False}")
         
         # データ構造の構築
         data = {
@@ -106,7 +124,12 @@ class DataBackfiller:
                 'hourly': None,
                 'cumulative': None,
                 'change': None
-            })
+            }),
+            '_metadata': {
+                'backfilled': True,
+                'complete': is_complete,
+                'source': 'backfill_missing_data.py'
+            }
         }
         
         return data

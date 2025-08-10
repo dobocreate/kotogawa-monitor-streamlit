@@ -1,17 +1,12 @@
 {
-  "timestamp": "2025-08-10T18:54:34.954878+09:00",
+  "timestamp": "2025-08-10T15:04:44.483857+09:00",
   "data_time": "2025-08-10T13:20:00+09:00",
   "dam": {
     "water_level": 37.09,
     "storage_rate": 90.1,
-    "inflow": 200.48,
-    "outflow": 174.2,
+    "inflow": null,
+    "outflow": null,
     "storage_change": null
-  },
-  "river": {
-    "water_level": 3.27,
-    "level_change": 0.06,
-    "status": "正常"
   },
   "rainfall": {
     "hourly": 7,

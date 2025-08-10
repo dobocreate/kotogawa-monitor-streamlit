@@ -46,11 +46,15 @@ jobs:
         
     - name: Backfill missing data
       run: |
-        python scripts/backfill_missing_data.py --hours 12 --max 6 || echo "Backfill completed with some failures"
+        echo "Starting backfill process for last 12 hours..."
+        python scripts/backfill_missing_data.py --hours 12 --max 6 || echo "⚠️ Backfill completed with some failures"
+        echo "Backfill process completed"
         
     - name: Run data collection
       run: |
+        echo "Starting current data collection..."
         python scripts/collect_data.py
+        echo "Data collection completed"
         
     - name: Check for changes
       id: changes
