@@ -1368,6 +1368,8 @@ class KotogawaMonitor:
             return fig
         
         df = pd.DataFrame(df_data)
+        if not df.empty:
+            df = df.sort_values('timestamp')  # 時系列順にソート
         
         # 二軸グラフを作成
         fig = make_subplots(specs=[[{"secondary_y": True}]])
@@ -1547,6 +1549,8 @@ class KotogawaMonitor:
             return fig
         
         df = pd.DataFrame(df_data)
+        if not df.empty:
+            df = df.sort_values('timestamp')  # 時系列順にソート
         
         # 二軸グラフを作成
         fig = make_subplots(specs=[[{"secondary_y": True}]])
@@ -1820,6 +1824,8 @@ class KotogawaMonitor:
             return fig
         
         df = pd.DataFrame(df_data)
+        if not df.empty:
+            df = df.sort_values('timestamp')  # 時系列順にソート
         
         # 二軸グラフを作成
         fig = make_subplots(specs=[[{"secondary_y": True}]])
@@ -2098,6 +2104,8 @@ class KotogawaMonitor:
             return fig
         
         df = pd.DataFrame(df_data)
+        if not df.empty:
+            df = df.sort_values('timestamp')  # 時系列順にソート
         
         # 二軸グラフを作成
         fig = make_subplots(specs=[[{"secondary_y": True}]])
