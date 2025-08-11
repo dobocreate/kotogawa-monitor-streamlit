@@ -1,0 +1,99 @@
+# 琴川ダム監視システム設定ファイル
+
+# データソース設定
+data_sources:
+  dam:
+    url: "https://y-bousai.pref.yamaguchi.lg.jp/citizen/dam/kdm_table.aspx"
+    station_code: "015"  # 厚東川ダムの観測所コード
+    
+  river:
+    url: "https://y-bousai.pref.yamaguchi.lg.jp/citizen/water/kwl_table.aspx"
+    station_code: "05067"  # 厚東川（持世寺）の観測所コード
+    
+  weather:
+    jma_url: "https://www.jma.go.jp/bosai/forecast/data/forecast/350000.json"
+    area_code: "350012"  # 宇部市のエリアコード
+    west_area_code: "350010"  # 西部エリアコード
+    
+  yahoo_weather:
+    api_url: "https://map.yahooapis.jp/weather/V1/place"
+    app_id: "dj00aiZpPW5YTFVqSXc0S2dCcSZzPWNvbnN1bWVyc2VjcmV0Jng9MDA-"
+    coordinates: "131.289496,34.079891"  # 経度,緯度
+
+# HTTPリクエスト設定
+http:
+  timeout: 30  # タイムアウト（秒）
+  max_retries: 5  # 最大リトライ回数
+  retry_delay: 3  # リトライ間隔（秒）
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+
+# データ検証設定
+validation:
+  dam:
+    water_level:
+      min: 30.0  # 最小値（m）
+      max: 40.0  # 最大値（m）
+    storage_rate:
+      min: 0.0   # 最小値（%）
+      max: 100.0 # 最大値（%）
+    flow:
+      min: 0.0    # 最小値（m³/s）
+      max: 1500.0 # 最大値（m³/s）
+      
+  river:
+    water_level:
+      min: 0.5  # 最小値（m）
+      max: 10.0 # 最大値（m）
+    thresholds:
+      preparedness: 3.80  # 水防団待機水位（m）
+      caution: 5.00      # 氾濫注意水位（m）
+      evacuation: 5.10   # 避難判断水位（m）
+      danger: 5.50       # 氾濫危険水位（m）
+      
+  rainfall:
+    hourly:
+      min: 0    # 最小値（mm）
+      max: 200  # 最大値（mm）
+    cumulative:
+      min: 0     # 最小値（mm）
+      max: 1000  # 最大値（mm）
+
+# バックフィル設定
+backfill:
+  default_hours: 12  # デフォルトの遡り時間
+  max_items: 6       # 最大処理件数
+  api_delay: 2       # API呼び出し間隔（秒）
+  
+  # 拡張設定（将来的な改善用）
+  extended:
+    hours: 24        # 拡張遡り時間
+    max_items: 20    # 拡張最大処理件数
+    parallel: false  # 並列処理有効化
+
+# データ保存設定
+storage:
+  data_dir: "data"
+  history_dir: "data/history"
+  retention_days: 7  # データ保持期間（日）
+  
+# ロギング設定
+logging:
+  level: "INFO"  # ログレベル (DEBUG, INFO, WARNING, ERROR)
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "logs/collect_data.log"
+  max_bytes: 10485760  # 10MB
+  backup_count: 5
+
+# GitHub Actions設定
+github_actions:
+  timeout_minutes: 5  # タイムアウト（分）
+  schedule:
+    - cron: "3,18,33,48 * * * *"  # 15分ごと
+  
+# 機能フラグ
+features:
+  use_extended_backfill: false  # 拡張バックフィル機能
+  enable_parallel_processing: false  # 並列処理
+  use_circuit_breaker: false  # サーキットブレーカー
+  structured_logging: false  # 構造化ログ
+  debug_mode: false  # デバッグモード
