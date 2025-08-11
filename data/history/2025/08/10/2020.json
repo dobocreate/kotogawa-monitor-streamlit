@@ -1,0 +1,26 @@
+{
+  "timestamp": "2025-08-11T09:06:10.960095+09:00",
+  "data_time": "2025-08-10T20:20:00+09:00",
+  "dam": {
+    "water_level": 37.19,
+    "storage_rate": 91.1,
+    "inflow": 471.66,
+    "outflow": 498.77,
+    "storage_change": null
+  },
+  "river": {
+    "water_level": 4.88,
+    "level_change": -0.02,
+    "status": "水防団待機"
+  },
+  "rainfall": {
+    "hourly": 0,
+    "cumulative": 234,
+    "change": null
+  },
+  "_metadata": {
+    "backfilled": true,
+    "complete": true,
+    "source": "backfill_missing_data.py"
+  }
+}
