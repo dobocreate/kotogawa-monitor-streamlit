@@ -27,3 +27,9 @@ Thumbs.db
 .env.local
 doc/
 kotogawa_env/
+gas/
+
+# Backup and temporary files
+*.backup
+quarantine/
+*.tmp

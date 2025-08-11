@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 import pandas as pd
+from utils.data_helper import get_latest_history_file, get_latest_file_mtime
 try:
     from zoneinfo import ZoneInfo
 except ImportError:
@@ -145,10 +146,11 @@ class KotogawaMonitor:
         }
     
     def load_latest_data(_self) -> Optional[Dict[str, Any]]:
-        """最新データを読み込む（ファイル更新時刻ベースのキャッシュ）"""
-        latest_file = _self.data_dir / "latest.json"
+        """最新データを読み込む（履歴ファイルから直接読み込み）"""
+        history_dir = _self.data_dir / "history"
+        latest_file = get_latest_history_file(history_dir)
         
-        if not latest_file.exists():
+        if not latest_file:
             st.warning("■ データファイルが見つかりません。データ収集スクリプトを実行してください。")
             return None
         
@@ -186,10 +188,10 @@ class KotogawaMonitor:
     def get_cache_key(self) -> str:
         """キャッシュキー用の最新ファイル時刻を取得"""
         try:
-            # latest.jsonの更新時刻を取得
-            latest_file = self.data_dir / "latest.json"
-            if latest_file.exists():
-                return str(latest_file.stat().st_mtime)
+            # 最新履歴ファイルの更新時刻を取得
+            mtime = get_latest_file_mtime(self.data_dir)
+            if mtime:
+                return str(mtime)
             return "no_file"
         except Exception:
             return "error"
@@ -207,6 +209,7 @@ class KotogawaMonitor:
             return history_data
         
         error_count = 0
+        error_files: List[str] = []
         processed_files = 0
         # 時間に応じて最大処理ファイル数を動的に調整（10分間隔データを想定）
         max_files = min(hours * 6 + 50, 500)  # 余裕を持って設定
@@ -231,6 +234,20 @@ class KotogawaMonitor:
                         continue
                     
                     try:
+                        # 直近で更新された可能性のあるファイル（書き込み中の一時的不整合を回避）をスキップ
+                        try:
+                            mtime = file_path.stat().st_mtime
+                            age_sec = (datetime.now().timestamp() - mtime)
+                            if age_sec < 10:
+                                # 直近10秒以内に更新されたファイルは読み飛ばす（次回に回す）
+                                continue
+                        except Exception:
+                            pass
+
+                        # 異常系ファイル名は集計には含めるが、必要に応じてここで除外も可能
+                        # if file_path.name.startswith("error_"):
+                        #     continue
+
                         with open(file_path, 'r', encoding='utf-8') as f:
                             data = json.load(f)
                             
@@ -254,12 +271,15 @@ class KotogawaMonitor:
                                     processed_files += 1
                             else:
                                 error_count += 1
+                                error_files.append(str(file_path))
                                 
                     except json.JSONDecodeError:
                         error_count += 1
+                        error_files.append(str(file_path))
                         # 個別のファイルエラーは表示しない（サマリーのみ）
                     except Exception as e:
                         error_count += 1
+                        error_files.append(str(file_path))
                         # 個別のファイルエラーは表示しない（サマリーのみ）
             
             current_time -= timedelta(days=1)
@@ -267,6 +287,10 @@ class KotogawaMonitor:
         # エラーサマリー表示（エラーが多い場合のみ表示）
         if error_count > 10:
             st.warning(f"■ 履歴データの読み込みで {error_count} 件のエラーがありました")
+            with st.expander("エラーの詳細（先頭のみ表示）"):
+                # 表示しすぎないよう先頭20件まで
+                for p in error_files[:20]:
+                    st.caption(p)
         
         # 時系列順にソート
         try:
@@ -1368,8 +1392,7 @@ class KotogawaMonitor:
             return fig
         
         df = pd.DataFrame(df_data)
-        if not df.empty:
-            df = df.sort_values('timestamp')  # 時系列順にソート
+        # ソート処理はload_history_data()で実施済みのため削除
         
         # 二軸グラフを作成
         fig = make_subplots(specs=[[{"secondary_y": True}]])
@@ -1549,8 +1572,7 @@ class KotogawaMonitor:
             return fig
         
         df = pd.DataFrame(df_data)
-        if not df.empty:
-            df = df.sort_values('timestamp')  # 時系列順にソート
+        # ソート処理はload_history_data()で実施済みのため削除
         
         # 二軸グラフを作成
         fig = make_subplots(specs=[[{"secondary_y": True}]])
@@ -1824,8 +1846,7 @@ class KotogawaMonitor:
             return fig
         
         df = pd.DataFrame(df_data)
-        if not df.empty:
-            df = df.sort_values('timestamp')  # 時系列順にソート
+        # ソート処理はload_history_data()で実施済みのため削除
         
         # 二軸グラフを作成
         fig = make_subplots(specs=[[{"secondary_y": True}]])
@@ -2104,8 +2125,7 @@ class KotogawaMonitor:
             return fig
         
         df = pd.DataFrame(df_data)
-        if not df.empty:
-            df = df.sort_values('timestamp')  # 時系列順にソート
+        # ソート処理はload_history_data()で実施済みのため削除
         
         # 二軸グラフを作成
         fig = make_subplots(specs=[[{"secondary_y": True}]])
