@@ -1017,16 +1017,54 @@ class KotogawaDataCollector:
         
         return precipitation_data
     
+    def validate_data(self, data: Dict[str, Any]) -> bool:
+        """データの完全性を検証"""
+        if not data or not isinstance(data, dict):
+            return False
+            
+        # 必須フィールドの存在確認
+        required_fields = ['dam', 'river', 'rainfall']
+        for field in required_fields:
+            if field not in data or data[field] is None:
+                return False
+                
+        # 各フィールドの主要データが存在するか確認
+        if 'water_level' not in data.get('dam', {}):
+            return False
+        if 'water_level' not in data.get('river', {}):
+            return False
+        if 'hourly' not in data.get('rainfall', {}):
+            return False
+            
+        # JSONサイズチェック（1KB未満は不完全データとみなす）
+        try:
+            json_str = json.dumps(data, ensure_ascii=False, default=str)
+            if len(json_str.encode('utf-8')) < 1000:
+                return False
+        except Exception:
+            return False
+            
+        return True
+    
     def save_data(self, data: Dict[str, Any], is_error: bool = False, error_info: Dict[str, Any] = None) -> None:
         """データを保存する"""
         jst = ZoneInfo('Asia/Tokyo')
         current_time = datetime.now(jst)
         
+        # データ検証（エラー時以外）
+        if not is_error and not self.validate_data(data):
+            print("Warning: Data validation failed, skipping save")
+            return
+        
         # 最新データを保存（エラーの場合はlatest.jsonは更新しない）
         if not is_error:
             latest_file = self.data_dir / "latest.json"
-            with open(latest_file, 'w', encoding='utf-8') as f:
-                json.dump(data, f, ensure_ascii=False, indent=2, default=str)
+            # 原子的書き込み（同一ディレクトリに一時ファイルを作成し置換）
+            import os, tempfile
+            with tempfile.NamedTemporaryFile('w', encoding='utf-8', delete=False, dir=latest_file.parent, suffix='.tmp') as tmp:
+                json.dump(data, tmp, ensure_ascii=False, indent=2, default=str)
+                tmp_path = tmp.name
+            os.replace(tmp_path, latest_file)
         
         # 履歴データを保存
         date_dir = self.history_dir / current_time.strftime("%Y") / current_time.strftime("%m") / current_time.strftime("%d")
@@ -1056,8 +1094,12 @@ class KotogawaDataCollector:
             if 'precipitation_intensity' in save_data and 'forecast' in save_data['precipitation_intensity']:
                 save_data['precipitation_intensity']['forecast'] = []
         
-        with open(history_file, 'w', encoding='utf-8') as f:
-            json.dump(save_data, f, ensure_ascii=False, indent=2, default=str)
+        # 原子的書き込みで履歴ファイルを保存
+        import os, tempfile
+        with tempfile.NamedTemporaryFile('w', encoding='utf-8', delete=False, dir=history_file.parent, suffix='.tmp') as tmp:
+            json.dump(save_data, tmp, ensure_ascii=False, indent=2, default=str)
+            tmp_path = tmp.name
+        os.replace(tmp_path, history_file)
         
         print(f"Data saved: {history_file.name}")
     
