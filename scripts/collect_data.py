@@ -1051,14 +1051,10 @@ class KotogawaDataCollector:
                 # data_timeがない場合は現在時刻を使用（フォールバック）
                 history_file = date_dir / f"{current_time.strftime('%H%M')}.json"
             
-            # 履歴データから予測値を除外
+            # 履歴データから予測値を除外（観測値のみ保存）
             save_data = data.copy()
-            if 'precipitation_intensity' in save_data:
-                # 予測値を削除（観測値のみ保存）
-                save_data['precipitation_intensity'] = {
-                    'observation': save_data['precipitation_intensity'].get('observation', []),
-                    'update_time': save_data['precipitation_intensity'].get('update_time')
-                }
+            if 'precipitation_intensity' in save_data and 'forecast' in save_data['precipitation_intensity']:
+                save_data['precipitation_intensity']['forecast'] = []
         
         with open(history_file, 'w', encoding='utf-8') as f:
             json.dump(save_data, f, ensure_ascii=False, indent=2, default=str)
@@ -1066,219 +1062,35 @@ class KotogawaDataCollector:
         print(f"Data saved: {history_file.name}")
     
     def cleanup_old_data(self, days_to_keep: int = 7) -> None:
-        """古いデータを削除する"""
+        """古いデータを削除する（シンプルな実装）"""
+        import shutil
+        
         cutoff_date = datetime.now() - timedelta(days=days_to_keep)
+        removed_count = 0
         
-        for year_dir in self.history_dir.iterdir():
-            if not year_dir.is_dir():
-                continue
-                
-            try:
-                year = int(year_dir.name)
-                if year < cutoff_date.year:
-                    # Remove entire year directory
-                    import shutil
-                    shutil.rmtree(year_dir)
-                    print(f"Removed old data directory: {year_dir}")
-                    continue
-                    
-                for month_dir in year_dir.iterdir():
-                    if not month_dir.is_dir():
-                        continue
-                    
-                    try:
-                        month = int(month_dir.name)
-                        if year == cutoff_date.year and month < cutoff_date.month:
-                            import shutil
-                            shutil.rmtree(month_dir)
-                            print(f"Removed old data directory: {month_dir}")
-                            continue
-                            
-                        for day_dir in month_dir.iterdir():
-                            if not day_dir.is_dir():
-                                continue
-                            
-                            try:
-                                day = int(day_dir.name)
-                                dir_date = datetime(year, month, day)
-                                if dir_date < cutoff_date:
-                                    import shutil
-                                    shutil.rmtree(day_dir)
-                                    print(f"Removed old data directory: {day_dir}")
-                            except (ValueError, OSError) as e:
-                                print(f"Error processing day directory {day_dir}: {e}")
-                                
-                    except (ValueError, OSError) as e:
-                        print(f"Error processing month directory {month_dir}: {e}")
-                        
-            except (ValueError, OSError) as e:
-                print(f"Error processing year directory {year_dir}: {e}")
-    
-    def create_daily_summary(self) -> None:
-        """前日の日次サマリーを作成する"""
         try:
-            jst = ZoneInfo('Asia/Tokyo')
-            current_time = datetime.now(jst)
-            yesterday = current_time - timedelta(days=1)
+            # YYYY/MM/DD形式のディレクトリを再帰的にチェック
+            for day_dir in self.history_dir.rglob("*/*/*"):
+                if day_dir.is_dir() and len(day_dir.parts) >= 3:
+                    try:
+                        # パスからYYYY/MM/DDを抽出
+                        date_parts = day_dir.parts[-3:]
+                        if len(date_parts) == 3 and all(part.isdigit() for part in date_parts):
+                            year, month, day = map(int, date_parts)
+                            dir_date = datetime(year, month, day)
+                            
+                            if dir_date < cutoff_date:
+                                shutil.rmtree(day_dir)
+                                removed_count += 1
+                    except (ValueError, OSError) as e:
+                        print(f"Error processing directory {day_dir}: {e}")
             
-            # 前日のディレクトリ
-            yesterday_dir = self.history_dir / yesterday.strftime("%Y") / yesterday.strftime("%m") / yesterday.strftime("%d")
-            if not yesterday_dir.exists():
-                return
-            
-            # 既に日次サマリーが存在する場合はスキップ
-            summary_file = yesterday_dir / "daily_summary.json"
-            if summary_file.exists():
-                return
-            
-            print(f"Creating daily summary for {yesterday.strftime('%Y-%m-%d')}...")
-            
-            # 前日のすべてのデータファイルを読み込む
-            daily_data = {}
-            error_count = 0
-            successful_count = 0
-            
-            for file_path in sorted(yesterday_dir.glob("*.json")):
-                # daily_summary.json自体はスキップ
-                if file_path.name == "daily_summary.json":
-                    continue
+            if removed_count > 0:
+                print(f"Cleaned up {removed_count} old data directories")
                 
-                try:
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        file_data = json.load(f)
-                    
-                    # エラーファイルとデータファイルを区別
-                    if file_path.name.startswith("error_"):
-                        error_count += 1
-                    else:
-                        successful_count += 1
-                        # 観測時刻をキーとしてデータを保存
-                        obs_time = file_path.stem  # ファイル名から拡張子を除いた部分
-                        daily_data[obs_time] = file_data
-                
-                except (json.JSONDecodeError, OSError) as e:
-                    print(f"Error reading {file_path}: {e}")
-                    continue
-            
-            # 日次統計を計算
-            statistics = self._calculate_daily_statistics(daily_data)
-            
-            # サマリーデータの作成
-            summary = {
-                'date': yesterday.strftime('%Y-%m-%d'),
-                'created_at': current_time.isoformat(),
-                'total_records': successful_count,
-                'error_count': error_count,
-                'statistics': statistics,
-                'hourly_data': daily_data  # 時刻をキーとした全データ
-            }
-            
-            # サマリーファイルを保存
-            with open(summary_file, 'w', encoding='utf-8') as f:
-                json.dump(summary, f, ensure_ascii=False, indent=2, default=str)
-            
-            print(f"Daily summary created: {summary_file.name}")
-            
         except Exception as e:
-            print(f"Error creating daily summary: {e}")
+            print(f"Error during cleanup: {e}")
     
-    def _calculate_daily_statistics(self, daily_data: Dict[str, Any]) -> Dict[str, Any]:
-        """日次統計を計算する"""
-        stats = {
-            'dam': {
-                'water_level': {'min': None, 'max': None, 'avg': None},
-                'storage_rate': {'min': None, 'max': None, 'avg': None},
-                'inflow': {'min': None, 'max': None, 'avg': None, 'total': None},
-                'outflow': {'min': None, 'max': None, 'avg': None, 'total': None}
-            },
-            'river': {
-                'water_level': {'min': None, 'max': None, 'avg': None}
-            },
-            'rainfall': {
-                'hourly': {'max': None, 'total': None},
-                'cumulative': {'max': None}
-            }
-        }
-        
-        # 各データタイプごとに値を収集
-        dam_levels = []
-        dam_rates = []
-        dam_inflows = []
-        dam_outflows = []
-        river_levels = []
-        hourly_rains = []
-        cumulative_rains = []
-        
-        for time_key, data in daily_data.items():
-            if 'dam' in data:
-                if data['dam'].get('water_level') is not None:
-                    dam_levels.append(data['dam']['water_level'])
-                if data['dam'].get('storage_rate') is not None:
-                    dam_rates.append(data['dam']['storage_rate'])
-                if data['dam'].get('inflow') is not None:
-                    dam_inflows.append(data['dam']['inflow'])
-                if data['dam'].get('outflow') is not None:
-                    dam_outflows.append(data['dam']['outflow'])
-            
-            if 'river' in data and data['river'].get('water_level') is not None:
-                river_levels.append(data['river']['water_level'])
-            
-            if 'rainfall' in data:
-                if data['rainfall'].get('hourly') is not None:
-                    hourly_rains.append(data['rainfall']['hourly'])
-                if data['rainfall'].get('cumulative') is not None:
-                    cumulative_rains.append(data['rainfall']['cumulative'])
-        
-        # 統計値の計算
-        if dam_levels:
-            stats['dam']['water_level'] = {
-                'min': min(dam_levels),
-                'max': max(dam_levels),
-                'avg': round(sum(dam_levels) / len(dam_levels), 2)
-            }
-        
-        if dam_rates:
-            stats['dam']['storage_rate'] = {
-                'min': min(dam_rates),
-                'max': max(dam_rates),
-                'avg': round(sum(dam_rates) / len(dam_rates), 1)
-            }
-        
-        if dam_inflows:
-            stats['dam']['inflow'] = {
-                'min': min(dam_inflows),
-                'max': max(dam_inflows),
-                'avg': round(sum(dam_inflows) / len(dam_inflows), 2),
-                'total': round(sum(dam_inflows) * 600 / 1000000, 2)  # m³/s * 600秒 / 1000000 = 百万m³
-            }
-        
-        if dam_outflows:
-            stats['dam']['outflow'] = {
-                'min': min(dam_outflows),
-                'max': max(dam_outflows),
-                'avg': round(sum(dam_outflows) / len(dam_outflows), 2),
-                'total': round(sum(dam_outflows) * 600 / 1000000, 2)  # m³/s * 600秒 / 1000000 = 百万m³
-            }
-        
-        if river_levels:
-            stats['river']['water_level'] = {
-                'min': min(river_levels),
-                'max': max(river_levels),
-                'avg': round(sum(river_levels) / len(river_levels), 2)
-            }
-        
-        if hourly_rains:
-            stats['rainfall']['hourly'] = {
-                'max': max(hourly_rains),
-                'total': sum(hourly_rains)
-            }
-        
-        if cumulative_rains:
-            stats['rainfall']['cumulative'] = {
-                'max': max(cumulative_rains)
-            }
-        
-        return stats
     
     def collect_all_data(self) -> Dict[str, Any]:
         """全てのデータを収集する"""
@@ -1483,9 +1295,6 @@ class KotogawaDataCollector:
         # 古いデータのクリーンアップ
         self.cleanup_old_data()
         
-        # 日次サマリーの作成（前日分）- 使用されていないため無効化
-        # self.create_daily_summary()
-        
         return data
 
 def main():
@@ -1510,9 +1319,10 @@ def main():
             'timestamp': current_time.isoformat(),
             'data_time': None,
             'dam': {'water_level': None, 'storage_rate': None, 'inflow': None, 'outflow': None, 'storage_change': None},
-            'river': {'water_level': None, 'level_change': 0.0, 'status': '不明'},
-            'rainfall': {'hourly': 0, 'cumulative': 0, 'change': 0},
-            'weather': {'today': {'weather_text': None, 'temp_max': None, 'temp_min': None}, 'tomorrow': {'weather_text': None, 'temp_max': None, 'temp_min': None}, 'update_time': None}
+            'river': {'water_level': None, 'level_change': None, 'status': None},
+            'rainfall': {'hourly': None, 'cumulative': None, 'change': None},
+            'weather': {'today': {}, 'tomorrow': {}, 'update_time': None},
+            'precipitation_intensity': {'observation': [], 'forecast': [], 'update_time': None}
         }
         error_info = {
             'errors': [{

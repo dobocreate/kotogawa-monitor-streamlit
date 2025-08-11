@@ -76,16 +76,13 @@ RIVER_THRESHOLDS = {
 
 # Data retention settings
 DATA_RETENTION = {
-    'days_to_keep': 7,
-    'cleanup_enabled': True
+    'days_to_keep': 7
 }
 
 # Backfill settings
 BACKFILL_CONFIG = {
     'default_hours': 24,
-    'default_max_items': 20,
-    'github_actions_hours': 24,  # GitHub Actions用の設定
-    'github_actions_max_items': 20
+    'default_max_items': 20
 }
 
 # Weather code mapping
