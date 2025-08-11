@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-08-12T05:25:32.514603+09:00",
+  "timestamp": "2025-08-12T05:28:58.569594+09:00",
   "data_time": "2025-08-12T05:20:00+09:00",
   "dam": {
     "water_level": 37.23,
@@ -14,9 +14,9 @@
     "status": "正常"
   },
   "rainfall": {
-    "hourly": null,
-    "cumulative": null,
-    "change": null
+    "hourly": 0,
+    "cumulative": 0,
+    "change": 0
   },
   "weather": {
     "today": {
@@ -165,6 +165,6 @@
         "intensity": 2.88
       }
     ],
-    "update_time": "2025-08-12T05:25:32.514507+09:00"
+    "update_time": "2025-08-12T05:28:58.569426+09:00"
   }
 }
