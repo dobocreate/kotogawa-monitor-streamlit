@@ -159,7 +159,7 @@ class KotogawaMonitor:
             file_mtime = latest_file.stat().st_mtime
             return _self._load_latest_data_cached(str(latest_file), file_mtime)
         except Exception as e:
-            st.error(f"× データ読み込みエラー: {e}")
+            #             st.error(f"× データ読み込みエラー: {e}")
             return None
     
     @st.cache_data(ttl=300)  # ファイル更新時刻が変わるまでキャッシュ
@@ -171,18 +171,18 @@ class KotogawaMonitor:
                 
                 # データの整合性チェック
                 if not data or 'timestamp' not in data:
-                    st.error("× データファイルの形式が正しくありません")
+                    #                     st.error("× データファイルの形式が正しくありません")
                     return None
                 
                 return data
         except json.JSONDecodeError as e:
-            st.error(f"× JSONファイルの形式エラー: {e}")
+            #             st.error(f"× JSONファイルの形式エラー: {e}")
             return None
         except FileNotFoundError:
             st.warning("■ データファイルが見つかりません")
             return None
         except Exception as e:
-            st.error(f"× データ読み込みエラー: {e}")
+            #             st.error(f"× データ読み込みエラー: {e}")
             return None
     
     def get_cache_key(self) -> str:
@@ -284,19 +284,20 @@ class KotogawaMonitor:
             
             current_time -= timedelta(days=1)
         
-        # エラーサマリー表示（エラーが多い場合のみ表示）
-        if error_count > 10:
-            st.warning(f"■ 履歴データの読み込みで {error_count} 件のエラーがありました")
-            with st.expander("エラーの詳細（先頭のみ表示）"):
-                # 表示しすぎないよう先頭20件まで
-                for p in error_files[:20]:
-                    st.caption(p)
+        #         # エラーサマリー表示（エラーが多い場合のみ表示）
+        #         if error_count > 10:
+        #             st.warning(f"■ 履歴データの読み込みで {error_count} 件のエラーがありました")
+        #             with st.expander("エラーの詳細（先頭のみ表示）"):
+        #                 # 表示しすぎないよう先頭20件まで
+        #                 for p in error_files[:20]:
+        #                     st.caption(p)
         
         # 時系列順にソート
         try:
             history_data.sort(key=lambda x: x.get('data_time', x.get('timestamp', '')))
         except Exception as e:
-            st.error(f"× 履歴データソートエラー: {e}")
+        #             st.error(f"× 履歴データソートエラー: {e}")
+            pass
             
         return history_data
     
@@ -388,10 +389,10 @@ class KotogawaMonitor:
                 if dt is None:
                     error_count += 1
                     if processed_count < 5:
-                        st.error(f"❌ 全ての形式で解析失敗: '{timestamp_str}' (長さ: {len(timestamp_str)}文字)")
+                        #                         st.error(f"❌ 全ての形式で解析失敗: '{timestamp_str}' (長さ: {len(timestamp_str)}文字)")
                         # 文字の詳細表示
                         char_info = [f"'{c}' ({ord(c)})" for c in timestamp_str[:20]]  # 最初の20文字
-                        st.error(f"文字詳細: {', '.join(char_info)}")
+                        #                         st.error(f"文字詳細: {', '.join(char_info)}")
                     continue
                 
                 # 対応する河川データを探す（クリーニング済みタイムスタンプでマッチング）
@@ -464,9 +465,9 @@ class KotogawaMonitor:
             return sample_data
             
         except Exception as e:
-            st.error(f"サンプルCSVファイルの読み込みエラー: {e}")
+            #             st.error(f"サンプルCSVファイルの読み込みエラー: {e}")
             import traceback
-            st.error(f"詳細エラー: {traceback.format_exc()}")
+            #             st.error(f"詳細エラー: {traceback.format_exc()}")
             return []
     
     def check_alert_status(self, data: Dict[str, Any], thresholds: Dict[str, float]) -> Dict[str, str]:
