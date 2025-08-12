@@ -294,7 +294,7 @@ class KotogawaMonitor:
         
         # 時系列順にソート
         try:
-            history_data.sort(key=lambda x: x.get('timestamp', ''))
+            history_data.sort(key=lambda x: x.get('data_time', x.get('timestamp', '')))
         except Exception as e:
             st.error(f"× 履歴データソートエラー: {e}")
             
