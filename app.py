@@ -21,7 +21,7 @@ from src.application.services.history_service import HistoryService
 
 # ページ設定
 st.set_page_config(
-    page_title="厚東川監視システム",
+    page_title="厚東川氾濫監視システム v2.5",
     page_icon="■",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -59,7 +59,7 @@ def main():
         st.session_state.demo_mode = False  # デフォルトは実データモード
     
     # ヘッダー表示
-    header = Header(title="厚東川氾濫監視システムv2.0")
+    header = Header(title="厚東川氾濫監視システム v2.5")
     header.render()
     
     # 状態表示バー
@@ -253,7 +253,7 @@ def main():
     
     # フッター
     st.sidebar.markdown("---")
-    st.sidebar.caption("厚東川氾濫監視システム v2.0")
+    st.sidebar.caption("厚東川氾濫監視システム v2.5")
     st.sidebar.caption("※ 本システムは山口県公開データを再加工した参考情報です。防災判断は必ず公式発表をご確認ください。")
     st.sidebar.caption("※ 本システムの利用または利用不能により生じた直接・間接の損害について、一切責任を負いません。")
     st.sidebar.caption("Powered by Streamlit")

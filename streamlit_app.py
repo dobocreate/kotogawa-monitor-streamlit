@@ -26,7 +26,7 @@ from streamlit_autorefresh import st_autorefresh
 
 # ページ設定
 st.set_page_config(
-    page_title="厚東川監視システム",
+    page_title="厚東川氾濫監視システム v2.5",
     page_icon="■",
     layout="wide",
     initial_sidebar_state="collapsed"  # モバイル・デスクトップ共に初期状態は閉じる
@@ -2535,7 +2535,7 @@ def main():
     }
     
     # システムヘッダーの表示
-    st.markdown('<h1 style="text-align: center; margin-top: 0; margin-bottom: 1rem;">厚東川氾濫監視システムv2.0</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 style="text-align: center; margin-top: 0; margin-bottom: 1rem;">厚東川氾濫監視システム v2.5</h1>', unsafe_allow_html=True)
     
     
     # 自動更新の実行（ヘッダーの後に配置）- デモモード時は無効化
@@ -2717,7 +2717,7 @@ def main():
     
     # アプリ情報
     st.sidebar.markdown("---")
-    st.sidebar.caption("厚東川氾濫監視システム v2.0")
+    st.sidebar.caption("厚東川氾濫監視システム v2.5")
     st.sidebar.caption("※ 本システムは山口県公開データを再加工した参考情報です。防災判断は必ず公式発表をご確認ください。")
     st.sidebar.caption("※ 本システムの利用または利用不能により生じた直接・間接の損害について、一切責任を負いません。")
     st.sidebar.caption("Powered by Streamlit")
