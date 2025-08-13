@@ -1,52 +1,40 @@
-# CSS最適化リファクタリング計画書
+# リファクタリング計画：実データ対応
 
 ## 目的
-Kotogawa監視アプリケーションのCSS実装を最適化し、重複除去・モジュール化・パフォーマンス改善を実現する
+app.pyを実データ（data/history内のJSONファイル）に対応させ、デモモードと実データモードの切り替えを可能にする
 
 ## 現状分析
-- **app.py**: インラインCSS 137行（initialize_css関数内）
-- **streamlit_app.py**: インラインCSS 約200行以上
-- **重複箇所**: 両ファイルで同一のスタイル定義が約90%重複
-- **header.py**: インラインスタイル属性使用
-- **問題点**: メンテナンス困難、読み込み遅延、一貫性欠如
-
-## 範囲
-- app.py内のインラインCSS（137行）
-- streamlit_app.py内のインラインCSS（推定約200行）
-- src/presentation/components/header.pyのインラインスタイル
-- 新規CSS統合モジュール（src/presentation/styles/）の作成
+- **app.py**：デモモード固定（line 161: `st.session_state.demo_mode = True`）
+- **DashboardPage**：monitoring_service未設定のため、常に`_get_demo_history_data()`を使用
+- **streamlit_app.py**：`load_history_data()`で実データを読み込む既存実装あり
+- **data/history/**：YYYY/MM/DD/*.json形式で実データが保存されている
 
 ## 影響範囲
-- **公開API**: なし（UIのみの変更）
-- **依存関係**: Streamlit表示コンポーネント
-- **I/O境界**: なし（純粋なスタイル変更）
-- **リスクレベル**: 低（表示のみ、機能影響なし）
+- app.py（サービス注入箇所）
+- src/presentation/pages/dashboard.py（データ取得ロジック）
+- 新規作成：src/infrastructure/repositories/history_repository.py
+- 新規作成：src/application/services/history_service.py
 
-## 実施手順
-1. **Step 1**: CSS統合モジュールの作成（src/presentation/styles/）
-2. **Step 2**: 重複スタイルの抽出と統合
-3. **Step 3**: コンポーネント別スタイルの整理
-4. **Step 4**: app.pyとstreamlit_app.pyの統合検討
-5. **Step 5**: 未使用スタイルの削除
-6. **Step 6**: パフォーマンス計測と検証
+## リスク評価
+- **低リスク**：新規ファイル追加のため既存機能への影響なし
+- **中リスク**：DashboardPageの変更（ただしデモモードは維持）
+- **注意点**：JSONファイル読み込み時のエラーハンドリング
 
 ## ロールバック計画
-- 各変更はgitコミット単位で独立
-- CSSモジュール化は既存コードを残したまま並行実装
-- 問題発生時は`git checkout -`で即時復帰可能
-- 各ステップ後に動作確認を実施
+1. 各コミットは独立してrevert可能
+2. デモモード動作は常に保証される
+3. 実データ読み込みエラー時はデモモードへフォールバック
+
+## 実装ステップ
+1. **Step 1**：履歴データリポジトリの作成（behavior-preserving）
+2. **Step 2**：履歴サービスの作成（behavior-preserving）
+3. **Step 3**：DashboardPageへのサービス統合（behavior-preserving）
+4. **Step 4**：app.pyでのサービス注入（behavior-preserving）
+5. **Step 5**：動作検証とテスト
 
 ## 完了条件
-- [ ] すべてのページが正常表示
-- [ ] CSS重複率0%
-- [ ] コード量50%削減達成
-- [ ] パフォーマンス計測で30%以上の改善
-- [ ] モバイル/デスクトップ両対応確認
-- [ ] app.pyとstreamlit_app.pyの統合完了
-
-## 計測指標
-- **Before**: インラインCSS約337行（app.py: 137行 + streamlit_app.py: 200行）
-- **Target**: 統合CSS約170行以下
-- **重複除去**: 100%達成目標
-- **読み込み時間**: 30-40%短縮目標
-- **ファイル数**: 2ファイル → 1モジュール化
+- [ ] デモモードが従来通り動作する
+- [ ] 実データモードでdata/historyからデータを読み込める
+- [ ] モード切り替えがサイドバーから可能
+- [ ] エラー時の適切なフォールバック
+- [ ] 既存のグラフ表示機能が維持される

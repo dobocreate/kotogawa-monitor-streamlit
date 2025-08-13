@@ -1,24 +1,4 @@
-# Deletion Candidates
-
-## 2025-08-13 CSS最適化関連
-
-### インラインCSS（フォールバック削除待ち）
-1. **streamlit_app.py内のインラインCSS（行47-142）**
-   - 根拠: CSS統合モジュールに移行済み
-   - 参照: src/presentation/styles/モジュールが正常動作確認後
-   - 保留期間: 2週間（2025-08-27まで）
-   - 削除条件: フォールバックが不要と確認後
-   - サイズ: 約100行（3KB）
-
-2. **将来的な統合候補**
-   - app.pyとstreamlit_app.pyの統合
-   - 根拠: 機能重複、CSS統合済み
-   - 保留期間: 3-6ヶ月（ユーザー習熟度による）
-   - 削除条件: 新UIの完全移行確認後
-
----
-
-## 2025-08-12 latest.json Removal
+# Deletion Candidates: latest.json Removal
 
 ## Files to be Deleted
 
