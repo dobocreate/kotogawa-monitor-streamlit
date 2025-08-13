@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from src.presentation.components import Header, AlertBanner, StatusBar
 from src.presentation.pages import DashboardPage
+from src.presentation.styles import get_all_styles
 from src.config.app_settings import AppSettings
 from src.application.services.history_service import HistoryService
 
@@ -28,113 +29,8 @@ st.set_page_config(
 
 
 def initialize_css():
-    """CSSスタイルを初期化（元のstreamlit_app.pyから移植）"""
-    st.markdown("""
-    <style>
-        /* サイドバーが開いている時のメインコンテンツ幅調整 */
-        .main .block-container {
-            padding-left: 1rem;
-            padding-right: 1rem;
-            padding-top: 0rem !important;
-            margin-top: 0rem !important;
-            max-width: 100%;
-        }
-        
-        /* Streamlitのデフォルト上部マージンを完全に除去 */
-        .main .block-container > div:first-child {
-            margin-top: 0 !important;
-            padding-top: 0 !important;
-        }
-        
-        /* ページ全体の上部マージンを除去 */
-        .stApp > header {
-            display: none !important;
-        }
-        
-        /* Streamlitのメインコンテナの上部スペースを除去 */
-        .main {
-            padding-top: 0 !important;
-        }
-        
-        /* 自動更新コンポーネントの上部マージンを除去 */
-        [data-testid="stVerticalBlock"] > div:first-child {
-            margin-top: 0 !important;
-            padding-top: 0 !important;
-        }
-        
-        /* Streamlitの全体的な上部スペースを強制除去 */
-        .stApp {
-            padding-top: 0 !important;
-            margin-top: 0 !important;
-        }
-        
-        /* 最初の要素の上部マージンを完全除去 */
-        .main .block-container > div > div:first-child {
-            margin-top: 0 !important;
-            padding-top: 0 !important;
-        }
-        
-        /* 自動更新コンポーネントを完全に非表示 */
-        iframe[title="st_autorefresh.autorefresh"] {
-            display: none !important;
-            height: 0 !important;
-            width: 0 !important;
-        }
-        
-        /* 自動更新コンポーネントのコンテナも非表示 */
-        [data-testid="stIFrame"]:has(iframe[title*="autorefresh"]) {
-            display: none !important;
-            height: 0 !important;
-            margin: 0 !important;
-            padding: 0 !important;
-        }
-        
-        /* サイドバーが開いている時のグラフコンテナ */
-        [data-testid="stSidebar"][aria-expanded="true"] ~ .main .block-container {
-            max-width: calc(100vw - 21rem);
-        }
-        
-        /* Plotlyグラフのレスポンシブ対応 */
-        .js-plotly-plot .plotly {
-            width: 100% !important;
-            height: auto !important;
-        }
-        
-        /* Streamlitのグラフコンテナ */
-        .stPlotlyChart {
-            width: 100% !important;
-        }
-        
-        /* メトリクス表示の調整 */
-        [data-testid="metric-container"] {
-            width: 100%;
-            min-width: 0;
-            background-color: #f0f2f6;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-        }
-        
-        /* サイドバーの上部余白調整 */
-        section[data-testid="stSidebar"] > div {
-            padding-top: 0rem;
-        }
-        
-        /* システム名を中央配置 */
-        .main .block-container h1,
-        .main h1,
-        h1[data-testid="stMarkdown"] {
-            text-align: center !important;
-            color: #1f77b4;
-            margin-bottom: 1rem;
-        }
-        
-        /* アラートバナーのスタイル */
-        .stAlert {
-            margin-bottom: 1rem;
-        }
-    </style>
-    """, unsafe_allow_html=True)
+    """CSSスタイルを初期化（統合モジュールから読み込み）"""
+    st.markdown(get_all_styles(), unsafe_allow_html=True)
 
 
 def main():
@@ -288,7 +184,6 @@ def main():
             if not st.session_state.get('demo_mode', False):
                 try:
                     from pathlib import Path
-                    from src.application.services.history_service import HistoryService
                     history_service = HistoryService(base_dir=Path.cwd())
                     latest_data = history_service.get_current_data()
                     
