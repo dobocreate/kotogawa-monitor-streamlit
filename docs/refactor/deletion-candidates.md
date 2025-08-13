@@ -123,3 +123,15 @@ If issues arise after deletion:
 - **I/O Operations Saved**: 144 file writes/day
 - **Code Simplified**: ~50 lines removed
 - **Maintenance Reduced**: No synchronization issues between latest and history
+
+## UI復元に関する削除候補
+
+### 評価結果
+- **削除候補ファイル**: なし
+- **理由**: 新旧UIは共存可能、クリーンアーキテクチャ版が元のUIを包含
+- **状態**: 両方のUIが並行して利用可能
+
+### 将来的な統合検討
+- **streamlit_app.py**: 将来的に app.py に完全移行後、アーカイブ候補
+- **タイムライン**: ユーザーの新UI習熟度による（3-6ヶ月後に再評価）
+- **移行戦略**: 段階的な機能統合とユーザーフィードバック収集
