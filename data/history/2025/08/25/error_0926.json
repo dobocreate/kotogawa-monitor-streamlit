@@ -1,5 +1,5 @@
 {
-  "error_time": "2025-08-18T06:26:28.627005+09:00",
+  "error_time": "2025-08-25T09:26:42.332686+09:00",
   "error_info": {
     "errors": [
       {
@@ -13,16 +13,16 @@
       }
     ],
     "total_errors": 1,
-    "observation_time": "2025-08-18T06:20:00+09:00"
+    "observation_time": "2025-08-25T09:20:00+09:00"
   },
   "partial_data": {
-    "timestamp": "2025-08-18T06:26:28.626951+09:00",
-    "data_time": "2025-08-18T06:20:00+09:00",
+    "timestamp": "2025-08-25T09:26:42.332627+09:00",
+    "data_time": "2025-08-25T09:20:00+09:00",
     "dam": {
-      "water_level": 37.84,
-      "storage_rate": 98.2,
-      "inflow": 9.7,
-      "outflow": 11.01,
+      "water_level": null,
+      "storage_rate": 0.0,
+      "inflow": 0.0,
+      "outflow": 0.0,
       "storage_change": null
     },
     "river": {
@@ -37,12 +37,12 @@
     },
     "weather": {
       "today": {
-        "weather_code": "111",
-        "weather_text": "晴れ　夕方　から　くもり　所により　昼過ぎ　から　雨　で　雷を伴う",
-        "temp_max": 33,
-        "temp_min": 33,
+        "weather_code": "101",
+        "weather_text": "晴れ　時々　くもり　所により　昼過ぎ　から　夜のはじめ頃　雨　で　雷を伴い　激しく　降る",
+        "temp_max": 34,
+        "temp_min": 34,
         "precipitation_probability": [
-          10,
+          20,
           20,
           20
         ],
@@ -53,13 +53,13 @@
         ]
       },
       "tomorrow": {
-        "weather_code": "201",
-        "weather_text": "くもり　時々　晴れ　所により　雨　で　雷を伴う",
+        "weather_code": "101",
+        "weather_text": "晴れ　時々　くもり　所により　雨　で　雷を伴う",
         "temp_max": 33,
         "temp_min": 27,
         "precipitation_probability": [
-          10,
-          10,
+          20,
+          20,
           20,
           20
         ],
@@ -71,57 +71,57 @@
         ]
       },
       "day_after_tomorrow": {
-        "weather_code": "101",
-        "weather_text": "晴れ時々くもり",
-        "temp_max": 33,
+        "weather_code": "202",
+        "weather_text": "くもり一時雨",
+        "temp_max": 31,
         "temp_min": 27,
         "precipitation_probability": [
-          20
+          50
         ],
         "precipitation_times": [
           "日中"
         ]
       },
-      "update_time": "2025-08-18T05:00:00+09:00",
+      "update_time": "2025-08-25T05:00:00+09:00",
       "weekly_forecast": [
         {
-          "date": "2025-08-18",
+          "date": "2025-08-25",
           "day_of_week": "Mon",
-          "weather_code": "100",
-          "weather_text": "晴れ",
+          "weather_code": "101",
+          "weather_text": "晴れ時々くもり",
           "precipitation_probability": null,
           "temp_max": null,
           "temp_min": null
         },
         {
-          "date": "2025-08-19",
+          "date": "2025-08-26",
           "day_of_week": "Tue",
-          "weather_code": "101",
-          "weather_text": "晴れ時々くもり",
+          "weather_code": "201",
+          "weather_text": "くもり時々晴れ",
           "precipitation_probability": 30,
           "temp_max": 33,
           "temp_min": 27
         },
         {
-          "date": "2025-08-20",
+          "date": "2025-08-27",
           "day_of_week": "Wed",
-          "weather_code": "101",
-          "weather_text": "晴れ時々くもり",
-          "precipitation_probability": 20,
-          "temp_max": 33,
+          "weather_code": "202",
+          "weather_text": "くもり一時雨",
+          "precipitation_probability": 50,
+          "temp_max": 31,
           "temp_min": 27
         },
         {
-          "date": "2025-08-21",
+          "date": "2025-08-28",
           "day_of_week": "Thu",
-          "weather_code": "101",
-          "weather_text": "晴れ時々くもり",
-          "precipitation_probability": 20,
+          "weather_code": "201",
+          "weather_text": "くもり時々晴れ",
+          "precipitation_probability": 30,
           "temp_max": 33,
           "temp_min": 27
         },
         {
-          "date": "2025-08-22",
+          "date": "2025-08-29",
           "day_of_week": "Fri",
           "weather_code": "101",
           "weather_text": "晴れ時々くもり",
@@ -130,59 +130,59 @@
           "temp_min": 27
         },
         {
-          "date": "2025-08-23",
+          "date": "2025-08-30",
           "day_of_week": "Sat",
-          "weather_code": "101",
-          "weather_text": "晴れ時々くもり",
-          "precipitation_probability": 20,
-          "temp_max": 33,
-          "temp_min": 26
+          "weather_code": "201",
+          "weather_text": "くもり時々晴れ",
+          "precipitation_probability": 30,
+          "temp_max": 34,
+          "temp_min": 27
         },
         {
-          "date": "2025-08-24",
+          "date": "2025-08-31",
           "day_of_week": "Sun",
-          "weather_code": "101",
-          "weather_text": "晴れ時々くもり",
-          "precipitation_probability": 20,
+          "weather_code": "200",
+          "weather_text": "くもり",
+          "precipitation_probability": 40,
           "temp_max": 33,
-          "temp_min": 26
+          "temp_min": 27
         }
       ]
     },
     "precipitation_intensity": {
       "observation": [
         {
-          "datetime": "2025-08-18T06:02:00+09:00",
+          "datetime": "2025-08-25T09:02:00+09:00",
           "intensity": 0.0
         }
       ],
       "forecast": [
         {
-          "datetime": "2025-08-18T06:03:00+09:00",
+          "datetime": "2025-08-25T09:03:00+09:00",
           "intensity": 0.0
         },
         {
-          "datetime": "2025-08-18T06:04:00+09:00",
+          "datetime": "2025-08-25T09:04:00+09:00",
           "intensity": 0.0
         },
         {
-          "datetime": "2025-08-18T06:05:00+09:00",
+          "datetime": "2025-08-25T09:05:00+09:00",
           "intensity": 0.0
         },
         {
-          "datetime": "2025-08-18T07:00:00+09:00",
+          "datetime": "2025-08-25T10:00:00+09:00",
           "intensity": 0.0
         },
         {
-          "datetime": "2025-08-18T07:01:00+09:00",
+          "datetime": "2025-08-25T10:01:00+09:00",
           "intensity": 0.0
         },
         {
-          "datetime": "2025-08-18T07:02:00+09:00",
+          "datetime": "2025-08-25T10:02:00+09:00",
           "intensity": 0.0
         }
       ],
-      "update_time": "2025-08-18T06:26:28.626807+09:00"
+      "update_time": "2025-08-25T09:26:42.331703+09:00"
     }
   }
 }

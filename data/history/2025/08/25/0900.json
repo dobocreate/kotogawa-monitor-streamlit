@@ -1,15 +1,15 @@
 {
-  "timestamp": "2025-08-18T12:26:14.927197+09:00",
-  "data_time": "2025-08-18T12:00:00+09:00",
+  "timestamp": "2025-08-25T09:26:25.680421+09:00",
+  "data_time": "2025-08-25T09:00:00+09:00",
   "dam": {
-    "water_level": 37.83,
-    "storage_rate": 98.1,
-    "inflow": 9.73,
-    "outflow": 11.02,
+    "water_level": null,
+    "storage_rate": 0.0,
+    "inflow": 0.0,
+    "outflow": 0.0,
     "storage_change": null
   },
   "river": {
-    "water_level": 2.91,
+    "water_level": 2.82,
     "level_change": 0.0,
     "status": "正常"
   },
@@ -20,7 +20,7 @@
   },
   "_metadata": {
     "backfilled": true,
-    "complete": true,
+    "complete": false,
     "source": "backfill_missing_data.py"
   }
 }
