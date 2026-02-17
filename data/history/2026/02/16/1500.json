@@ -1,0 +1,26 @@
+{
+  "timestamp": "2026-02-17T12:07:09.215614+09:00",
+  "data_time": "2026-02-16T15:00:00+09:00",
+  "dam": {
+    "water_level": 33.04,
+    "storage_rate": 48.9,
+    "inflow": 1.92,
+    "outflow": 0.32,
+    "storage_change": null
+  },
+  "river": {
+    "water_level": 2.48,
+    "level_change": -0.01,
+    "status": "正常"
+  },
+  "rainfall": {
+    "hourly": 0,
+    "cumulative": 0,
+    "change": null
+  },
+  "_metadata": {
+    "backfilled": true,
+    "complete": true,
+    "source": "backfill_missing_data.py"
+  }
+}
