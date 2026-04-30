@@ -1,26 +1,26 @@
 {
-  "timestamp": "2026-04-24T12:05:29.962107+09:00",
-  "data_time": "2026-04-23T12:40:00+09:00",
+  "timestamp": "2026-04-30T12:07:09.312700+09:00",
+  "data_time": "2026-04-29T14:10:00+09:00",
   "dam": {
     "water_level": 38.31,
     "storage_rate": 92.6,
-    "inflow": 25.43,
+    "inflow": 5.62,
     "outflow": 8.86,
     "storage_change": null
   },
   "river": {
-    "water_level": 2.58,
-    "level_change": 0.0,
-    "status": "正常"
+    "water_level": null,
+    "level_change": null,
+    "status": null
   },
   "rainfall": {
-    "hourly": 1,
-    "cumulative": 39,
+    "hourly": null,
+    "cumulative": null,
     "change": null
   },
   "_metadata": {
     "backfilled": true,
-    "complete": true,
+    "complete": false,
     "source": "backfill_missing_data.py"
   }
 }
