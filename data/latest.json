@@ -1,11 +1,11 @@
 {
-  "timestamp": "2026-05-14T00:07:39.742480+09:00",
-  "data_time": "2026-05-13T23:50:00+09:00",
+  "timestamp": "2026-05-14T12:07:31.604834+09:00",
+  "data_time": "2026-05-14T12:00:00+09:00",
   "dam": {
-    "water_level": 38.28,
-    "storage_rate": 92.3,
-    "inflow": 4.07,
-    "outflow": 4.07,
+    "water_level": 38.27,
+    "storage_rate": 92.2,
+    "inflow": 4.32,
+    "outflow": 8.32,
     "storage_change": null
   },
   "river": {
@@ -20,14 +20,28 @@
   },
   "weather": {
     "today": {
+      "weather_code": "101",
+      "weather_text": "晴れ　昼過ぎ　から　夕方　くもり　所により　夜のはじめ頃　まで　雨　で　雷を伴う",
+      "temp_max": 26,
+      "temp_min": 26,
+      "precipitation_probability": [
+        10,
+        10
+      ],
+      "precipitation_times": [
+        "12時",
+        "18時"
+      ]
+    },
+    "tomorrow": {
       "weather_code": "100",
-      "weather_text": "晴れ　所により　夕方　雨",
-      "temp_max": null,
-      "temp_min": null,
+      "weather_text": "晴れ",
+      "temp_max": 26,
+      "temp_min": 17,
       "precipitation_probability": [
         0,
         0,
-        10,
+        0,
         0
       ],
       "precipitation_times": [
@@ -37,31 +51,23 @@
         "18時"
       ]
     },
-    "tomorrow": {
-      "weather_code": "100",
-      "weather_text": "晴れ　所により　昼過ぎ　から　夕方　雨　で　雷を伴う",
-      "temp_max": null,
-      "temp_min": null,
-      "precipitation_probability": [],
-      "precipitation_times": []
-    },
     "day_after_tomorrow": {
-      "weather_code": "101",
-      "weather_text": "晴れ時々くもり",
+      "weather_code": "100",
+      "weather_text": "晴れ",
       "temp_max": 26,
       "temp_min": 17,
       "precipitation_probability": [
-        10
+        0
       ],
       "precipitation_times": [
         "日中"
       ]
     },
-    "update_time": "2026-05-13T17:00:00+09:00",
+    "update_time": "2026-05-14T11:00:00+09:00",
     "weekly_forecast": [
       {
-        "date": "2026-05-14",
-        "day_of_week": "Thu",
+        "date": "2026-05-15",
+        "day_of_week": "Fri",
         "weather_code": "100",
         "weather_text": "晴れ",
         "precipitation_probability": null,
@@ -69,20 +75,11 @@
         "temp_min": null
       },
       {
-        "date": "2026-05-15",
-        "day_of_week": "Fri",
-        "weather_code": "100",
-        "weather_text": "晴れ",
-        "precipitation_probability": 10,
-        "temp_max": 25,
-        "temp_min": 17
-      },
-      {
         "date": "2026-05-16",
         "day_of_week": "Sat",
-        "weather_code": "101",
-        "weather_text": "晴れ時々くもり",
-        "precipitation_probability": 10,
+        "weather_code": "100",
+        "weather_text": "晴れ",
+        "precipitation_probability": 0,
         "temp_max": 26,
         "temp_min": 17
       },
@@ -102,7 +99,7 @@
         "weather_text": "晴れ時々くもり",
         "precipitation_probability": 20,
         "temp_max": 25,
-        "temp_min": 17
+        "temp_min": 16
       },
       {
         "date": "2026-05-19",
@@ -121,42 +118,51 @@
         "precipitation_probability": 30,
         "temp_max": 25,
         "temp_min": 18
+      },
+      {
+        "date": "2026-05-21",
+        "day_of_week": "Thu",
+        "weather_code": "202",
+        "weather_text": "くもり一時雨",
+        "precipitation_probability": 50,
+        "temp_max": 25,
+        "temp_min": 19
       }
     ]
   },
   "precipitation_intensity": {
     "observation": [
       {
-        "datetime": "2026-05-14T00:00:00+09:00",
+        "datetime": "2026-05-14T12:00:00+09:00",
         "intensity": 0.0
       }
     ],
     "forecast": [
       {
-        "datetime": "2026-05-14T00:01:00+09:00",
+        "datetime": "2026-05-14T12:01:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2026-05-14T00:02:00+09:00",
+        "datetime": "2026-05-14T12:02:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2026-05-14T00:03:00+09:00",
+        "datetime": "2026-05-14T12:03:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2026-05-14T00:04:00+09:00",
+        "datetime": "2026-05-14T12:04:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2026-05-14T00:05:00+09:00",
+        "datetime": "2026-05-14T12:05:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2026-05-14T01:00:00+09:00",
+        "datetime": "2026-05-14T13:00:00+09:00",
         "intensity": 0.0
       }
     ],
-    "update_time": "2026-05-14T00:07:39.741828+09:00"
+    "update_time": "2026-05-14T12:07:31.604253+09:00"
   }
 }
