@@ -1,11 +1,11 @@
 {
-  "timestamp": "2026-05-11T12:06:08.072694+09:00",
-  "data_time": "2026-05-10T13:50:00+09:00",
+  "timestamp": "2026-05-17T12:05:24.840881+09:00",
+  "data_time": "2026-05-16T12:30:00+09:00",
   "dam": {
-    "water_level": 38.26,
-    "storage_rate": 92.1,
-    "inflow": 6.14,
-    "outflow": 7.62,
+    "water_level": 38.21,
+    "storage_rate": 91.6,
+    "inflow": 3.36,
+    "outflow": 4.1,
     "storage_change": null
   },
   "river": {
