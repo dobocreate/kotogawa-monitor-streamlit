@@ -1,11 +1,11 @@
 {
-  "timestamp": "2026-05-16T00:07:05.180142+09:00",
-  "data_time": "2026-05-15T03:00:00+09:00",
+  "timestamp": "2026-05-22T12:05:21.188730+09:00",
+  "data_time": "2026-05-21T12:30:00+09:00",
   "dam": {
-    "water_level": 38.26,
-    "storage_rate": 92.1,
-    "inflow": 3.13,
-    "outflow": 4.07,
+    "water_level": 37.97,
+    "storage_rate": 89.1,
+    "inflow": 3.41,
+    "outflow": 10.27,
     "storage_change": null
   },
   "river": {
@@ -14,8 +14,8 @@
     "status": "正常"
   },
   "rainfall": {
-    "hourly": 0,
-    "cumulative": 0,
+    "hourly": 8,
+    "cumulative": 13,
     "change": null
   },
   "_metadata": {
