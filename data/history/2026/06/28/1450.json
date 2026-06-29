@@ -1,15 +1,15 @@
 {
-  "timestamp": "2026-06-23T00:06:58.218999+09:00",
-  "data_time": "2026-06-22T02:40:00+09:00",
+  "timestamp": "2026-06-29T12:07:36.312156+09:00",
+  "data_time": "2026-06-28T14:50:00+09:00",
   "dam": {
-    "water_level": 36.8,
-    "storage_rate": 97.7,
-    "inflow": 18.58,
-    "outflow": 13.07,
+    "water_level": 36.68,
+    "storage_rate": 96.3,
+    "inflow": 44.64,
+    "outflow": 59.28,
     "storage_change": null
   },
   "river": {
-    "water_level": 2.96,
+    "water_level": 3.06,
     "level_change": 0.0,
     "status": "正常"
   },
