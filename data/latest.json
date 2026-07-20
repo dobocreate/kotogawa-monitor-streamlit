@@ -1,34 +1,48 @@
 {
-  "timestamp": "2026-07-20T00:07:47.655388+09:00",
-  "data_time": "2026-07-19T23:40:00+09:00",
+  "timestamp": "2026-07-20T12:07:46.697510+09:00",
+  "data_time": "2026-07-20T12:00:00+09:00",
   "dam": {
-    "water_level": 37.68,
-    "storage_rate": 96.4,
-    "inflow": 6.11,
+    "water_level": 37.7,
+    "storage_rate": 96.6,
+    "inflow": 5.64,
     "outflow": 4.54,
     "storage_change": null
   },
   "river": {
-    "water_level": 1.85,
+    "water_level": 1.86,
     "level_change": 0.0,
     "status": "正常"
   },
   "rainfall": {
-    "hourly": null,
-    "cumulative": null,
-    "change": null
+    "hourly": 0,
+    "cumulative": 0,
+    "change": 0
   },
   "weather": {
     "today": {
-      "weather_code": "100",
-      "weather_text": "晴れ",
-      "temp_max": null,
-      "temp_min": null,
+      "weather_code": "201",
+      "weather_text": "くもり　時々　晴れ　所により　昼過ぎ　から　夕方　雨　で　雷を伴い　激しく　降る",
+      "temp_max": 33,
+      "temp_min": 33,
       "precipitation_probability": [
         20,
-        20,
-        20,
         20
+      ],
+      "precipitation_times": [
+        "12時",
+        "18時"
+      ]
+    },
+    "tomorrow": {
+      "weather_code": "101",
+      "weather_text": "晴れ　時々　くもり",
+      "temp_max": 33,
+      "temp_min": 27,
+      "precipitation_probability": [
+        10,
+        10,
+        10,
+        10
       ],
       "precipitation_times": [
         "00時",
@@ -37,19 +51,11 @@
         "18時"
       ]
     },
-    "tomorrow": {
-      "weather_code": "101",
-      "weather_text": "晴れ　時々　くもり　所により　明け方　から　夜のはじめ頃　雨　で　雷を伴う",
-      "temp_max": null,
-      "temp_min": null,
-      "precipitation_probability": [],
-      "precipitation_times": []
-    },
     "day_after_tomorrow": {
       "weather_code": "101",
       "weather_text": "晴れ時々くもり",
       "temp_max": 33,
-      "temp_min": 26,
+      "temp_min": 27,
       "precipitation_probability": [
         20
       ],
@@ -57,25 +63,16 @@
         "日中"
       ]
     },
-    "update_time": "2026-07-19T17:00:00+09:00",
+    "update_time": "2026-07-20T11:00:00+09:00",
     "weekly_forecast": [
-      {
-        "date": "2026-07-20",
-        "day_of_week": "Mon",
-        "weather_code": "101",
-        "weather_text": "晴れ時々くもり",
-        "precipitation_probability": null,
-        "temp_max": null,
-        "temp_min": null
-      },
       {
         "date": "2026-07-21",
         "day_of_week": "Tue",
         "weather_code": "101",
         "weather_text": "晴れ時々くもり",
-        "precipitation_probability": 20,
-        "temp_max": 33,
-        "temp_min": 27
+        "precipitation_probability": null,
+        "temp_max": null,
+        "temp_min": null
       },
       {
         "date": "2026-07-22",
@@ -84,7 +81,7 @@
         "weather_text": "晴れ時々くもり",
         "precipitation_probability": 20,
         "temp_max": 33,
-        "temp_min": 26
+        "temp_min": 27
       },
       {
         "date": "2026-07-23",
@@ -121,42 +118,51 @@
         "precipitation_probability": 20,
         "temp_max": 32,
         "temp_min": 27
+      },
+      {
+        "date": "2026-07-27",
+        "day_of_week": "Mon",
+        "weather_code": "101",
+        "weather_text": "晴れ時々くもり",
+        "precipitation_probability": 20,
+        "temp_max": 32,
+        "temp_min": 26
       }
     ]
   },
   "precipitation_intensity": {
     "observation": [
       {
-        "datetime": "2026-07-20T00:00:00+09:00",
+        "datetime": "2026-07-20T12:00:00+09:00",
         "intensity": 0.0
       }
     ],
     "forecast": [
       {
-        "datetime": "2026-07-20T00:01:00+09:00",
+        "datetime": "2026-07-20T12:01:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2026-07-20T00:02:00+09:00",
+        "datetime": "2026-07-20T12:02:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2026-07-20T00:03:00+09:00",
+        "datetime": "2026-07-20T12:03:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2026-07-20T00:04:00+09:00",
+        "datetime": "2026-07-20T12:04:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2026-07-20T00:05:00+09:00",
+        "datetime": "2026-07-20T12:05:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2026-07-20T01:00:00+09:00",
+        "datetime": "2026-07-20T13:00:00+09:00",
         "intensity": 0.0
       }
     ],
-    "update_time": "2026-07-20T00:07:47.654634+09:00"
+    "update_time": "2026-07-20T12:07:46.696640+09:00"
   }
 }
