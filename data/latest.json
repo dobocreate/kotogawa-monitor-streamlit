@@ -1,15 +1,15 @@
 {
-  "timestamp": "2026-10-18T12:07:25.698860+09:00",
-  "data_time": "2026-10-18T12:00:00+09:00",
+  "timestamp": "2026-10-19T00:07:27.254451+09:00",
+  "data_time": "2026-10-18T23:50:00+09:00",
   "dam": {
-    "water_level": 31.32,
-    "storage_rate": 38.8,
+    "water_level": 31.29,
+    "storage_rate": 38.7,
     "inflow": 1.7,
-    "outflow": 2.65,
+    "outflow": 2.62,
     "storage_change": null
   },
   "river": {
-    "water_level": 2.82,
+    "water_level": 2.83,
     "level_change": 0.0,
     "status": "正常"
   },
@@ -20,27 +20,13 @@
   },
   "weather": {
     "today": {
-      "weather_code": "101",
-      "weather_text": "晴れ　時々　くもり",
-      "temp_max": 27,
-      "temp_min": 27,
-      "precipitation_probability": [
-        10,
-        10
-      ],
-      "precipitation_times": [
-        "12時",
-        "18時"
-      ]
-    },
-    "tomorrow": {
-      "weather_code": "203",
-      "weather_text": "くもり　昼前　から　夕方　雨　所により　雷　を伴う",
-      "temp_max": 26,
-      "temp_min": 21,
+      "weather_code": "200",
+      "weather_text": "くもり",
+      "temp_max": null,
+      "temp_min": null,
       "precipitation_probability": [
         20,
-        50,
+        30,
         50,
         30
       ],
@@ -51,11 +37,19 @@
         "18時"
       ]
     },
+    "tomorrow": {
+      "weather_code": "212",
+      "weather_text": "くもり　昼過ぎ　から　夕方　雨　所により　雷　を伴う",
+      "temp_max": null,
+      "temp_min": null,
+      "precipitation_probability": [],
+      "precipitation_times": []
+    },
     "day_after_tomorrow": {
       "weather_code": "202",
       "weather_text": "くもり一時雨",
-      "temp_max": 27,
-      "temp_min": 21,
+      "temp_max": 25,
+      "temp_min": 19,
       "precipitation_probability": [
         60
       ],
@@ -63,13 +57,13 @@
         "日中"
       ]
     },
-    "update_time": "2026-10-18T11:00:00+09:00",
+    "update_time": "2026-10-18T17:00:00+09:00",
     "weekly_forecast": [
       {
         "date": "2026-10-19",
         "day_of_week": "Mon",
-        "weather_code": "203",
-        "weather_text": "くもり時々雨",
+        "weather_code": "212",
+        "weather_text": "くもり一時雨か雪",
         "precipitation_probability": null,
         "temp_max": null,
         "temp_min": null
@@ -80,7 +74,7 @@
         "weather_code": "202",
         "weather_text": "くもり一時雨",
         "precipitation_probability": 60,
-        "temp_max": 27,
+        "temp_max": 26,
         "temp_min": 21
       },
       {
@@ -133,36 +127,36 @@
   "precipitation_intensity": {
     "observation": [
       {
-        "datetime": "2026-10-18T12:00:00+09:00",
+        "datetime": "2026-10-19T00:00:00+09:00",
         "intensity": 0.0
       }
     ],
     "forecast": [
       {
-        "datetime": "2026-10-18T12:01:00+09:00",
+        "datetime": "2026-10-19T00:01:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2026-10-18T12:02:00+09:00",
+        "datetime": "2026-10-19T00:02:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2026-10-18T12:03:00+09:00",
+        "datetime": "2026-10-19T00:03:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2026-10-18T12:04:00+09:00",
+        "datetime": "2026-10-19T00:04:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2026-10-18T12:05:00+09:00",
+        "datetime": "2026-10-19T00:05:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2026-10-18T13:00:00+09:00",
+        "datetime": "2026-10-19T01:00:00+09:00",
         "intensity": 0.0
       }
     ],
-    "update_time": "2026-10-18T12:07:25.698116+09:00"
+    "update_time": "2026-10-19T00:07:27.253727+09:00"
   }
 }
