@@ -1,43 +1,29 @@
 {
-  "timestamp": "2026-10-30T12:07:14.653570+09:00",
-  "data_time": "2026-10-30T12:00:00+09:00",
+  "timestamp": "2026-10-31T00:07:34.635215+09:00",
+  "data_time": "2026-10-30T23:50:00+09:00",
   "dam": {
-    "water_level": 35.11,
-    "storage_rate": 63.6,
-    "inflow": 13.37,
-    "outflow": 4.67,
+    "water_level": 35.35,
+    "storage_rate": 65.5,
+    "inflow": 13.34,
+    "outflow": 5.49,
     "storage_change": null
   },
   "river": {
-    "water_level": 2.87,
+    "water_level": 2.84,
     "level_change": 0.0,
     "status": "正常"
   },
   "rainfall": {
     "hourly": 0,
-    "cumulative": 22,
+    "cumulative": 0,
     "change": 0
   },
   "weather": {
     "today": {
-      "weather_code": "313",
-      "weather_text": "雨　昼過ぎ　から　くもり　後　晴れ　所により　昼過ぎ　まで　雷　を伴う",
-      "temp_max": 22,
-      "temp_min": 22,
-      "precipitation_probability": [
-        20,
-        10
-      ],
-      "precipitation_times": [
-        "12時",
-        "18時"
-      ]
-    },
-    "tomorrow": {
-      "weather_code": "100",
-      "weather_text": "晴れ　明け方　まで　くもり",
-      "temp_max": 23,
-      "temp_min": 18,
+      "weather_code": "111",
+      "weather_text": "晴れ　夜遅く　くもり",
+      "temp_max": null,
+      "temp_min": null,
       "precipitation_probability": [
         10,
         0,
@@ -51,19 +37,27 @@
         "18時"
       ]
     },
+    "tomorrow": {
+      "weather_code": "100",
+      "weather_text": "晴れ　明け方　まで　くもり",
+      "temp_max": null,
+      "temp_min": null,
+      "precipitation_probability": [],
+      "precipitation_times": []
+    },
     "day_after_tomorrow": {
-      "weather_code": "201",
-      "weather_text": "くもり時々晴れ",
-      "temp_max": 21,
-      "temp_min": 15,
+      "weather_code": "203",
+      "weather_text": "くもり時々雨",
+      "temp_max": 22,
+      "temp_min": 18,
       "precipitation_probability": [
-        20
+        70
       ],
       "precipitation_times": [
         "日中"
       ]
     },
-    "update_time": "2026-10-30T11:00:00+09:00",
+    "update_time": "2026-10-30T17:00:00+09:00",
     "weekly_forecast": [
       {
         "date": "2026-10-31",
@@ -133,36 +127,36 @@
   "precipitation_intensity": {
     "observation": [
       {
-        "datetime": "2026-10-30T12:00:00+09:00",
+        "datetime": "2026-10-31T00:00:00+09:00",
         "intensity": 0.0
       }
     ],
     "forecast": [
       {
-        "datetime": "2026-10-30T12:01:00+09:00",
+        "datetime": "2026-10-31T00:01:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2026-10-30T12:02:00+09:00",
+        "datetime": "2026-10-31T00:02:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2026-10-30T12:03:00+09:00",
+        "datetime": "2026-10-31T00:03:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2026-10-30T12:04:00+09:00",
+        "datetime": "2026-10-31T00:04:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2026-10-30T12:05:00+09:00",
+        "datetime": "2026-10-31T00:05:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2026-10-30T13:00:00+09:00",
+        "datetime": "2026-10-31T01:00:00+09:00",
         "intensity": 0.0
       }
     ],
-    "update_time": "2026-10-30T12:07:14.652955+09:00"
+    "update_time": "2026-10-31T00:07:34.634463+09:00"
   }
 }
