@@ -1,34 +1,48 @@
 {
-  "timestamp": "2026-11-09T00:07:17.894397+09:00",
-  "data_time": "2026-11-08T23:40:00+09:00",
+  "timestamp": "2026-11-09T12:07:37.177124+09:00",
+  "data_time": "2026-11-09T12:00:00+09:00",
   "dam": {
-    "water_level": 36.36,
-    "storage_rate": 73.9,
-    "inflow": 5.37,
-    "outflow": 3.88,
+    "water_level": 36.39,
+    "storage_rate": 74.2,
+    "inflow": 5.08,
+    "outflow": 3.79,
     "storage_change": null
   },
   "river": {
-    "water_level": 2.83,
+    "water_level": 2.82,
     "level_change": 0.0,
     "status": "正常"
   },
   "rainfall": {
-    "hourly": null,
-    "cumulative": null,
-    "change": null
+    "hourly": 0,
+    "cumulative": 1,
+    "change": 0
   },
   "weather": {
     "today": {
-      "weather_code": "200",
-      "weather_text": "くもり",
-      "temp_max": null,
-      "temp_min": null,
+      "weather_code": "300",
+      "weather_text": "雨",
+      "temp_max": 17,
+      "temp_min": 17,
       "precipitation_probability": [
-        10,
-        50,
         80,
-        60
+        80
+      ],
+      "precipitation_times": [
+        "12時",
+        "18時"
+      ]
+    },
+    "tomorrow": {
+      "weather_code": "202",
+      "weather_text": "くもり　後　晴れ　明け方　まで　雨　所により　雷　を伴う",
+      "temp_max": 18,
+      "temp_min": 14,
+      "precipitation_probability": [
+        50,
+        20,
+        0,
+        0
       ],
       "precipitation_times": [
         "00時",
@@ -36,14 +50,6 @@
         "12時",
         "18時"
       ]
-    },
-    "tomorrow": {
-      "weather_code": "214",
-      "weather_text": "くもり　昼前　から　雨",
-      "temp_max": null,
-      "temp_min": null,
-      "precipitation_probability": [],
-      "precipitation_times": []
     },
     "day_after_tomorrow": {
       "weather_code": "101",
@@ -57,25 +63,16 @@
         "日中"
       ]
     },
-    "update_time": "2026-11-08T17:00:00+09:00",
+    "update_time": "2026-11-09T11:00:00+09:00",
     "weekly_forecast": [
-      {
-        "date": "2026-11-09",
-        "day_of_week": "Mon",
-        "weather_code": "214",
-        "weather_text": "天気コード214",
-        "precipitation_probability": null,
-        "temp_max": null,
-        "temp_min": null
-      },
       {
         "date": "2026-11-10",
         "day_of_week": "Tue",
         "weather_code": "202",
         "weather_text": "くもり一時雨",
-        "precipitation_probability": 50,
-        "temp_max": 18,
-        "temp_min": 13
+        "precipitation_probability": null,
+        "temp_max": null,
+        "temp_min": null
       },
       {
         "date": "2026-11-11",
@@ -110,53 +107,62 @@
         "weather_code": "200",
         "weather_text": "くもり",
         "precipitation_probability": 40,
-        "temp_max": 20,
-        "temp_min": 15
+        "temp_max": 21,
+        "temp_min": 14
       },
       {
         "date": "2026-11-15",
         "day_of_week": "Sun",
         "weather_code": "202",
         "weather_text": "くもり一時雨",
-        "precipitation_probability": 50,
+        "precipitation_probability": 70,
         "temp_max": 20,
-        "temp_min": 16
+        "temp_min": 17
+      },
+      {
+        "date": "2026-11-16",
+        "day_of_week": "Mon",
+        "weather_code": "201",
+        "weather_text": "くもり時々晴れ",
+        "precipitation_probability": 30,
+        "temp_max": 20,
+        "temp_min": 14
       }
     ]
   },
   "precipitation_intensity": {
     "observation": [
       {
-        "datetime": "2026-11-09T00:00:00+09:00",
+        "datetime": "2026-11-09T12:00:00+09:00",
         "intensity": 0.0
       }
     ],
     "forecast": [
       {
-        "datetime": "2026-11-09T00:01:00+09:00",
-        "intensity": 0.0
+        "datetime": "2026-11-09T12:01:00+09:00",
+        "intensity": 0.1
       },
       {
-        "datetime": "2026-11-09T00:02:00+09:00",
-        "intensity": 0.0
+        "datetime": "2026-11-09T12:02:00+09:00",
+        "intensity": 0.1
       },
       {
-        "datetime": "2026-11-09T00:03:00+09:00",
-        "intensity": 0.0
+        "datetime": "2026-11-09T12:03:00+09:00",
+        "intensity": 0.1
       },
       {
-        "datetime": "2026-11-09T00:04:00+09:00",
-        "intensity": 0.0
+        "datetime": "2026-11-09T12:04:00+09:00",
+        "intensity": 0.35
       },
       {
-        "datetime": "2026-11-09T00:05:00+09:00",
-        "intensity": 0.0
+        "datetime": "2026-11-09T12:05:00+09:00",
+        "intensity": 0.1
       },
       {
-        "datetime": "2026-11-09T01:00:00+09:00",
-        "intensity": 0.0
+        "datetime": "2026-11-09T13:00:00+09:00",
+        "intensity": 0.1
       }
     ],
-    "update_time": "2026-11-09T00:07:17.893717+09:00"
+    "update_time": "2026-11-09T12:07:37.176399+09:00"
   }
 }
