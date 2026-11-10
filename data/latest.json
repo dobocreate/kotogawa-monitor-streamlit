@@ -1,43 +1,29 @@
 {
-  "timestamp": "2026-11-10T12:07:25.467968+09:00",
-  "data_time": "2026-11-10T12:00:00+09:00",
+  "timestamp": "2026-11-11T00:07:41.874492+09:00",
+  "data_time": "2026-11-10T23:40:00+09:00",
   "dam": {
-    "water_level": 36.45,
-    "storage_rate": 74.7,
-    "inflow": 4.75,
-    "outflow": 3.29,
+    "water_level": 36.48,
+    "storage_rate": 75.0,
+    "inflow": 4.47,
+    "outflow": 2.92,
     "storage_change": null
   },
   "river": {
-    "water_level": 2.82,
+    "water_level": 2.83,
     "level_change": 0.0,
     "status": "正常"
   },
   "rainfall": {
-    "hourly": 0,
-    "cumulative": 0,
-    "change": 0
+    "hourly": null,
+    "cumulative": null,
+    "change": null
   },
   "weather": {
     "today": {
-      "weather_code": "100",
-      "weather_text": "晴れ",
-      "temp_max": 18,
-      "temp_min": 18,
-      "precipitation_probability": [
-        10,
-        10
-      ],
-      "precipitation_times": [
-        "12時",
-        "18時"
-      ]
-    },
-    "tomorrow": {
-      "weather_code": "100",
-      "weather_text": "晴れ　明け方　まで　くもり",
-      "temp_max": 19,
-      "temp_min": 13,
+      "weather_code": "111",
+      "weather_text": "晴れ　夜遅く　くもり",
+      "temp_max": null,
+      "temp_min": null,
       "precipitation_probability": [
         10,
         0,
@@ -51,19 +37,27 @@
         "18時"
       ]
     },
+    "tomorrow": {
+      "weather_code": "100",
+      "weather_text": "晴れ　明け方　まで　くもり",
+      "temp_max": null,
+      "temp_min": null,
+      "precipitation_probability": [],
+      "precipitation_times": []
+    },
     "day_after_tomorrow": {
       "weather_code": "101",
       "weather_text": "晴れ時々くもり",
       "temp_max": 21,
-      "temp_min": 12,
+      "temp_min": 15,
       "precipitation_probability": [
-        0
+        10
       ],
       "precipitation_times": [
         "日中"
       ]
     },
-    "update_time": "2026-11-10T11:00:00+09:00",
+    "update_time": "2026-11-10T17:00:00+09:00",
     "weekly_forecast": [
       {
         "date": "2026-11-11",
@@ -79,7 +73,7 @@
         "day_of_week": "Thu",
         "weather_code": "101",
         "weather_text": "晴れ時々くもり",
-        "precipitation_probability": 0,
+        "precipitation_probability": 10,
         "temp_max": 21,
         "temp_min": 12
       },
@@ -133,36 +127,36 @@
   "precipitation_intensity": {
     "observation": [
       {
-        "datetime": "2026-11-10T12:00:00+09:00",
+        "datetime": "2026-11-11T00:00:00+09:00",
         "intensity": 0.0
       }
     ],
     "forecast": [
       {
-        "datetime": "2026-11-10T12:01:00+09:00",
+        "datetime": "2026-11-11T00:01:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2026-11-10T12:02:00+09:00",
+        "datetime": "2026-11-11T00:02:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2026-11-10T12:03:00+09:00",
+        "datetime": "2026-11-11T00:03:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2026-11-10T12:04:00+09:00",
+        "datetime": "2026-11-11T00:04:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2026-11-10T12:05:00+09:00",
+        "datetime": "2026-11-11T00:05:00+09:00",
         "intensity": 0.0
       },
       {
-        "datetime": "2026-11-10T13:00:00+09:00",
+        "datetime": "2026-11-11T01:00:00+09:00",
         "intensity": 0.0
       }
     ],
-    "update_time": "2026-11-10T12:07:25.467449+09:00"
+    "update_time": "2026-11-11T00:07:41.873835+09:00"
   }
 }
